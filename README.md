@@ -18,6 +18,7 @@ The pattern borrows from [SpecKit](https://github.com/github/spec-kit) (planning
 ## Documentation
 
 - **[bower.md](bower.md)** — Full framework specification with templates and guidance
+- **[method.md](method.md)** — Operational guide: how to use Bower phase by phase
 - **[docs/constitution.md](docs/constitution.md)** — Development process conventions (reusable template)
 - **[docs/index.md](docs/index.md)** — Example project navigation (Kancil web scraping pipeline)
 - **[docs/architecture.md](docs/architecture.md)** — Example system architecture
