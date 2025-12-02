@@ -1,4 +1,6 @@
-# RSE AI-Assisted Development Pattern Specification
+# The Bowser Framework: A lightweight, maintainable documentation pattern for AI-assisted research software engineering
+
+🚧🚧🚧 WORK IN PROGRESS 🚧🚧🚧
 
 ## Overview
 
@@ -77,7 +79,7 @@ This pattern is designed specifically for **research software engineering contex
 
 4. **Projects evolve from prototype to infrastructure**: Many RSE projects start as "quick test" and become "oh shit, this is now critical infrastructure." The pattern works both pre-MVP (where modules guide build sequence) and post-MVP (where modules define system boundaries).
 
-5. **AI assistance is the norm**: The structure is designed for AI discoverability (grep-based or semantic search) and maintenance (regeneratable indices, clear update targets).
+5. **AI assistance is the norm**: The structure is designed for AI discoverability (grep-based or semantic search) and maintenance (regeneratable indices, clear update targets). Note: documentation rot from temporal phases can poison semantic search in tools like Cursor.
 
 **Core Philosophy:** Use SpecKit's planning discipline and OpenSpec's living documentation concept, but optimise for small-team research velocity and the full prototype→infrastructure lifecycle.
 
@@ -112,9 +114,8 @@ project-root/
 └── tests/                            # Test code
 ```
 
-**Note on Agent Context Files:** The `CLAUDE.md` file provides AI agent context and code standards. Alternative names include `GEMINI.md`, `CURSOR.md`, etc. depending on your tooling. Some teams prefer to keep code standards in `constitution.md` instead — choose what works for your workflow. The key recommendation is to include a link to `docs/index.md` in your agent file so the project documentation is discovered automatically in AI sessions.
-
----
+**Note on Agent Context Files:** AI agents usually have a mechanism to specify project context such as files named `CLAUDE.md`, `GEMINI.md`, `CURSOR.md`, etc. In this example, we use `CLAUDE.md` and have a code quality example here, with a largely project-agnostic `constitution.md`. 
+Some teams prefer to keep code standards in `constitution.md`. The key recommendation is to include a link to `docs/index.md` in your agent file so that AI agents can rapidly navigate project documentation.
 
 ## Core Documents
 
@@ -178,6 +179,8 @@ Brief description of what this module provides
 
 **Template:**
 
+This is a project-agnostic template that can be reused across projects without modification. Code standards go in agent-specific context files (`CLAUDE.md` etc), and project-specific implementation conventions go in `architecture.md`. 
+
 ```markdown
 # Development Constitution
 
@@ -213,64 +216,70 @@ When starting new work, generate task breakdowns from the plan:
 - Use docs/index.md as primary navigation
 - Feature plan.md files contain implementation details
 - Module-status.md describes integration behaviour
-```
 
-**Notes:**
-- The living documentation principle is critical — it changes how AI updates docs
-- This file contains no project-specific content — it's fully reusable
-- Code standards belong in CLAUDE.md (or keep here if preferred)
-- Project conventions belong in architecture.md
+## Documentation Structure
+
+Each component is documented at `docs/modules/<module>/<component>/` containing:
+
+- **plan.md** — How the component works, its design, and source locations
+- **status.md** — Current state, known issues, and work in progress
+
+**Before working on any component**, read its `plan.md` first. This file contains:
+- Component purpose and design
+- Source file locations (eliminating need to search for implementations)
+- Test file locations
+- Integration points with other components
+
+The source location section in plan.md provides direct paths to implementation files, avoiding separate searches for code.
+
+## Standards
+
+### Testing Philosophy
+- **End-to-end tests:** For data pipelines and workflows
+- **Integration tests:** At module boundaries (module-status.md)
+- **Unit tests:** For complex logic, pure functions, transformations
+- Generate tests alongside implementation when plan is clear
+
+### Documentation Style
+- Write for future-you in 6 months
+- Explain *why* decisions were made, not just *what*
+- Keep it concise — prefer clarity over completeness
+- Update docs as part of implementation, not after
 
 ---
 
 ### 3. CLAUDE.md (Agent Context File)
 
-**Purpose:** Provide AI agents with project context, navigation, and code standards. Named for your AI tool of choice — alternatives include `GEMINI.md`, `CURSOR.md`, etc.
+We recommend adding this template to your AI agent context file to povide AI agents with project context (`design/` folder), navigation (`index.md`), and process instructions (`constitution.md`). 
 
 **Template:**
 
 ```markdown
 # Project Context
 
-This project follows the Bower AI-assisted development pattern. All documentation
-is in `docs/` and represents current state (living documents).
+This project follows the Bower AI-assisted development pattern.
 
-**Start here:** [docs/index.md](index.md) — Project navigation and status
+**Start here:** [docs/index.md](docs/index.md) — Project navigation and status
 
-## Key Files
-- `docs/index.md` — Project navigation and module status
-- `docs/constitution.md` — Development process conventions
-- `docs/architecture.md` — System design and project conventions
+**Development conventions:** [docs/constitution.md](docs/constitution.md) — Process and standards
 
-## When Implementing Features
-1. Read the relevant plan.md for context
-2. Update plan.md if implementation approach changes
-3. Update status.md with progress and issues
-4. Follow conventions in constitution.md
-
-## Finding Information
-- Use docs/index.md to navigate feature modules
-- Feature implementation details are in plan.md files
-- Integration behaviour is in module-status.md files
-
+All documentation in `docs/` represents current state (living documents).
 ---
 
 ## Code Standards
 
-[Add your code standards here — type hints, testing philosophy, documentation style, etc.]
+[Add your code standards here]
 ```
 
 **Notes:**
 - The link to `docs/index.md` is critical — it ensures AI agents discover the full project structure
-- Some teams prefer to keep code standards in constitution.md instead
-- Name the file to match your AI tooling (CLAUDE.md, GEMINI.md, CURSOR.md, etc.)
-- Can include multiple agent files if using different tools
+- Some teams prefer to keep code standards in `constitution.md` instead
 
 ---
 
 ### 4. architecture.md
 
-**Purpose:** High-level system design, technology choices, key structural decisions, and project-specific conventions (environment, data handling, etc.).
+This is a document that describes the high-level system design, technology choices, key structural decisions, and project-specific conventions (environment, data handling, etc.). The following is an example template but the shape of it will differ depending on the project. In a full-stack monorepo, the architecture may be split into sections describing the different layers of the stack.
 
 **Template:**
 
@@ -640,6 +649,8 @@ For testing this pattern, create a minimal example with:
 **Purpose:** Extract text and metadata from uploaded PDFs
 
 **Structure:**
+
+Example structure:
 ```
 docs/
 ├── index.md
@@ -665,7 +676,7 @@ docs/
         └── module-status.md
 ```
 
-This gives you two modules with realistic integration points to test the pattern.
+The modules/ directory is illustrative of a real project with two modules with realistic integration points to test the pattern.
 
 ---
 
@@ -681,7 +692,6 @@ When validating this pattern, track:
 
 ---
 
-## License and Usage
+## Credit and License
 
-This pattern specification is provided for research software engineering community use. Adapt freely for your projects and share learnings.
-
+This pattern was developed by the **HASS Digital Research Hub** at the **Australian National University** and is provided for research software engineering community use. Adapt freely for your projects and share learnings.
