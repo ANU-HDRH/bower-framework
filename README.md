@@ -46,6 +46,7 @@ bower-framework/
 | `/bower-design-full` | Four-stage design process: problem → decisions → architecture → modules. Hard gates at each stage. |
 | `/bower-feature` | Lightweight flow for features/fixes within existing architecture. One gate before code. |
 | `/bower-index` | Regenerate `docs/index.md` from current module status markers. |
+| `/bower-spec` | Export a single specification document for sharing with others. |
 
 ## How It Works
 

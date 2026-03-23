@@ -74,6 +74,8 @@ Use `/bower-design` as the entry point for all new work. It assesses scope and r
 
 Use `/bower-index` to regenerate `docs/index.md` from current module status.
 
+Use `/bower-spec` to export a single specification document from project documentation, suitable for sharing with stakeholders or other teams.
+
 ## Framework Reference
 
 - `_bower/rationale.md` — Why Bower works this way, design principles, comparison to alternatives
