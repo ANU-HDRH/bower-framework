@@ -255,15 +255,9 @@ We recommend adding this template to your AI agent context file to povide AI age
 **Template:**
 
 ```markdown
-# Project Context
-
-This project follows the Bower AI-assisted development pattern.
-
-**Start here:** [docs/index.md](docs/index.md) — Project navigation and status
-
-**Development conventions:** [docs/constitution.md](docs/constitution.md) — Process and standards
-
-All documentation in `docs/` represents current state (living documents).
+- This project follows the Bower AI-assisted development pattern
+- Read `docs/index.md` to find the location of Bower documentation and source code for components
+- Read `docs/constitution.md` to understand how to contribute, plan, and implement features and which files to update when making changes
 ---
 
 ## Code Standards
