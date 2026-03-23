@@ -99,6 +99,7 @@ Create directories as needed. If `docs/constitution.md` doesn't exist, create it
 
 After writing, present a summary of files created/updated to the user.
 
+<critical_constraints>
 ## What NOT To Do
 
 - Do not write implementation code
@@ -106,3 +107,4 @@ After writing, present a summary of files created/updated to the user.
 - Do not skip gates or combine stages
 - Do not proceed past a gate without explicit user confirmation
 - Do not ignore existing documentation — read and build on it
+</critical_constraints>

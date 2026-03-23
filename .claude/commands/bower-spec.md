@@ -70,6 +70,7 @@ Only include if substantive.]
 
 Write the spec to a file. Use AskUserQuestion to confirm the output path. Suggest `docs/spec.md` by default, but note that if this is a one-off export, the user might prefer a location outside `docs/` so it doesn't get treated as a living document.
 
+<critical_constraints>
 ## Rules
 
 - **Strip internal details.** Source file paths, test file paths, status markers, work-in-progress items, and deferred work are internal. Don't include them.
@@ -77,3 +78,4 @@ Write the spec to a file. Use AskUserQuestion to confirm the output path. Sugges
 - **Respect the audience.** If the user says it's for a non-technical stakeholder, reduce implementation detail. If it's for a technical reviewer, keep it.
 - **Don't invent.** Only include what's in the documentation. If something is missing or thin, note the gap rather than filling it with assumptions.
 - **Don't update project docs.** This command reads and exports. It doesn't modify any existing Bower documentation.
+</critical_constraints>

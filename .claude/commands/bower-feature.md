@@ -58,6 +58,7 @@ After confirmation:
 
 If during implementation you discover the approach needs to change significantly, stop and consult the user again via AskUserQuestion before continuing.
 
+<critical_constraints>
 ## What NOT To Do
 
 - Do not start coding before the gate
@@ -65,3 +66,4 @@ If during implementation you discover the approach needs to change significantly
 - Do not skip documentation updates
 - Do not propose architectural changes — if the change requires them, recommend the user runs `/bower-design` instead
 - Do not treat acceptance criteria as optional — they're the contract
+</critical_constraints>

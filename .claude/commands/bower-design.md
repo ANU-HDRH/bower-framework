@@ -55,8 +55,10 @@ Based on the user's choice, invoke the appropriate command:
 - If **Full Design**: Run @bower-design-full with the user's original description
 - If **Lightweight Change**: Run @bower-feature with the user's original description
 
+<critical_constraints>
 ## What NOT To Do
 
 - Do not start designing or implementing — you are a router
 - Do not skip the AskUserQuestion — the user chooses the path
 - Do not assume — if the scope is ambiguous, your recommendation should reflect that uncertainty
+</critical_constraints>
