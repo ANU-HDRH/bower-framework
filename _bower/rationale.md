@@ -34,6 +34,8 @@ This contrasts with phase-based organisation where groupings are temporal (what 
 
 **Module rubric.** The definition that makes "related features" concrete: *a module is a set of features that share data concerns and can be meaningfully integration-tested together.* Data concerns are the underlying property; shared integration tests are the observable consequence. If two feature sets don't share data and don't warrant a shared integration test, they belong in separate modules. This gives the agent and the engineer something concrete to reason about at Stage 4 of full design, instead of a judgement call without scaffolding.
 
+**DAG in the positive form.** Conventional wisdom on module architecture says "dependencies must form a DAG — no cycles, no lower-level modules importing from higher-level ones." Bower deliberately states this in the positive form rather than as an enforcement rule: if a module can be meaningfully integration-tested in isolation, its dependencies are well-formed by construction. If it can't — if writing the integration test drags in half the system, or the test is awkward because of back-channels between modules — the rubric has been violated and the module boundaries have eroded. The agent's job at that point is to notice and surface it ("this module's boundaries are tangled, consider a refactor"), not to enforce a static DAG check. This keeps Bower lightweight: no graph analyser, no import-direction linter, just the rubric and the agent's judgement at the moment integration-testing actually happens.
+
 ### AI-Readable Context
 
 The documentation structure is designed for discoverability:

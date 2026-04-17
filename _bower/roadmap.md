@@ -18,17 +18,11 @@ Each item has a one-line description and a *revisit trigger*: the signal that tu
 - **CLAUDE.md tiering via `_bower/conventions.md`** — A short core CLAUDE.md with non-negotiables, plus an on-demand `_bower/conventions.md` loaded by the commands that need it.
   *Revisit trigger:* when CLAUDE.md passes a size budget to be set.
 
-- **Testing conventions beyond policy** — Concrete conventions for test location, fixtures, and verification-required-for-✓.
-  *Revisit trigger:* before second real project.
-
-- **Module dependency-DAG rule** — "Module dependencies must form a DAG; cycles require an architecture revision."
-  *Revisit trigger:* name-only, no action required.
-
 - **Constitution template and archive rules** — A schema for `constitution.md` and explicit rules for what belongs in `_bower/archive/`.
   *Revisit trigger:* before second real project.
 
-- **Bower-version marker in adopting projects** — A `_bower/version` file or version line in CLAUDE.md so meta-migrations between Bower releases are tractable.
-  *Revisit trigger:* on v0.3 release.
+- **Version migration conventions** — The version marker itself is resolved (CLAUDE.md header carries it, auto-loaded). What's missing is a convention for how an adopting project migrates between Bower releases (e.g., v0.4 → v0.5): what changes, who runs it, how CLAUDE.md customisations are preserved.
+  *Revisit trigger:* when a real adopting project first needs to cross a Bower version boundary.
 
 - **Durable-ephemeral proposals on disk** — `docs/proposals/<slug>.md` written at the gate, deleted on completion, to survive session boundaries.
   *Revisit trigger:* if session-boundary pain shows up after first real use.
