@@ -32,6 +32,8 @@ Features are grouped into modules — logical system boundaries that persist acr
 
 This contrasts with phase-based organisation where groupings are temporal (what we built in week 1) rather than structural (what handles authentication). Temporal groupings become meaningless the moment the build phase ends.
 
+**Module rubric.** The definition that makes "related features" concrete: *a module is a set of features that share data concerns and can be meaningfully integration-tested together.* Data concerns are the underlying property; shared integration tests are the observable consequence. If two feature sets don't share data and don't warrant a shared integration test, they belong in separate modules. This gives the agent and the engineer something concrete to reason about at Stage 4 of full design, instead of a judgement call without scaffolding.
+
 ### AI-Readable Context
 
 The documentation structure is designed for discoverability:
@@ -39,6 +41,23 @@ The documentation structure is designed for discoverability:
 - `docs/index.md` gives the full project map with status at a glance
 - `plan.md` files contain source locations, eliminating search
 - Status markers are machine-parseable
+
+### Two-Layer Documentation Model
+
+Bower documents split into two layers by *audience* and *style*, not by directory:
+
+- **Design layer** (`architecture.md`, `design/problem-space.md`, `design/design-decisions.md`, `constitution.md`, `scope.md`) — humans primary, agents consult on demand. Narrative prose, explains *why*, tolerates length, decision-oriented.
+- **Operational layer** (`modules/**/plan.md`, `modules/**/status.md`, `module-status.md`, `index.md`) — agents primary, humans consult on demand. Terse bullets, tables, pointers. No narrative. Word budgets enforced on volatile docs (status.md ~150 words, module-status.md ~200 words).
+
+Audience drives style. A narrative `status.md` wastes the agent's context window; a bulleted `architecture.md` loses the reasoning that makes the design defensible. Naming the layers makes the split deliberate rather than accidental and gives the phased-précis rule and word budgets a principled home — operational-layer docs are compression-mandatory because they're on the hot path of agent attention.
+
+### Scope as Current State
+
+`docs/scope.md` is a *present-state* document: what's in scope now, what's been explicitly deferred, which success criteria are met or unmet. It is deliberately distinct from `problem-space.md`, which is framing history — frozen at Stage 1 of full design, capturing the problem as originally understood. When reality shifts, `scope.md` is updated in place; `problem-space.md` stays as the Day-1 snapshot. Keeping the two apart prevents either from doing the other's job badly.
+
+## Roadmap
+
+Deferred framework improvements live in [`_bower/roadmap.md`](./roadmap.md), each with a revisit trigger. Anything named but not yet acted on belongs there, not in active docs.
 
 ## Relationship to Existing Patterns
 

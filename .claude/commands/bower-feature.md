@@ -15,8 +15,9 @@ The user's description of what they want to change: $ARGUMENTS
 
 1. Read `docs/index.md` to understand project structure
 2. Read `docs/architecture.md` for system context
-3. Read the plan.md and status.md of any components likely affected
-4. Read relevant source code to understand current implementation
+3. Read `docs/scope.md` to understand current scope, non-goals, and success-criteria state
+4. Read the plan.md and status.md of any components likely affected
+5. Read relevant source code to understand current implementation
 
 ## Step 2: Propose Changes
 
@@ -25,6 +26,7 @@ Prepare a proposal covering:
 - **What changes:** Which components/modules are affected and how
 - **Technical approach:** What you'll actually do (new files, modified files, patterns used)
 - **Impact:** What else this touches — integration points, tests, documentation
+- **Scope impact:** Does this change scope, non-goals, or close a success criterion in `scope.md`?
 - **Acceptance criteria:** How we'll know this works. Be specific:
   - Tests to write or update (with brief description of what each verifies)
   - Manual verification steps if applicable
@@ -50,10 +52,12 @@ After confirmation:
 1. Implement the changes as proposed
 2. Write/update tests per the agreed acceptance criteria
 3. Update documentation:
-   - Update affected `plan.md` files if the design changed
-   - Update affected `status.md` files
-   - Update `module-status.md` if integration behaviour changed
-   - Update `docs/index.md` if module status changed (or run `/bower-index`)
+   1. Update `plan.md` if the design shifted.
+   2. Rewrite `status.md` from scratch as a **resumption snapshot** — what's the current state, what's the next move if someone picked this up tomorrow. ≤150 words. Do not append to the previous contents.
+   3. If the feature is multi-session, update `## Implementation trajectory` in `plan.md`: compress the just-completed phase into a one-paragraph précis (why-focused, not steps); leave future phases detailed.
+   4. Update `scope.md` if the change shifted scope, changed non-goals, or closed a success criterion.
+   5. Update `module-status.md` if integration behaviour changed.
+   6. Run `/bower-index` or update `docs/index.md` if module status markers changed.
 4. Run tests to verify acceptance criteria are met
 
 If during implementation you discover the approach needs to change significantly, stop and consult the user again via AskUserQuestion before continuing.

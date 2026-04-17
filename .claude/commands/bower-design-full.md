@@ -17,7 +17,7 @@ The user's description of what they want to design: $ARGUMENTS
 **Goal:** Establish what we're solving, for whom, and within what constraints.
 
 **Process:**
-1. Read any existing project documentation (architecture.md, design/, README, etc.)
+1. Read any existing project documentation (architecture.md, design/, scope.md, README, etc.)
 2. Analyse the user's description alongside existing context
 3. Draft the problem framing covering:
    - The problem and who has it
@@ -25,9 +25,15 @@ The user's description of what they want to design: $ARGUMENTS
    - Success criteria (how we'll know it worked)
    - Scope boundaries (in/out)
    - Constraints (technical, time, policy, resource)
+4. Draft the initial scope statement alongside the framing:
+   - Current scope — what we're building now
+   - Current non-goals — what we've explicitly deferred
+   - Success criteria with initial met/unmet state (all unmet at project start)
 
-**Gate:** Present the problem framing to the user via AskUserQuestion. Ask:
-- "Does this capture the problem accurately? Anything missing, wrong, or out of scope that should be in (or vice versa)?"
+Scope is a *present-state* document distinct from problem framing, which is framing history. Both are produced at Stage 1 but serve different lifecycles.
+
+**Gate:** Present the problem framing *and* initial scope to the user via AskUserQuestion. Ask:
+- "Does this capture the problem accurately, and is the initial scope right? Anything missing, wrong, or out of scope that should be in (or vice versa)?"
 
 Wait for confirmation before proceeding.
 
@@ -73,16 +79,19 @@ Wait for confirmation before proceeding.
 **Goal:** Break the architecture into implementable modules and establish build order.
 
 **Process:**
-1. Identify logical modules — groups of related features that form system boundaries
-2. For each module:
-   - What features/components it contains
+1. Apply the module rubric explicitly. *A module is a set of features that share data concerns and can be meaningfully integration-tested together.* Data concerns are the underlying property; shared integration tests are the observable consequence. If two feature sets don't share data and don't warrant a shared integration test, they belong in separate modules.
+2. Identify logical modules — groups of related features that form system boundaries under the rubric above.
+3. For each module, capture:
+   - Features/components it contains
+   - What data is shared across those features (one sentence)
+   - What integration test(s) would make sense at the module boundary (one sentence)
    - What it depends on (other modules, external systems)
    - Brief description of its purpose
-3. Determine build order based on dependencies
-4. Identify which modules can be built in parallel
+4. Determine build order based on dependencies
+5. Identify which modules can be built in parallel
 
-**Gate:** Present the module breakdown and build order to the user via AskUserQuestion. Ask:
-- "Does this module breakdown make sense? Is the build order right? Any features in the wrong module?"
+**Gate:** Present the module breakdown and build order to the user via AskUserQuestion. For each proposed module, show the shared-data and integration-test rationale alongside the features it contains. Ask:
+- "Given the data-concerns and integration-test rationale shown, does this breakdown hold? Is the build order right? Any features in the wrong module?"
 
 Wait for confirmation before proceeding.
 
@@ -90,10 +99,11 @@ Wait for confirmation before proceeding.
 
 After all four stages are confirmed, write the documentation files:
 
-1. **`docs/design/problem-space.md`** — From Stage 1
-2. **`docs/design/design-decisions.md`** — From Stage 2
-3. **`docs/architecture.md`** — From Stage 3 (update if exists)
-4. **`docs/index.md`** — Populated with module structure from Stage 4, all marked ⏸ Planned
+1. **`docs/design/problem-space.md`** — From Stage 1 (framing history)
+2. **`docs/scope.md`** — From Stage 1 (current scope, non-goals, success criteria with met/unmet state)
+3. **`docs/design/design-decisions.md`** — From Stage 2
+4. **`docs/architecture.md`** — From Stage 3 (update if exists)
+5. **`docs/index.md`** — Populated with module structure from Stage 4, all marked ⏸ Planned
 
 Create directories as needed. If `docs/constitution.md` doesn't exist, create it following the conventions described in the project's CLAUDE.md.
 

@@ -1,4 +1,4 @@
-# Bower Framework
+# Bower Framework v0.5
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -64,6 +64,7 @@ When Bower runs, it creates and maintains:
 ```
 docs/
 ├── index.md                    # Auto-generated navigation and status
+├── scope.md                    # Current scope, non-goals, success criteria
 ├── constitution.md             # Process conventions
 ├── architecture.md             # System design and key decisions
 ├── design/                     # Problem space and design decisions
@@ -71,9 +72,11 @@ docs/
     └── <module>/
         ├── <feature>/
         │   ├── plan.md         # How it works, components, testing
-        │   └── status.md       # Current state, issues, todo
+        │   └── status.md       # Resumption snapshot (~150 words)
         └── module-status.md    # Integration testing
 ```
+
+Deferred framework improvements live in [`_bower/roadmap.md`](_bower/roadmap.md) — named items with revisit triggers, so they don't clutter active docs or get lost.
 
 ## About
 
