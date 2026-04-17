@@ -34,7 +34,7 @@ bower-framework/
 │       └── bower-index.md          # Regenerate docs/index.md
 ├── _bower/
 │   ├── rationale.md                # Why Bower works this way
-│   └── archive/                    # Previous framework docs (historical)
+│   └── roadmap.md                  # Deferred framework improvements
 └── README.md
 ```
 
