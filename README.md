@@ -59,7 +59,7 @@ The agent recommends; you decide. Every gate uses explicit confirmation — no c
 
 ## Project Documentation Structure
 
-When Bower runs, it creates and maintains:
+Bower creates and maintains the `docs/` tree below, with `docs/reference/` as an optional home for vendored external material that agents consult but don't rewrite:
 
 ```
 docs/
@@ -68,6 +68,7 @@ docs/
 ├── constitution.md             # Process conventions
 ├── architecture.md             # System design and key decisions
 ├── design/                     # Problem space and design decisions
+├── reference/                  # Vendored external docs for lookup (optional, read-only)
 └── modules/
     └── <module>/
         ├── <feature>/

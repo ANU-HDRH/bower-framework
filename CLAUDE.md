@@ -18,10 +18,11 @@ This project uses the Bower AI-assisted development pattern. Bower optimises for
 - **Process conventions:** `docs/constitution.md` — How to contribute, plan, and update documentation
 - **System design:** `docs/architecture.md` — Technology choices, key decisions, data flow
 - **Design context:** `docs/design/` — Problem space and design decisions (created during full design)
+- **Reference material:** `docs/reference/` — Vendored external docs for agent lookup (optional; created when needed)
 
 ## Document Layers
 
-Bower splits documentation into two layers by *audience* and *style*, not by directory. Design-layer docs are narrative and human-primary; operational-layer docs are terse, bulleted, and agent-primary. Word budgets apply only to operational volatile docs.
+Bower splits documentation into three layers by *audience* and *style*, not by directory. Design-layer docs are narrative and human-primary; operational-layer docs are terse, bulleted, and agent-primary; reference-layer docs are external or vendored material consulted during implementation. Word budgets apply only to operational volatile docs.
 
 | Document | Layer | Primary audience | Ownership | Style | Budget |
 |---|---|---|---|---|---|
@@ -34,8 +35,9 @@ Bower splits documentation into two layers by *audience* and *style*, not by dir
 | `docs/modules/**/status.md` | operational | agent | agent-owned | terse bullets | ~150 words |
 | `docs/modules/**/module-status.md` | operational | agent | agent-owned | terse bullets | ~200 words |
 | `docs/index.md` | operational | agent | agent-owned | tables | — |
+| `docs/reference/**` | reference | agent | external/vendored | as-delivered | — |
 
-**Ownership semantics:** *human-owned* docs may be drafted by the agent during full design, but must not be rewritten unprompted afterwards. *Co-authored* docs are agent-updated in place as changes land, human-reviewed and edited freely. *Agent-owned* docs are routinely maintained by the agent.
+**Ownership semantics:** *human-owned* docs may be drafted by the agent during full design, but must not be rewritten unprompted afterwards. *Co-authored* docs are agent-updated in place as changes land, human-reviewed and edited freely. *Agent-owned* docs are routinely maintained by the agent. *External/vendored* material is treated as read-only — consult it, don't edit it; refresh by re-vendoring.
 
 ## Documentation Structure
 
@@ -48,6 +50,7 @@ docs/
 ├── design/                           # Problem space and decisions
 │   ├── problem-space.md
 │   └── design-decisions.md
+├── reference/                        # Vendored external docs for lookup (optional)
 └── modules/
     └── <module-name>/
         ├── <feature-name>/
@@ -76,6 +79,15 @@ Used in `index.md` and `status.md` files:
 ## Implementation Trajectory (multi-session features)
 
 Multi-session features maintain an `## Implementation trajectory` section in `plan.md`. As each phase completes, its description is rewritten in place as a one-paragraph précis of *why* that direction was taken — not the steps, which are in git. Current and future phases stay detailed. Single-session features skip the section entirely.
+
+## Reference Material
+
+Two kinds of persistent reference material have a home in Bower:
+
+- **Vendored external docs** (e.g. LLM-friendly framework indexes) live in `docs/reference/`. Create the directory only when needed. Treat contents as read-only; refresh by re-vendoring.
+- **Out-of-tree source references** (e.g. a sibling prototype treated as a behavioural oracle) are pointed to from `docs/constitution.md` under working conventions, with the rationale for the pointer logged in `docs/design/design-decisions.md`. The material itself stays where it lives on disk.
+
+Reference material is consulted during implementation but never synthesised into project docs — if insight from it needs to persist, it belongs in `plan.md` or `design-decisions.md`, not copied into `docs/reference/`.
 
 ## What to Update When
 
