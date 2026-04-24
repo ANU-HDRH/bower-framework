@@ -1,4 +1,4 @@
-# Bower Framework v0.5
+# Bower Framework v0.6
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -29,9 +29,12 @@ bower-framework/
 ├── .claude/
 │   └── commands/
 │       ├── bower-design.md         # Entry point — assesses scope, routes workflow
-│       ├── bower-design-full.md    # Full design: 4 stages with hard gates
-│       ├── bower-feature.md        # Lightweight change: propose → confirm → build
-│       └── bower-index.md          # Regenerate docs/index.md
+│       ├── bower-design-full.md    # Full design: 5 stages with hard gates (includes scaffolding)
+│       ├── bower-feature.md        # Lightweight change: propose → confirm → build (one feature)
+│       ├── bower-module.md         # Build a whole module: one gate, one integration pass
+│       ├── bower-recap.md          # Read-only "where am I, what's next?" orientation
+│       ├── bower-index.md          # Regenerate docs/index.md
+│       └── bower-spec.md           # Export a single specification document
 ├── _bower/
 │   ├── rationale.md                # Why Bower works this way
 │   └── roadmap.md                  # Deferred framework improvements
@@ -42,20 +45,22 @@ bower-framework/
 
 | Command | Purpose |
 |---------|---------|
-| `/bower-design` | Start here. Assesses scope and routes to full design or lightweight change. |
-| `/bower-design-full` | Four-stage design process: problem → decisions → architecture → modules. Hard gates at each stage. |
-| `/bower-feature` | Lightweight flow for features/fixes within existing architecture. One gate before code. |
+| `/bower-design` | Start here. Assesses scope and routes to full design or lightweight change. Greenfield projects are routed to Full Design unconditionally. |
+| `/bower-design-full` | Five-stage design process: problem → decisions → architecture → modules → scaffolding. Hard gates at each stage; ends with an explicit handoff to implementation. |
+| `/bower-feature` | Lightweight flow for a single feature or fix within existing architecture. One gate before code. Warns if working out of the module's build order. |
+| `/bower-module` | Build all features in a module in one pass. One gate up front, one integration pass at the end. Use when the module is small and well-specified. |
+| `/bower-recap` | Read-only, advisory "where am I, what's next?" synthesis across project docs. Never writes. |
 | `/bower-index` | Regenerate `docs/index.md` from current module status markers. |
 | `/bower-spec` | Export a single specification document for sharing with others. |
 
 ## How It Works
 
-`/bower-design` reads your project's current state and recommends a workflow:
+`/bower-design` reads your project's current state and routes you:
 
-- **Full Design** — For new projects or architectural changes. Four stages with engineer review at each gate.
-- **Lightweight Change** — For features, fixes, and enhancements. Proposes changes and acceptance criteria, confirms with you, then implements.
+- **Full Design** — For new projects or architectural changes. Five stages with engineer review at each gate: problem → decisions → architecture → modules → scaffolding. Greenfield (no existing `docs/architecture.md`) is routed here unconditionally. Ends with an explicit handoff naming the first module to build and the recommended command (`/bower-module` or `/bower-feature`).
+- **Lightweight Change** — For features, fixes, and enhancements within an existing architecture. Proposes changes and acceptance criteria, confirms with you, then implements.
 
-The agent recommends; you decide. Every gate uses explicit confirmation — no changes without your sign-off.
+The agent recommends; you decide. Every gate uses explicit confirmation — no changes without your sign-off. `/bower-recap` re-orients you in a fresh session without touching anything.
 
 ## Project Documentation Structure
 

@@ -1,6 +1,6 @@
 # Bower Full Design
 
-You are running the Bower full design process. This is a four-stage workflow that produces the design documentation for a project or major architectural change. You do NOT write code in this workflow — only documentation.
+You are running the Bower full design process. This is a five-stage workflow that produces the design documentation and runnable scaffolding for a project or major architectural change. You write documentation and scaffolding files; you do NOT implement features in this workflow.
 
 The user's description of what they want to design: $ARGUMENTS
 
@@ -87,34 +87,93 @@ Wait for confirmation before proceeding.
    - What integration test(s) would make sense at the module boundary (one sentence)
    - What it depends on (other modules, external systems)
    - Brief description of its purpose
-4. Determine build order based on dependencies
+   - **Intra-module build order** — an ordered list of the features within this module, reflecting internal dependencies. This is architectural thinking and belongs here, not at implementation time.
+4. Determine inter-module build order based on dependencies
 5. Identify which modules can be built in parallel
 
-**Gate:** Present the module breakdown and build order to the user via AskUserQuestion. For each proposed module, show the shared-data and integration-test rationale alongside the features it contains. Ask:
-- "Given the data-concerns and integration-test rationale shown, does this breakdown hold? Is the build order right? Any features in the wrong module?"
+**Gate:** Present the module breakdown, intra-module build order for each module, and inter-module build order to the user via AskUserQuestion. For each proposed module, show the shared-data and integration-test rationale alongside the ordered feature list. Ask:
+- "Given the data-concerns and integration-test rationale shown, does this breakdown hold? Is the build order right (both within and across modules)? Any features in the wrong module?"
 
 Wait for confirmation before proceeding.
 
-## Writing Outputs
+## Writing Design Outputs
 
-After all four stages are confirmed, write the documentation files:
+After Stages 1–4 are confirmed, write the documentation files:
 
 1. **`docs/design/problem-space.md`** — From Stage 1 (framing history)
 2. **`docs/scope.md`** — From Stage 1 (current scope, non-goals, success criteria with met/unmet state)
 3. **`docs/design/design-decisions.md`** — From Stage 2
 4. **`docs/architecture.md`** — From Stage 3 (update if exists)
 5. **`docs/index.md`** — Populated with module structure from Stage 4, all marked ⏸ Planned
+6. **`docs/modules/<module-name>/module-status.md`** (one per module) — Placeholder with integration-test notes from Stage 4 and a `## Build order` section listing the module's features in order, each marked ⏸.
 
 Create directories as needed. If `docs/constitution.md` doesn't exist, create it following the conventions described in the project's CLAUDE.md.
 
-After writing, present a summary of files created/updated to the user.
+Do not create feature `plan.md` or `status.md` — those belong to implementation (`/bower-feature` or `/bower-module`).
+
+## Stage 5: Scaffolding
+
+**Goal:** Produce a runnable project skeleton aligned with Stage 2's technology decisions, before any feature work begins.
+
+**Process:**
+
+1. Detect current state of the repository. For each scaffolding artifact, determine whether it's *missing*, *present* (leave alone), or *stock* (present but from framework/boilerplate and should be archived/replaced).
+
+2. Build a scaffolding plan covering (only include items genuinely needed):
+   - **Package manifest** — `package.json`, `pyproject.toml`, `Cargo.toml`, etc. per Stage 2 decisions. Skip if present.
+   - **README.md** — If a stock README exists (e.g. from `create-*` tooling, or from adopting Bower itself), move it to `_bower/original-README.md` and generate a project-specific README drawn from `scope.md` and `architecture.md`. The new README must include a short "Built with Bower" section linking to `_bower/original-README.md` for the framework's own README.
+   - **.gitignore** — Stack-appropriate. Skip if present and adequate.
+   - **Linter / formatter config** — per Stage 2 decisions.
+   - **Test runner setup** — per the testing approach in `constitution.md`.
+   - **Directory skeleton** — create empty module directories matching the Stage 4 breakdown (the `module-status.md` placeholders have already been written above).
+
+3. For **existing projects** (architectural revision rather than greenfield), scaffolding is delta-only: detect what's already present and propose only what's genuinely missing or changed. If everything is in place, state "scaffolding already present, nothing to do" and proceed to the handoff.
+
+**Gate:** Present the scaffolding plan via AskUserQuestion. List each action as *create* / *modify* / *archive* / *skip (already present)*. Recommend defaults; let the user strike items. Ask:
+- "Here's the scaffolding plan. Confirm to proceed, or tell me what to adjust or skip."
+
+After confirmation, execute the plan.
+
+## Post-Design Handoff
+
+Once Stage 5 is complete (or skipped as a no-op), emit an explicit handoff block. This is the only end-of-workflow output — do not also print a generic file summary.
+
+The block must include:
+
+1. **Confirmation** — "Design and scaffolding complete."
+2. **Suggested commit point** — A proposed commit message covering the design docs and scaffolding. Advisory only: do **not** run `git commit` yourself.
+3. **Next move** — The first module in the inter-module build order.
+4. **Recommended command** — Based on the module's size and clarity:
+   - If the module has ≤3 features and its Stage 4 plan is unambiguous: recommend `/bower-module <name>`.
+   - Otherwise: recommend `/bower-feature <first-feature>` (naming the first feature from the module's build order).
+   Mention the other option as an alternative in one line.
+5. **Orientation hint** — "Run `/bower-recap` any time to re-orient."
+
+Example shape:
+
+```
+Design and scaffolding complete.
+
+Suggested commit point — stage the design docs and scaffolding:
+
+  chore: scaffold <project> — Bower design and project skeleton
+
+Next move:
+  - Start with module: <first-module>
+  - Recommended: /bower-module <first-module>   (3 features, well-specified)
+  - Alternative: /bower-feature <first-feature>  (build feature-by-feature)
+
+Run /bower-recap any time to re-orient.
+```
 
 <critical_constraints>
 ## What NOT To Do
 
-- Do not write implementation code
-- Do not create feature plan.md or status.md files — those come during implementation
-- Do not skip gates or combine stages
-- Do not proceed past a gate without explicit user confirmation
-- Do not ignore existing documentation — read and build on it
+- Do not implement features — Stage 5 is scaffolding only (manifests, configs, directory skeletons, README). Feature code belongs to `/bower-feature` or `/bower-module`.
+- Do not create feature plan.md or status.md files — those come during implementation.
+- Do not skip gates or combine stages.
+- Do not proceed past a gate without explicit user confirmation.
+- Do not ignore existing documentation or existing scaffolding — read and build on it; delta-only on existing projects.
+- Do not run `git commit` — the commit point is advisory. Print the suggested message; let the user commit.
+- Do not overwrite a user-authored `README.md` or `package.json` — only stock / boilerplate artefacts are candidates for replacement, and even then only after the Stage 5 gate.
 </critical_constraints>

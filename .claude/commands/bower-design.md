@@ -11,12 +11,17 @@ The user's description of what they want to do: $ARGUMENTS
 3. Check if `docs/design/` exists and read any files there
 4. Note whether this is a new project (no existing architecture) or an existing one
 
-## Step 2: Assess Scope
+## Step 2: Greenfield Hard Gate
 
-Based on the user's request and the project's current state, determine which workflow is appropriate:
+If `docs/architecture.md` does **not** exist, this is a greenfield project. Full Design is required — do **not** offer a choice. State the situation to the user in one sentence and proceed directly to `/bower-design-full`. Skip Steps 3 and 4 entirely.
+
+Rationale: Lightweight Change reads architecture/index/scope as its first step. Without those, it has no foundation.
+
+## Step 3: Assess Scope (existing projects only)
+
+Reached only when `docs/architecture.md` exists. Determine which workflow is appropriate:
 
 **Full Design** (`/bower-design-full`) is appropriate when:
-- This is a new project with no existing architecture
 - The change requires significant architectural revision
 - Multiple new modules or major new subsystems are being added
 - The problem space is unclear or needs exploration
@@ -28,12 +33,12 @@ Based on the user's request and the project's current state, determine which wor
 - Affected components are clear and limited
 - No new modules or major structural changes are needed
 
-## Step 3: Present Recommendation
+## Step 4: Present Recommendation (existing projects only)
 
 Use AskUserQuestion to present your assessment to the user. Include:
 
 1. **Brief summary** of what you understand they want to do
-2. **Current project state** (new project, or existing with N modules, etc.)
+2. **Current project state** (existing with N modules, etc.)
 3. **Your recommendation** — Full Design or Lightweight Change, with a one-line reason
 4. **The other option** — briefly note when it would apply, so the user can make an informed choice
 
@@ -46,19 +51,18 @@ Frame it as a choice, with one marked (recommended). For example:
 >
 > Which approach would you like to take?
 
-For a new project with no existing architecture, recommend Full Design and note this clearly.
+## Step 5: Route
 
-## Step 4: Route
+Based on the user's choice (or the greenfield gate), invoke the appropriate command:
 
-Based on the user's choice, invoke the appropriate command:
-
-- If **Full Design**: Run @bower-design-full with the user's original description
+- If **Full Design** (or greenfield): Run @bower-design-full with the user's original description
 - If **Lightweight Change**: Run @bower-feature with the user's original description
 
 <critical_constraints>
 ## What NOT To Do
 
 - Do not start designing or implementing — you are a router
-- Do not skip the AskUserQuestion — the user chooses the path
-- Do not assume — if the scope is ambiguous, your recommendation should reflect that uncertainty
+- Do not skip the AskUserQuestion on existing projects — the user chooses the path
+- Do not offer a choice on greenfield projects — Full Design is required
+- Do not assume — if the scope is ambiguous on an existing project, your recommendation should reflect that uncertainty
 </critical_constraints>

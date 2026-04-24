@@ -17,7 +17,10 @@ The user's description of what they want to change: $ARGUMENTS
 2. Read `docs/architecture.md` for system context
 3. Read `docs/scope.md` to understand current scope, non-goals, and success-criteria state
 4. Read the plan.md and status.md of any components likely affected
-5. Read relevant source code to understand current implementation
+5. Read the `module-status.md` of the affected module (if it exists) — check the `## Build order` section
+6. Read relevant source code to understand current implementation
+
+**Build order check:** If the requested feature is part of a module with a `## Build order` and earlier features in that order are not yet complete (not ✓), surface this to the user as part of the proposal in Step 2. Do not hard-block — warn and let the user proceed anyway. Working out of order is sometimes the right call; the warning exists so it's a conscious choice.
 
 ## Step 2: Propose Changes
 
@@ -56,7 +59,7 @@ After confirmation:
    2. Rewrite `status.md` from scratch as a **resumption snapshot** — what's the current state, what's the next move if someone picked this up tomorrow. ≤150 words. Do not append to the previous contents.
    3. If the feature is multi-session, update `## Implementation trajectory` in `plan.md`: compress the just-completed phase into a one-paragraph précis (why-focused, not steps); leave future phases detailed.
    4. Update `scope.md` if the change shifted scope, changed non-goals, or closed a success criterion.
-   5. Update `module-status.md` if integration behaviour changed.
+   5. Update `module-status.md`: update the `## Build order` marker for this feature (⏸ → 🚧 → ✓ etc.), and update integration notes if integration behaviour changed.
    6. Run `/bower-index` or update `docs/index.md` if module status markers changed.
 4. Run tests to verify acceptance criteria are met
 
