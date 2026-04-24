@@ -66,15 +66,38 @@ After confirmation, for each feature in build order:
 3. Implement the feature per the agreed approach.
 4. Write/update tests per the agreed acceptance criteria.
 5. Run the tests; confirm they pass.
-6. Create `docs/modules/<module>/<feature>/status.md` as a resumption snapshot (≤150 words).
-7. Mark the feature ✓ in `module-status.md` `## Build order`.
+6. **Per-feature acceptance reconciliation (automated only).** Map each agreed criterion to its test:
+
+   ```
+   - <criterion> — test: <path::name> — PASS
+   - <criterion> — test: <none written> — MISSING
+   ```
+
+   MISSING is a blocker — write the test or renegotiate via AskUserQuestion before continuing. Any manual criteria for this feature are deferred to Step 4 and surfaced in a single batch at the end of the module; create `status.md` with a `Pending verification:` line and mark the feature 🚧 (not ✓) for now.
+7. Create `docs/modules/<module>/<feature>/status.md` as a resumption snapshot (≤150 words). If any manual criteria remain, include `Pending verification:`.
+8. If no manual criteria remain for this feature, mark it ✓ in `module-status.md` `## Build order`. Otherwise leave it 🚧 pending Step 4.
 
 After all features are complete:
 
-8. Run the module-level integration test. If it fails, mark the module 🟡 or 🔴 as appropriate in `module-status.md` and surface the failure — do not paper over it.
-9. Update integration notes in `module-status.md` if behaviour differs from Stage 4's assumptions.
-10. Update `scope.md` if any success criterion is now met.
-11. Run `/bower-index` or update `docs/index.md` so module-level status reflects reality.
+9. Run the module-level integration test. If it fails, mark the module 🟡 or 🔴 as appropriate in `module-status.md` and surface the failure — do not paper over it.
+
+## Step 4: Module Acceptance Reconciliation
+
+Collect every manual acceptance check agreed at the gate — both per-feature manual checks and any manual aspect of the module integration test — into a single list. Present them to the user via one AskUserQuestion:
+
+"These manual checks were agreed at the gate. Confirm each, or tell me which failed: [list]."
+
+For each check:
+
+- **PASS** — flip the relevant feature from 🚧 to ✓ in `module-status.md`; remove the item from that feature's `status.md` `Pending verification:` line (delete the line if now empty).
+- **FAIL** — treat as a bug; if fixable in scope, fix and re-verify. If not, leave the feature 🟡 or 🔴 with the failure noted in its `status.md`.
+- **Deferred** — leave the feature 🚧 with `Pending verification:` intact. `/bower-recap` will surface it later.
+
+## Step 5: Finalise
+
+10. Update integration notes in `module-status.md` if behaviour differs from Stage 4's assumptions.
+11. Update `scope.md` if any success criterion is now met. Only count criteria whose manual checks have passed.
+12. Run `/bower-index` or update `docs/index.md` so module-level status reflects reality.
 
 ## Partial Failure
 
@@ -97,4 +120,6 @@ If a feature mid-way through the module fails acceptance and cannot be resolved 
 - Do not proceed past a feature whose tests are failing
 - Do not propose architectural changes — if the module needs them, recommend the user run `/bower-design` instead
 - Do not treat acceptance criteria as optional
+- Do not mark a feature ✓ if any agreed criterion is MISSING or PENDING USER
+- Do not skip the module-end manual-check prompt when manual criteria were agreed at the gate
 </critical_constraints>

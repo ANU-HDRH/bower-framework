@@ -1,4 +1,4 @@
-# Bower Framework v0.6
+# Bower Framework v0.7
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle.
 
@@ -75,6 +75,8 @@ Used in `index.md` and `status.md` files:
 ## status.md — Resumption Framing
 
 `status.md` answers one question: *if I picked this up tomorrow, what's the state and what's the next move?* Current state in a short paragraph or bullets; next move explicit; open issues only if they affect resumption. No history, no changelog, no solved-issue residue. Bug backlog belongs in the external tracker, not here. Budget ~150 words — over budget is a signal to compress, not to split.
+
+If any acceptance criterion agreed at the gate has not yet been verified (typically manual checks the user deferred), include a `Pending verification:` line listing those checks. Empty or omitted means fully verified. A feature with pending verification is marked 🚧 in `module-status.md`, not ✓.
 
 ## module-status.md — Integration and Build Order
 

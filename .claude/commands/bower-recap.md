@@ -27,6 +27,7 @@ From those inputs, compose:
   - If a module has features in 🚧, that's the next action (continue via `/bower-feature <name>`)
   - Otherwise, the first ⏸ feature in the first not-yet-complete module's build order. Recommend `/bower-module <module>` if remaining features are few and unambiguous, else `/bower-feature <feature>`.
   - If everything is ✓ and success criteria in `scope.md` are met, say so.
+- **Awaiting manual verification** — any feature whose `status.md` contains a `Pending verification:` line, with the checks listed
 - **Open questions / blockers** — anything explicitly flagged in `status.md` files
 
 ## Output shape
@@ -47,6 +48,9 @@ Currently in progress:
 
 Degraded / blocked:
   - (none) | <module>/<feature> — <reason>
+
+Awaiting manual verification:
+  - (none) | <module>/<feature> — <pending check>
 
 Recommended next action:
   - <concrete command, e.g. /bower-feature <name> or /bower-module <name>>
