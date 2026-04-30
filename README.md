@@ -2,6 +2,8 @@
 
 A lightweight AI-assisted development pattern for research software engineering.
 
+> **⚠️ Draft — feedback actively sought.** Bower is in active development, but it's already been used to build real tools. If you try it, please share what worked and what didn't: open an issue on this repo, or email **matthew.bettinson@anu.edu.au**.
+
 ## What is Bower?
 
 Bower provides structure for planning, documenting, and implementing software projects where AI coding assistants are first-class participants. It emphasises:
