@@ -98,7 +98,7 @@ A fuller how-to for setting up `constitution.md` may come later. For now, the sh
 
 ## About
 
-A project by the **HASS Digital Research Hub** at the **Australian National University**.
+A project of the [**HASS Digital Research Hub**](https://hdrh.anu.edu.au/) at the **Australian National University**.
 
 ## License
 
