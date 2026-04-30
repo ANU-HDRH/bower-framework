@@ -15,13 +15,58 @@ Bower provides structure for planning, documenting, and implementing software pr
 
 The pattern borrows planning discipline from [SpecKit](https://github.com/github/spec-kit) and living documentation from [OpenSpec](https://github.com/Fission-AI/OpenSpec), optimised for small research teams and the full prototype-to-infrastructure lifecycle.
 
-## Quick Start
+## Getting Started
 
-1. Clone this repo into your project (or copy the files you need)
-2. Edit `CLAUDE.md` — add your project-specific code standards at the bottom
-3. Use `/bower-design` in Claude Code to start designing
+Bower is a set of files you drop into a project that uses [Claude Code](https://claude.com/claude-code). It doesn't install anything, run a server, or require an account beyond your existing Claude Code setup. If you've never used Claude Code before, install it first and make sure `claude` runs in a terminal — Bower is built on top of it.
 
-The `CLAUDE.md` file loads automatically and gives the AI agent full context on project structure and conventions. The slash commands handle workflow.
+### 1. Put Bower into your project
+
+Either start a new project directory, or open an existing one. Then copy the Bower files in:
+
+```bash
+# from inside your project directory
+git clone https://github.com/anu-hdrh/bower-framework /tmp/bower
+cp -r /tmp/bower/CLAUDE.md /tmp/bower/.claude /tmp/bower/_bower .
+rm -rf /tmp/bower
+```
+
+(Or just clone this repo and use it as your project — that works too.)
+
+You should now have, at the top of your project:
+
+- `CLAUDE.md` — instructions Claude Code reads on every session
+- `.claude/commands/` — the `/bower-*` slash commands
+- `_bower/` — framework rationale and roadmap (you don't normally edit these)
+
+### 2. Tell Claude about your project's code standards
+
+Open `CLAUDE.md` and scroll to the bottom. There's a section called **Project-Specific Code Standards** — add anything you'd tell a new collaborator about the codebase: language, formatter, test runner, conventions you care about. Two or three bullets is enough to start; you can grow it later.
+
+You don't need to do anything to "load" this file. Claude Code reads it automatically every time you start a session in this directory. Same for the slash commands — they appear as soon as `.claude/commands/` is present.
+
+### 3. Start a Claude Code session and run `/bower-design`
+
+```bash
+cd your-project
+claude
+```
+
+Then, at the Claude prompt, type:
+
+```
+/bower-design I want to build <one-sentence description of what you want>
+```
+
+`/bower-design` is the entry point. It looks at your project, decides whether you need a full design pass or a lightweight change, and routes you accordingly. You don't pick the workflow yourself — it asks you, recommends one, and waits for your answer.
+
+### What happens next
+
+- **New project (no `docs/architecture.md` yet):** you'll be routed into the full five-stage design, which produces `docs/architecture.md`, scope, and module plans before any code is written. There are review gates at each stage — nothing happens without your sign-off.
+- **Existing project, small change:** you'll be routed into the lightweight change flow, which proposes the change and acceptance criteria, waits for your confirmation, then implements.
+
+After the first design pass, day-to-day work usually means running `/bower-feature` (one feature) or `/bower-module` (a whole module's worth). If you come back to the project later and don't remember where you were, run `/bower-recap` — it reads the docs and tells you the current state without changing anything.
+
+> **Heavy vs. light design.** There's no separate `/bower-design-light` command — lightweight design happens *inside* `/bower-feature`, in its propose → acceptance-criteria → confirm gate before any code is written. The `/bower-design` router sends greenfield and architectural work to `/bower-design-full`, and everything else to `/bower-feature`.
 
 ## Repository Structure
 

@@ -130,8 +130,8 @@ Reference material is consulted during implementation but never synthesised into
 
 Use `/bower-design` as the entry point for all new work. It assesses scope and routes to the appropriate workflow:
 
-- **Full Design** — Five-stage process for new projects or architectural changes: problem framing → design decisions → architecture → module planning → scaffolding. Greenfield projects (no existing `docs/architecture.md`) are required to use Full Design; the router does not offer a choice.
-- **Lightweight Change** — For features, fixes, and enhancements to existing architecture: propose changes → acceptance criteria → confirm → implement
+- **Full Design** (`/bower-design-full`) — Five-stage process for new projects or architectural changes: problem framing → design decisions → architecture → module planning → scaffolding. Greenfield projects (no existing `docs/architecture.md`) are required to use Full Design; the router does not offer a choice.
+- **Lightweight Change** (`/bower-feature`) — For features, fixes, and enhancements to existing architecture: propose changes → acceptance criteria → confirm → implement. There is no separate `/bower-design-light`; lightweight design lives inside `/bower-feature`'s propose/confirm gate.
 
 Implementation commands:
 
