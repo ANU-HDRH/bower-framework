@@ -1,4 +1,4 @@
-# Bower Framework v0.7
+# Bower Framework v0.8
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -35,7 +35,7 @@ rm -rf /tmp/bower
 You should now have, at the top of your project:
 
 - `CLAUDE.md` — instructions Claude Code reads on every session
-- `.claude/commands/` — the `/bower-*` slash commands
+- `.claude/commands/` — the `/b-*` slash commands
 - `_bower/` — framework rationale and roadmap (you don't normally edit these)
 
 ### 2. Tell Claude about your project's code standards
@@ -44,7 +44,7 @@ Open `CLAUDE.md` and scroll to the bottom. There's a section called **Project-Sp
 
 You don't need to do anything to "load" this file. Claude Code reads it automatically every time you start a session in this directory. Same for the slash commands — they appear as soon as `.claude/commands/` is present.
 
-### 3. Start a Claude Code session and run `/bower-design`
+### 3. Start a Claude Code session and run `/b-design`
 
 ```bash
 cd your-project
@@ -54,19 +54,18 @@ claude
 Then, at the Claude prompt, type:
 
 ```
-/bower-design I want to build <one-sentence description of what you want>
+/b-design I want to build <one-sentence description of what you want>
 ```
 
-`/bower-design` is the entry point. It looks at your project, decides whether you need a full design pass or a lightweight change, and routes you accordingly. You don't pick the workflow yourself — it asks you, recommends one, and waits for your answer.
+`/b-design` is the entry point. It looks at your project, decides whether you need a full design pass or a lightweight change, and routes you accordingly. You don't pick the workflow yourself — it asks you, recommends one, and waits for your answer.
 
 ### What happens next
 
-- **New project (no `docs/architecture.md` yet):** you'll be routed into the full five-stage design, which produces `docs/architecture.md`, scope, and module plans before any code is written. There are review gates at each stage — nothing happens without your sign-off.
-- **Existing project, small change:** you'll be routed into the lightweight change flow, which proposes the change and acceptance criteria, waits for your confirmation, then implements.
+`/b-design` runs the full five-stage design — problem framing, design decisions, architecture, module planning, scaffolding — with review gates at every stage. On a greenfield project this is required; on an existing project it's the right command when you're genuinely changing architecture.
 
-After the first design pass, day-to-day work usually means running `/bower-feature` (one feature) or `/bower-module` (a whole module's worth). If you come back to the project later and don't remember where you were, run `/bower-recap` — it reads the docs and tells you the current state without changing anything.
+For features, fixes, and enhancements that fit within the existing architecture, use `/b-feature` directly — its propose-and-confirm gate is the lightweight design pass. If a `/b-feature` request turns out to need architectural change, it'll point you back to `/b-design`.
 
-> **Heavy vs. light design.** There's no separate `/bower-design-light` command — lightweight design happens *inside* `/bower-feature`, in its propose → acceptance-criteria → confirm gate before any code is written. The `/bower-design` router sends greenfield and architectural work to `/bower-design-full`, and everything else to `/bower-feature`.
+After the first design pass, day-to-day work usually means running `/b-feature` (one feature) or `/b-module` (a whole module's worth). If you come back to the project later and don't remember where you were, run `/b-recap` — it reads the docs and tells you the current state without changing anything.
 
 ## Repository Structure
 
@@ -75,16 +74,17 @@ bower-framework/
 ├── CLAUDE.md                       # Always-loaded reference (copy to your project)
 ├── .claude/
 │   └── commands/
-│       ├── bower-design.md         # Entry point — assesses scope, routes workflow
-│       ├── bower-design-full.md    # Full design: 5 stages with hard gates (includes scaffolding)
-│       ├── bower-feature.md        # Lightweight change: propose → confirm → build (one feature)
-│       ├── bower-module.md         # Build a whole module: one gate, one integration pass
-│       ├── bower-recap.md          # Read-only "where am I, what's next?" orientation
-│       ├── bower-index.md          # Regenerate docs/index.md
-│       └── bower-spec.md           # Export a single specification document
+│       ├── b-design.md         # Five-stage design: problem → decisions → architecture → modules → scaffolding
+│       ├── b-feature.md        # Lightweight change: propose → confirm → build (one feature)
+│       ├── b-module.md         # Build a whole module: one gate, one integration pass
+│       ├── b-integration.md    # Build the module-boundary integration test
+│       ├── b-recap.md          # Read-only "where am I, what's next?" orientation
+│       ├── b-index.md          # Regenerate docs/index.md
+│       └── b-spec.md           # Export a single specification document
 ├── _bower/
 │   ├── rationale.md                # Why Bower works this way
-│   └── roadmap.md                  # Deferred framework improvements
+│   ├── roadmap.md                  # Deferred framework improvements
+│   └── changes.md                  # Versioned log of framework changes
 └── README.md
 ```
 
@@ -92,22 +92,21 @@ bower-framework/
 
 | Command | Purpose |
 |---------|---------|
-| `/bower-design` | Start here. Assesses scope and routes to full design or lightweight change. Greenfield projects are routed to Full Design unconditionally. |
-| `/bower-design-full` | Five-stage design process: problem → decisions → architecture → modules → scaffolding. Hard gates at each stage; ends with an explicit handoff to implementation. |
-| `/bower-feature` | Lightweight flow for a single feature or fix within existing architecture. One gate before code. Warns if working out of the module's build order. |
-| `/bower-module` | Build all features in a module in one pass. One gate up front, one integration pass at the end. Use when the module is small and well-specified. |
-| `/bower-recap` | Read-only, advisory "where am I, what's next?" synthesis across project docs. Never writes. |
-| `/bower-index` | Regenerate `docs/index.md` from current module status markers. |
-| `/bower-spec` | Export a single specification document for sharing with others. |
+| `/b-design` | Five-stage design process for new projects and architectural revisions: problem → decisions → architecture → modules → scaffolding. Hard gates at each stage; ends with an explicit handoff to implementation. |
+| `/b-feature` | The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture. One gate before code. Warns if working out of the module's build order. Redirects to `/b-design` if the request requires architectural change. |
+| `/b-module` | Build all features in a module in one pass. One gate up front, one integration pass at the end. Use when the module is small and well-specified. |
+| `/b-integration` | Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the integration test is the residual. |
+| `/b-recap` | Read-only, advisory "where am I, what's next?" synthesis across project docs. Never writes. |
+| `/b-index` | Regenerate `docs/index.md` from current module status markers. |
+| `/b-spec` | Export a single specification document for sharing with others. |
 
 ## How It Works
 
-`/bower-design` reads your project's current state and routes you:
+`/b-design` is the design command. Five stages with engineer review at each gate: problem → decisions → architecture → modules → scaffolding. Required for greenfield (no existing `docs/architecture.md`) and for changes that genuinely shift architecture. Ends with an explicit handoff naming the first module to build and the recommended command (`/b-module` or `/b-feature`).
 
-- **Full Design** — For new projects or architectural changes. Five stages with engineer review at each gate: problem → decisions → architecture → modules → scaffolding. Greenfield (no existing `docs/architecture.md`) is routed here unconditionally. Ends with an explicit handoff naming the first module to build and the recommended command (`/bower-module` or `/bower-feature`).
-- **Lightweight Change** — For features, fixes, and enhancements within an existing architecture. Proposes changes and acceptance criteria, confirms with you, then implements.
+`/b-feature` is the implementation command for everything else. Proposes changes and acceptance criteria, confirms with you, then implements. If the request turns out to need architectural change, it redirects to `/b-design`.
 
-The agent recommends; you decide. Every gate uses explicit confirmation — no changes without your sign-off. `/bower-recap` re-orients you in a fresh session without touching anything.
+The agent recommends; you decide. Every gate uses explicit confirmation — no changes without your sign-off. `/b-recap` re-orients you in a fresh session without touching anything.
 
 ## Project Documentation Structure
 

@@ -1,4 +1,4 @@
-# Bower Framework v0.7
+# Bower Framework v0.8
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle.
 
@@ -80,7 +80,18 @@ If any acceptance criterion agreed at the gate has not yet been verified (typica
 
 ## module-status.md — Integration and Build Order
 
-`module-status.md` captures two things: integration-test state at the module boundary, and the build order of features within the module. Build order is populated during full design (Stage 4) and maintained as features progress.
+`module-status.md` captures three things: the module-boundary integration test (its location and status), the build order of features within the module, and any free-form integration notes. Build order and the module-integration placeholder are populated during full design (Stage 4) and maintained as features progress.
+
+Module-integration schema:
+
+```markdown
+## Module integration
+
+Test: <path or "not yet defined"> — ✓ | 🚧 | ⏸ | 🟡 | 🔴
+Notes: <one-line behavioural rationale carried forward from Stage 4>
+```
+
+Only `/b-integration` (or `/b-module`'s in-pass integration step) flips this marker. `/b-feature` may refresh `Notes:` when a feature shifts what the integration test will need to assert, but does not touch the marker.
 
 Build-order schema:
 
@@ -92,7 +103,9 @@ Build-order schema:
 3. <feature-name> — ⏸
 ```
 
-Order reflects intra-module dependencies identified at design time. Reorderings should be rare and driven by a genuine plan change, not preference. `/bower-feature` and `/bower-module` update markers as features complete. Budget ~250 words total.
+Order reflects intra-module dependencies identified at design time. Reorderings should be rare and driven by a genuine plan change, not preference. `/b-feature` and `/b-module` update build-order markers as features complete. Budget ~250 words total.
+
+**Module-level status is a floor, not a sum.** `/b-index` derives a module's status as the worst across both feature markers and the module-integration marker. A module with all features ✓ but `## Module integration` still ⏸ surfaces as 🚧 — making the constitution's verified-for-✓ rule observable rather than aspirational.
 
 ## Implementation Trajectory (multi-session features)
 
@@ -126,28 +139,38 @@ Reference material is consulted during implementation but never synthesised into
 
 **Documentation style:** Design layer is narrative and explains *why*; operational layer is terse bullets and tables. Write for future-you in 6 months. Update docs as part of implementation, not after.
 
+**Literal-command handoffs.** Every command that emits a "next move" — in `status.md`, in handoff blocks, in `/b-recap` output — names the exact slash command the operator should type next. "`Run /b-integration foundation`" — yes. "Write the integration test next" — no. The point is to remove the gap between *knowing what should happen next* and *being able to do it without thinking*. If there is genuinely no next command, the explicit form is `(none — <reason>)`.
+
 ## Bower Commands
 
-Use `/bower-design` as the entry point for all new work. It assesses scope and routes to the appropriate workflow:
+Design and change:
 
-- **Full Design** (`/bower-design-full`) — Five-stage process for new projects or architectural changes: problem framing → design decisions → architecture → module planning → scaffolding. Greenfield projects (no existing `docs/architecture.md`) are required to use Full Design; the router does not offer a choice.
-- **Lightweight Change** (`/bower-feature`) — For features, fixes, and enhancements to existing architecture: propose changes → acceptance criteria → confirm → implement. There is no separate `/bower-design-light`; lightweight design lives inside `/bower-feature`'s propose/confirm gate.
-
-Implementation commands:
-
-- `/bower-feature` — Build one feature with a single gate. Use when features are exploratory or may need mid-flight design revision.
-- `/bower-module` — Build all features in a module in one pass, one gate up front, one integration pass at the end. Use when the module is small (≤3–4 features) and well-specified.
+- `/b-design` — Five-stage design process for new projects and architectural revisions: problem framing → design decisions → architecture → module planning → scaffolding. Required for greenfield (no `docs/architecture.md` yet) and for changes that genuinely shift architecture.
+- `/b-feature` — The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture: propose → acceptance-criteria → confirm → implement → reconcile. Redirects back to `/b-design` if the request turns out to need architectural change.
+- `/b-module` — Build all features in a module in one pass, one gate up front, one integration pass at the end. Use when the module is small (≤3–4 features) and well-specified.
+- `/b-integration` — Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the test is the residual, or when a `/b-feature` change shifted what the test must assert.
 
 Orientation and export:
 
-- `/bower-recap` — Read-only, advisory "where am I, what's next?" synthesis across `index.md`, `scope.md`, `module-status.md`, and any in-progress `status.md` files. Never writes.
-- `/bower-index` — Regenerate `docs/index.md` from current module status.
-- `/bower-spec` — Export a single specification document from project documentation, suitable for sharing with stakeholders or other teams.
+- `/b-recap` — Read-only, advisory "where am I, what's next?" synthesis across `index.md`, `scope.md`, `module-status.md`, and any in-progress `status.md` files. Never writes.
+- `/b-index` — Regenerate `docs/index.md` from current module status.
+- `/b-spec` — Export a single specification document from project documentation, suitable for sharing with stakeholders or other teams.
+
+## Post-MVP Work: When to Use Which
+
+Once the initial design is in place, the bias is toward `/b-feature`. The framework is for lightweight cases — don't reach for design when a change command will do.
+
+- **Use `/b-feature`** for adding a new feature within an existing module (just append to `## Build order`), modifying behaviour of an existing feature, fixing bugs, removing features, and adjusting tests. The build order is a living document, not a Stage-4 contract — appending to it during a `/b-feature` add is normal.
+- **Use `/b-design`** when the change crosses architectural boundaries: introducing a new module, adopting a new technology, fundamentally re-shaping data flow, or expanding scope in a way that warrants re-examining `scope.md` and `architecture.md`. If you're unsure, start with `/b-feature` — its propose-and-confirm gate will redirect to `/b-design` if the request turns out to be bigger than it looked.
+- **Don't run both pre-emptively.** Updating `architecture.md` "just in case" before a feature change is the kind of large-process overhead Bower is meant to avoid. Run `/b-design` only when you actually need design treatment.
+
+Living documentation does the heavy lifting: `/b-feature` updates `plan.md` and the relevant sibling plans in place, so post-MVP docs stay accurate without a separate "documentation pass" between feature work.
 
 ## Framework Reference
 
 - `_bower/rationale.md` — Why Bower works this way, design principles, comparison to alternatives
 - `_bower/roadmap.md` — Deferred framework improvements and their revisit triggers
+- `_bower/changes.md` — Versioned log of framework changes (most recent first)
 
 
 ## Project-Specific Code Standards

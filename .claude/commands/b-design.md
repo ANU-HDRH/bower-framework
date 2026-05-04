@@ -1,6 +1,8 @@
-# Bower Full Design
+# Bower Design
 
-You are running the Bower full design process. This is a five-stage workflow that produces the design documentation and runnable scaffolding for a project or major architectural change. You write documentation and scaffolding files; you do NOT implement features in this workflow.
+You are running the Bower design process. This is a five-stage workflow that produces the design documentation and runnable scaffolding for a project or major architectural change. Use it for greenfield projects and for architectural revisions of existing ones. You write documentation and scaffolding files; you do NOT implement features in this workflow.
+
+For feature-scoped or fix-scoped work within an existing architecture, use `/b-feature` instead — it has its own propose-and-confirm gate, and will redirect back here if a request turns out to need architectural change.
 
 The user's description of what they want to design: $ARGUMENTS
 
@@ -8,9 +10,10 @@ The user's description of what they want to design: $ARGUMENTS
 
 - **Consult at every gate.** Use AskUserQuestion at the end of each stage before proceeding. Present your findings, analysis, or draft and ask for confirmation, corrections, or elaboration. The user is an engineer — they expect to review and shape decisions, not rubber-stamp them.
 - **Recommend, don't dictate.** When presenting options, mark one as (recommended) with a brief rationale, but make it clear the user chooses.
+- **Literal-command handoff.** The post-design handoff names the exact slash command to type next, never free prose.
 - **Stay in your stage.** Do not skip ahead. Each stage's output informs the next.
 - **Write docs, not code.** This workflow produces documentation files only.
-- **Read before writing.** If docs/architecture.md, docs/design/, or docs/index.md already exist, read them first. You are extending or revising, not starting from scratch unless the project is genuinely new.
+- **Read before writing.** If `docs/architecture.md`, `docs/design/`, or `docs/index.md` already exist, read them first. You are extending or revising, not starting from scratch unless the project is genuinely new.
 
 ## Stage 1: Problem Framing
 
@@ -105,11 +108,13 @@ After Stages 1–4 are confirmed, write the documentation files:
 3. **`docs/design/design-decisions.md`** — From Stage 2
 4. **`docs/architecture.md`** — From Stage 3 (update if exists)
 5. **`docs/index.md`** — Populated with module structure from Stage 4, all marked ⏸ Planned
-6. **`docs/modules/<module-name>/module-status.md`** (one per module) — Placeholder with integration-test notes from Stage 4 and a `## Build order` section listing the module's features in order, each marked ⏸.
+6. **`docs/modules/<module-name>/module-status.md`** (one per module) — Placeholder with:
+   - A `## Module integration` section: `Test: not yet defined — ⏸` and a `Notes:` line carrying the one-sentence integration-test rationale from Stage 4.
+   - A `## Build order` section listing the module's features in order, each marked ⏸.
 
 Create directories as needed. If `docs/constitution.md` doesn't exist, create it following the conventions described in the project's CLAUDE.md.
 
-Do not create feature `plan.md` or `status.md` — those belong to implementation (`/bower-feature` or `/bower-module`).
+Do not create feature `plan.md` or `status.md` — those belong to implementation (`/b-feature` or `/b-module`).
 
 ## Stage 5: Scaffolding
 
@@ -144,10 +149,10 @@ The block must include:
 2. **Suggested commit point** — A proposed commit message covering the design docs and scaffolding. Advisory only: do **not** run `git commit` yourself.
 3. **Next move** — The first module in the inter-module build order.
 4. **Recommended command** — Based on the module's size and clarity:
-   - If the module has ≤3 features and its Stage 4 plan is unambiguous: recommend `/bower-module <name>`.
-   - Otherwise: recommend `/bower-feature <first-feature>` (naming the first feature from the module's build order).
+   - If the module has ≤3 features and its Stage 4 plan is unambiguous: recommend `/b-module <name>`.
+   - Otherwise: recommend `/b-feature <first-feature>` (naming the first feature from the module's build order).
    Mention the other option as an alternative in one line.
-5. **Orientation hint** — "Run `/bower-recap` any time to re-orient."
+5. **Orientation hint** — "Run `/b-recap` any time to re-orient."
 
 Example shape:
 
@@ -160,20 +165,21 @@ Suggested commit point — stage the design docs and scaffolding:
 
 Next move:
   - Start with module: <first-module>
-  - Recommended: /bower-module <first-module>   (3 features, well-specified)
-  - Alternative: /bower-feature <first-feature>  (build feature-by-feature)
+  - Recommended: /b-module <first-module>   (3 features, well-specified)
+  - Alternative: /b-feature <first-feature>  (build feature-by-feature)
 
-Run /bower-recap any time to re-orient.
+Run /b-recap any time to re-orient.
 ```
 
 <critical_constraints>
 ## What NOT To Do
 
-- Do not implement features — Stage 5 is scaffolding only (manifests, configs, directory skeletons, README). Feature code belongs to `/bower-feature` or `/bower-module`.
+- Do not implement features — Stage 5 is scaffolding only (manifests, configs, directory skeletons, README). Feature code belongs to `/b-feature` or `/b-module`.
 - Do not create feature plan.md or status.md files — those come during implementation.
 - Do not skip gates or combine stages.
 - Do not proceed past a gate without explicit user confirmation.
 - Do not ignore existing documentation or existing scaffolding — read and build on it; delta-only on existing projects.
 - Do not run `git commit` — the commit point is advisory. Print the suggested message; let the user commit.
 - Do not overwrite a user-authored `README.md` or `package.json` — only stock / boilerplate artefacts are candidates for replacement, and even then only after the Stage 5 gate.
+- Do not emit free-prose next moves — the post-design handoff names the literal slash command.
 </critical_constraints>

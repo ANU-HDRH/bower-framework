@@ -96,10 +96,13 @@ The reference layer — principles, file layout, status markers, and update rule
 
 Process knowledge lives in commands, not documents the agent has to interpret:
 
-- **`/bower-design`** — Entry point that assesses scope and routes to the appropriate workflow
-- **`/bower-design-full`** — Heavyweight four-stage design process with hard gates between stages
-- **`/bower-feature`** — Lightweight change flow with one gate before implementation
-- **`/bower-index`** — Deterministic index regeneration
+- **`/b-design`** — Five-stage design process for new projects and architectural revisions, with hard gates between stages
+- **`/b-feature`** — Everyday change command (add / modify / remove) with one gate before implementation
+- **`/b-module`** — Build a whole module in one pass when it's small and well-specified
+- **`/b-integration`** — Build the module-boundary integration test
+- **`/b-recap`** — Read-only orientation
+- **`/b-index`** — Deterministic index regeneration
+- **`/b-spec`** — Export a single specification document
 
 ### Consultation Gates (AskUserQuestion)
 
@@ -107,12 +110,12 @@ Every workflow gate uses the AskUserQuestion tool to present findings and wait f
 
 ### Heavy and Light Paths
 
-Not all changes need the same process. The entry point (`/bower-design`) reads the project's current state and recommends either:
+Not all changes need the same process, but Bower doesn't ask the user to declare which they want — the user picks the command directly:
 
-- **Full Design** — For new projects or architectural changes. Four stages with hard gates: problem framing → design decisions → architecture synthesis → module planning.
-- **Lightweight Change** — For features, fixes, and enhancements within existing architecture. Propose changes and acceptance criteria, confirm, implement.
+- **`/b-design`** — For new projects or architectural changes. Five stages with hard gates: problem framing → design decisions → architecture synthesis → module planning → scaffolding.
+- **`/b-feature`** — For features, fixes, modifications, and removals within existing architecture. Propose changes and acceptance criteria, confirm, implement. Redirects to `/b-design` if the request turns out to need architectural treatment.
 
-The agent recommends a path; the engineer chooses. The boundary between "architectural" and "lightweight" is a human judgement call, not an algorithm.
+The bias post-MVP is toward `/b-feature`. The boundary between "architectural" and "lightweight" is a human judgement call, but `/b-feature`'s redirect is the safety net for "I picked wrong."
 
 ### Acceptance as Contract
 

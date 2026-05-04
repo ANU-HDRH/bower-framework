@@ -10,10 +10,10 @@ Read these and only these, and only if they exist:
 
 1. `docs/index.md` — project-level structure and module status markers
 2. `docs/scope.md` — current scope and success-criteria state (met/unmet)
-3. `docs/modules/**/module-status.md` — build order and integration state for each module
+3. `docs/modules/**/module-status.md` — `## Build order` and `## Module integration` state for each module
 4. `docs/modules/**/<feature>/status.md` — only for features currently at 🚧, 🟡, 🔴, or 🔧 (skip ✓ and ⏸)
 
-If `docs/index.md` does not exist, the project has not been designed yet. Say so in one line and recommend `/bower-design`. Stop.
+If `docs/index.md` does not exist, the project has not been designed yet. Say so in one line and recommend `/b-design`. Stop.
 
 ## Synthesis
 
@@ -23,10 +23,12 @@ From those inputs, compose:
 - **Progress overview** — per module, one line each, with status marker and brief state (e.g. "Module B: 🚧 2 of 4 features built")
 - **Currently in progress** — any feature at 🚧 with a one-line state drawn from its `status.md`
 - **Degraded or blocked** — any feature at 🟡, 🔴, or 🔧 with the reason
-- **Recommended next action** — derived from the build order:
-  - If a module has features in 🚧, that's the next action (continue via `/bower-feature <name>`)
-  - Otherwise, the first ⏸ feature in the first not-yet-complete module's build order. Recommend `/bower-module <module>` if remaining features are few and unambiguous, else `/bower-feature <feature>`.
-  - If everything is ✓ and success criteria in `scope.md` are met, say so.
+- **Recommended next action** — derived from build order *and* module-integration state. Always emitted as a literal slash command (or the explicit `(none — ...)` form), never as prose:
+  - If a module has features in 🚧, continue via `/b-feature <name>`.
+  - Else, if a module has all features ✓ but its `## Module integration` `Test:` marker is ⏸ or 🚧, recommend `/b-integration <module>` — this is the residual case the rule was designed for.
+  - Else, the first ⏸ feature in the first not-yet-complete module's build order. Recommend `/b-module <module>` if remaining features are few and unambiguous, else `/b-feature <feature>`.
+  - If everything is ✓ (features and module integration) and success criteria in `scope.md` are met, emit `(none — project complete)`.
+- **Module integration state** — list any module where features are ✓ but the integration marker is ⏸/🚧/🟡/🔴, with the marker shown
 - **Awaiting manual verification** — any feature whose `status.md` contains a `Pending verification:` line, with the checks listed
 - **Open questions / blockers** — anything explicitly flagged in `status.md` files
 
@@ -49,11 +51,14 @@ Currently in progress:
 Degraded / blocked:
   - (none) | <module>/<feature> — <reason>
 
+Module integration:
+  - (none pending) | <module> — Test: <path or "not yet defined"> <marker>
+
 Awaiting manual verification:
   - (none) | <module>/<feature> — <pending check>
 
 Recommended next action:
-  - <concrete command, e.g. /bower-feature <name> or /bower-module <name>>
+  - <literal slash command, e.g. /b-feature <name>, /b-module <name>, /b-integration <module>, or "(none — project complete)">
 
 Open questions:
   - (none) | <item from status.md>
@@ -67,7 +72,7 @@ Keep it tight. This is a dashboard, not a report.
 - Do not write, edit, or create any file — this command is strictly read-only
 - Do not run `AskUserQuestion` — no interaction
 - Do not run `git` commands
-- Do not regenerate `docs/index.md` — that's `/bower-index`
+- Do not regenerate `docs/index.md` — that's `/b-index`
 - Do not infer project state from source code — trust the docs; if they're stale, that's a separate concern for the user
 - Do not propose architectural changes or new features
 - Do not expand the output beyond the shape above

@@ -9,7 +9,7 @@ Regenerate `docs/index.md` by scanning the current state of project documentatio
 3. Scan `docs/design/` for design documents
 4. Scan `docs/modules/` for all modules, features, and their status files
 5. For each feature, read its `status.md` to determine the current status marker
-6. For each module, read its `module-status.md` for integration status
+6. For each module, read its `module-status.md` for both the `## Build order` markers and the `## Module integration` `Test:` marker
 
 ## Output
 
@@ -39,7 +39,7 @@ Write `docs/index.md` with the following structure:
 
 - Order modules by dependency sequence (build order), not alphabetically
 - Derive status markers from status.md files: ✓ 🚧 ⏸ 🟡 🔴 🔧
-- Module-level status is the "worst" status of its features (🔴 > 🟡 > 🚧 > ⏸ > 🔧 > ✓)
+- Module-level status is the "worst" status across both its feature markers *and* its `## Module integration` `Test:` marker (🔴 > 🟡 > 🚧 > ⏸ > 🔧 > ✓). A module with all features ✓ but module integration ⏸ surfaces as 🚧 — the constitution's verified-for-✓ rule made observable.
 - Only include sections that exist (skip Design Context if no design/ directory)
 - Include brief descriptions for each module from its module-status.md
 - If no modules exist yet, write the Core System and Design Context sections only
