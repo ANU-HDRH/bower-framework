@@ -7,10 +7,11 @@ Optional scope or instructions from the user: $ARGUMENTS
 ## Step 1: Read Everything
 
 1. Read `docs/architecture.md`
-2. Read `docs/design/problem-space.md` and `docs/design/design-decisions.md` (if they exist)
-3. Read `docs/index.md` to identify all modules and features
-4. Read every `plan.md` across `docs/modules/`
-5. Read every `module-status.md` for integration context
+2. Read `docs/design/problem-space.md` (if it exists)
+3. Read `docs/adr/index.md` and every accepted ADR in `docs/adr/` (if the directory exists). Skip superseded and deprecated ADRs — the spec presents *current* decisions.
+4. Read `docs/index.md` to identify all modules and features
+5. Read every `plan.md` across `docs/modules/`
+6. Read every `module-status.md` for integration context
 
 Note which files exist and which don't — the spec should only cover what's documented.
 
@@ -19,7 +20,7 @@ Note which files exist and which don't — the spec should only cover what's doc
 Use AskUserQuestion to confirm what should be included. Present:
 
 - The full list of modules and features you found
-- Whether design context (problem space, design decisions) exists
+- Whether design context exists (problem-space.md, accepted ADRs)
 - Your recommendation: full project spec, or a subset
 
 Ask: "What should the spec cover? Everything, or specific modules/areas? And who's the audience — this affects the level of technical detail."
@@ -42,10 +43,12 @@ Drawn from architecture.md overview and problem-space.md.]
 Skip if no design/ docs exist.]
 
 ## Design Decisions
-[From design-decisions.md: key choices and rationale.
-Present as narrative, not a raw decision log. Focus on decisions the reader needs
-to understand to make sense of the architecture.
-Skip if no design/ docs exist.]
+[Synthesised from accepted ADRs in docs/adr/. Present as narrative, not a raw
+decision log — group related decisions, explain the reasoning chain, focus on
+what the reader needs to make sense of the architecture. E.g. a paragraph
+linking three related ADRs into a single technology-stack rationale, rather
+than listing each ADR as its own bullet. Skip superseded and deprecated ADRs.
+Skip the section entirely if no ADRs exist.]
 
 ## Architecture
 [From architecture.md: components, data flow, technology stack, constraints.

@@ -13,7 +13,7 @@ The user's description of what they want to design: $ARGUMENTS
 - **Literal-command handoff.** The post-design handoff names the exact slash command to type next, never free prose.
 - **Stay in your stage.** Do not skip ahead. Each stage's output informs the next.
 - **Write docs, not code.** This workflow produces documentation files only.
-- **Read before writing.** If `docs/architecture.md`, `docs/design/`, or `docs/index.md` already exist, read them first. You are extending or revising, not starting from scratch unless the project is genuinely new.
+- **Read before writing.** If `docs/architecture.md`, `docs/design/`, `docs/adr/`, or `docs/index.md` already exist, read them first. You are extending or revising, not starting from scratch unless the project is genuinely new. For revisions, accepted ADRs that are still true should be left alone; ADRs that the revision contradicts should be superseded by new ADRs (do not edit existing ADR bodies).
 
 ## Stage 1: Problem Framing
 
@@ -42,20 +42,31 @@ Wait for confirmation before proceeding.
 
 ## Stage 2: Design Decisions
 
-**Goal:** Explore the solution space and make key architectural choices.
+**Goal:** Explore the solution space and make key architectural choices. Each confirmed decision becomes an ADR in `docs/adr/`.
 
 **Process:**
-1. Based on the confirmed problem framing, identify the major design decisions that need to be made
-2. For each decision, explore options with trade-offs:
+1. **If `docs/adr/` already exists, load existing ADRs first.** Read `docs/adr/index.md` and open accepted ADRs — they are the current decision baseline. New decisions either add to that baseline, supersede entries, or partially supersede them. Frame Stage 2 as "what changes among these?", not "what should we decide?" with no context.
+2. Based on the confirmed problem framing (and the existing baseline, if any), identify the major design decisions that need to be made — or revisited.
+3. For each decision, explore options with trade-offs:
    - What approaches are available
    - Pros and cons of each
    - Which you recommend and why
-3. Consider: technology choices, architectural patterns, data flow, integration points, and anything the problem framing's constraints bear on
+4. Consider: technology choices, architectural patterns, data flow, integration points, and anything the problem framing's constraints bear on
+5. For each decision, classify its relationship to the existing baseline: **new** (no prior ADR), **supersedes ADR-NNNN** (replaces an existing decision), **partial-supersession of ADR-NNNN** (scopes an exception; both stay accepted), or **confirms ADR-NNNN** (no new ADR needed; existing is reaffirmed).
 
-**Gate:** Present the design decisions to the user via AskUserQuestion. For each decision, show options and your recommendation. Ask:
+**Gate:** Present the design decisions to the user via AskUserQuestion. For each decision, show options, your recommendation, and the relationship to existing ADRs (if any). Ask:
 - "Here are the key decisions I see. Do you agree with these choices? Any decisions I've missed, or options you'd prefer?"
 
 Wait for confirmation before proceeding.
+
+**ADR emission.** After confirmation, write one ADR per *new* or *superseding* confirmed decision to `docs/adr/`. Decisions classified as "confirms ADR-NNNN" need no new ADR. Use the schema and lifecycle described in `CLAUDE.md` and in `/b-adr`.
+
+- **ID computation.** Scan `docs/adr/*.md` filenames for the highest existing `NNNN-` prefix; new IDs are that number + 1, incrementing in the order decisions were enumerated. If `docs/adr/` is empty or missing, the first ID is `0001`.
+- **Modules field.** Stage 2 ADRs are typically cross-cutting (omit `modules:`) — module-scoped ADRs more often emerge at Stage 4 or post-MVP.
+- **Status.** `accepted`.
+- **Supersession bookkeeping.** For decisions that supersede an existing ADR, add `supersedes: [ADR-NNNN]` to the new ADR and update the older ADR's frontmatter (`status: superseded`, `superseded-by: [<new-id>]`). Bodies of older ADRs stay untouched. All affected files in this commit.
+
+Skipping the per-ADR `/b-adr` gate is intentional — the Stage 2 gate is the contract, and running `/b-adr` for each decision would re-confirm what's already confirmed. Write the files directly and surface the list of ADR IDs created (and any supersession relationships) in the Stage 3 input.
 
 ## Stage 3: Architecture Synthesis
 
@@ -67,7 +78,7 @@ Wait for confirmation before proceeding.
    - Key components and their responsibilities
    - Data flow through the system
    - Technology stack
-   - Key design decisions (referencing Stage 2 outcomes)
+   - Key design decisions (cross-reference ADRs by ID, e.g. "see ADR-0003 for the storage choice" — do not restate the decision text)
    - Known constraints
    - Extension points
 2. If revising existing architecture, clearly identify what changes and what stays
@@ -82,17 +93,18 @@ Wait for confirmation before proceeding.
 **Goal:** Break the architecture into implementable modules and establish build order.
 
 **Process:**
-1. Apply the module rubric explicitly. *A module is a set of features that share data concerns and can be meaningfully integration-tested together.* Data concerns are the underlying property; shared integration tests are the observable consequence. If two feature sets don't share data and don't warrant a shared integration test, they belong in separate modules.
-2. Identify logical modules — groups of related features that form system boundaries under the rubric above.
-3. For each module, capture:
+1. Re-read the ADRs from Stage 2 (and any pre-existing accepted ADRs on revision projects) — some decisions shape what counts as a sensible module boundary or constrain what tests look like at module boundaries (e.g. an ADR mandating real-DB integration tests). Treat them as inputs to the rubric below, not as bookkeeping.
+2. Apply the module rubric explicitly. *A module is a set of features that share data concerns and can be meaningfully integration-tested together.* Data concerns are the underlying property; shared integration tests are the observable consequence. If two feature sets don't share data and don't warrant a shared integration test, they belong in separate modules.
+3. Identify logical modules — groups of related features that form system boundaries under the rubric above.
+4. For each module, capture:
    - Features/components it contains
    - What data is shared across those features (one sentence)
    - What integration test(s) would make sense at the module boundary (one sentence)
    - What it depends on (other modules, external systems)
    - Brief description of its purpose
    - **Intra-module build order** — an ordered list of the features within this module, reflecting internal dependencies. This is architectural thinking and belongs here, not at implementation time.
-4. Determine inter-module build order based on dependencies
-5. Identify which modules can be built in parallel
+5. Determine inter-module build order based on dependencies
+6. Identify which modules can be built in parallel
 
 **Gate:** Present the module breakdown, intra-module build order for each module, and inter-module build order to the user via AskUserQuestion. For each proposed module, show the shared-data and integration-test rationale alongside the ordered feature list. Ask:
 - "Given the data-concerns and integration-test rationale shown, does this breakdown hold? Is the build order right (both within and across modules)? Any features in the wrong module?"
@@ -105,10 +117,11 @@ After Stages 1–4 are confirmed, write the documentation files:
 
 1. **`docs/design/problem-space.md`** — From Stage 1 (framing history)
 2. **`docs/scope.md`** — From Stage 1 (current scope, non-goals, success criteria with met/unmet state)
-3. **`docs/design/design-decisions.md`** — From Stage 2
-4. **`docs/architecture.md`** — From Stage 3 (update if exists)
+3. **`docs/adr/NNNN-*.md`** — One ADR per confirmed Stage 2 decision (already written at the end of Stage 2; verify they are present)
+4. **`docs/architecture.md`** — From Stage 3 (update if exists). Cross-reference ADRs by ID rather than restating decisions.
 5. **`docs/index.md`** — Populated with module structure from Stage 4, all marked ⏸ Planned
-6. **`docs/modules/<module-name>/module-status.md`** (one per module) — Placeholder with:
+6. **`docs/adr/index.md`** — Generated from ADR frontmatter (run `/b-index` or write directly per the schema in `b-index.md`)
+7. **`docs/modules/<module-name>/module-status.md`** (one per module) — Placeholder with:
    - A `## Module integration` section: `Test: not yet defined — ⏸` and a `Notes:` line carrying the one-sentence integration-test rationale from Stage 4.
    - A `## Build order` section listing the module's features in order, each marked ⏸.
 

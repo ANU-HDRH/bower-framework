@@ -19,7 +19,8 @@ The user's target module: $ARGUMENTS
 3. Read `docs/modules/<module>/module-status.md` — the `## Module integration` section is the rubric you're implementing; the `## Build order` confirms which features participate.
 4. Read each participating feature's `plan.md` to understand the data each contributes and the seams the test will exercise.
 5. Read `docs/constitution.md` for test location, runner, fixture conventions, and any verification-required-for-✓ rules.
-6. Read source code at the module boundary to confirm the test will hit real seams, not mocked ones (unless the constitution says otherwise).
+6. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it and open accepted ADRs that (a) list this module under `modules`, (b) are cross-cutting (no `modules` field), or (c) have a title topically relevant to integration testing or the module's behaviour. The integration test should honour these decisions — e.g. an ADR mandating real-DB integration tests means no mock fixtures here.
+7. Read source code at the module boundary to confirm the test will hit real seams, not mocked ones (unless the constitution says otherwise).
 
 **Precondition check:** if any feature in the module's build order is not yet ✓ or 🚧 with passing automated criteria, surface this. The integration test can still be written, but it will fail until the underlying features are built. Recommend the user finish the missing features first via `/b-feature <name>` unless they confirm otherwise.
 
@@ -69,6 +70,8 @@ Handling:
 
 - **MISSING** is a blocker. Either add the assertion or renegotiate via AskUserQuestion. Do not proceed.
 - **PENDING USER** — present all manual checks in one AskUserQuestion. PASS → mark ✓. Failure → treat as bug, fix, re-verify. Deferred → leave PENDING USER and mark the module-integration marker 🚧 (not ✓).
+
+**ADR drift.** If writing the test surfaced a contradiction between an accepted ADR and the code or constitution (e.g. the ADR mandates real-DB but the harness uses an in-memory fixture), flag it in the handoff and recommend `/b-adr` to supersede before flipping the marker to ✓. Do not silently let the drift stand — that's exactly the rot the ADR mechanism exists to prevent.
 
 ## Step 5: Update Documentation
 

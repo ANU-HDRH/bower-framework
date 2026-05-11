@@ -30,7 +30,8 @@ If any of these fail, stop and recommend the user run `/b-feature` instead, feat
 3. Read the target module's `module-status.md` — integration notes and build order
 4. Read `docs/constitution.md` for testing conventions
 5. Read any `plan.md` / `status.md` that already exist in this module (e.g. from partial prior work)
-6. Read source code for adjacent modules this one depends on
+6. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) list this module under `modules`, (b) have no `modules` field (cross-cutting), or (c) have a title topically relevant to features in this module — even if filed under another module. Open and read each. Treat them as constraints the module plan must respect; flag any that look stale relative to the current code.
+7. Read source code for adjacent modules this one depends on
 
 ## Step 2: Draft Module Plan
 
@@ -46,6 +47,7 @@ Then, at the module level:
 
 - **Integration test** — what test exercises the module boundary (per the integration notes in `module-status.md`)
 - **Scope impact** — which `scope.md` success criteria this module closes, if any
+- **Decision impact** — list any accepted ADR loaded in Step 1 that this module's build *touches*: confirms, contradicts (must supersede), narrows (partial-supersession ADR), or surfaces as drifted. Note any new cross-cutting decision the module introduces that needs an ADR.
 - **What you won't touch** — explicitly note adjacent areas left alone
 
 ## Gate: Confirm or Adjust
@@ -93,6 +95,10 @@ For each check:
 - **PASS** — flip the relevant feature from 🚧 to ✓ in `module-status.md`; remove the item from that feature's `status.md` `Pending verification:` line (delete the line if now empty).
 - **FAIL** — treat as a bug; if fixable in scope, fix and re-verify. If not, leave the feature 🟡 or 🔴 with the failure noted in its `status.md`.
 - **Deferred** — leave the feature 🚧 with `Pending verification:` intact. `/b-recap` will surface it later.
+
+**Decision reconciliation.** Review the **Decision impact** noted at the gate. For each touched ADR: confirmed → no action; contradicted/drifted → invoke `/b-adr` with the ADR-ID being superseded; narrowed → invoke `/b-adr` for a partial-supersession ADR; new cross-cutting decision → invoke `/b-adr` to record it.
+
+Skip only if no Decision impact was identified at the gate. If the user rejects the drafted ADR at `/b-adr`'s gate, redraft with their adjustments rather than skipping; if they want to abandon ADR creation entirely, re-classify the impact (likely "confirmed") — do not silently skip. Complete any ADR work before continuing to Step 5.
 
 ## Step 5: Finalise
 

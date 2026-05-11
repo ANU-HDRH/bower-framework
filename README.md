@@ -1,4 +1,4 @@
-# Bower Framework v0.8
+# Bower Framework v0.9
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -78,8 +78,9 @@ bower-framework/
 │       ├── b-feature.md        # Lightweight change: propose → confirm → build (one feature)
 │       ├── b-module.md         # Build a whole module: one gate, one integration pass
 │       ├── b-integration.md    # Build the module-boundary integration test
+│       ├── b-adr.md            # Scaffold an Architectural Decision Record (or supersede one)
 │       ├── b-recap.md          # Read-only "where am I, what's next?" orientation
-│       ├── b-index.md          # Regenerate docs/index.md
+│       ├── b-index.md          # Regenerate docs/index.md and docs/adr/index.md
 │       └── b-spec.md           # Export a single specification document
 ├── _bower/
 │   ├── rationale.md                # Why Bower works this way
@@ -92,12 +93,13 @@ bower-framework/
 
 | Command | Purpose |
 |---------|---------|
-| `/b-design` | Five-stage design process for new projects and architectural revisions: problem → decisions → architecture → modules → scaffolding. Hard gates at each stage; ends with an explicit handoff to implementation. |
-| `/b-feature` | The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture. One gate before code. Warns if working out of the module's build order. Redirects to `/b-design` if the request requires architectural change. |
+| `/b-design` | Five-stage design process for new projects and architectural revisions: problem → decisions → architecture → modules → scaffolding. Hard gates at each stage; emits one ADR per Stage 2 decision; ends with an explicit handoff to implementation. |
+| `/b-feature` | The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture. One gate before code, with relevant ADRs loaded as constraints. Reconcile step prompts for ADR creation/supersession when a cross-cutting decision was introduced or invalidated. Redirects to `/b-design` if the request requires architectural change. |
 | `/b-module` | Build all features in a module in one pass. One gate up front, one integration pass at the end. Use when the module is small and well-specified. |
 | `/b-integration` | Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the integration test is the residual. |
+| `/b-adr` | Scaffold an Architectural Decision Record, or supersede an existing one. Auto-increments ID, writes the new ADR (and frontmatter update for supersession) in one pass. Called from `/b-feature` and `/b-design`; can be invoked directly. |
 | `/b-recap` | Read-only, advisory "where am I, what's next?" synthesis across project docs. Never writes. |
-| `/b-index` | Regenerate `docs/index.md` from current module status markers. |
+| `/b-index` | Regenerate `docs/index.md` and `docs/adr/index.md` from current state. |
 | `/b-spec` | Export a single specification document for sharing with others. |
 
 ## How It Works
@@ -117,8 +119,12 @@ docs/
 ├── index.md                    # Auto-generated navigation and status
 ├── scope.md                    # Current scope, non-goals, success criteria
 ├── constitution.md             # Process conventions
-├── architecture.md             # System design and key decisions
-├── design/                     # Problem space and design decisions
+├── architecture.md             # System design (high-level structure; cross-references ADRs for decisions)
+├── design/                     # Day-1 problem framing
+│   └── problem-space.md
+├── adr/                        # Architectural Decision Records (one file per decision)
+│   ├── index.md                # Schema reference + decision index
+│   └── NNNN-kebab-title.md
 ├── reference/                  # Vendored external docs for lookup (optional, read-only)
 └── modules/
     └── <module>/

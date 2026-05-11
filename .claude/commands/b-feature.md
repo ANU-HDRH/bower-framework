@@ -29,7 +29,10 @@ The user's description of what they want to change: $ARGUMENTS
 3. Read `docs/scope.md` to understand current scope, non-goals, and success-criteria state
 4. Read the plan.md and status.md of any components likely affected
 5. Read the `module-status.md` of the affected module (if it exists) — check the `## Build order` section and the `## Module integration` `Notes:`
-6. Read relevant source code to understand current implementation
+6. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) list the affected module(s) under `modules`, (b) have no `modules` field at all (cross-cutting), or (c) have a title topically relevant to the change — e.g. an ADR about caching strategy when the change touches a cache, even if it's filed under another module. Open and read each. These are the constraints the proposal must respect or explicitly contradict. Skip if no `docs/adr/` exists.
+7. Read relevant source code to understand current implementation
+
+**ADR posture.** Treat accepted ADRs as constraints to confirm against current code, not as ground truth. If an ADR names a specific library, file, or flag and the code contradicts it, the ADR is the stale one — flag it in the proposal so the gate can decide whether to supersede. Do not silently rely on a stale ADR.
 
 **For modify or remove intents, also read sibling features in the same module.** Other features' `plan.md` files often describe interactions with the thing you're changing — those references go stale if you don't catch them. Skim each sibling `plan.md` for outbound references to the feature/component being modified or removed; list any that need updating in the Step 2 Impact section.
 
@@ -48,6 +51,7 @@ Prepare a proposal covering:
   - **Docs:** **list each `plan.md` that needs updating by path** (the one for this feature, plus any sibling features whose plans reference behaviour you're changing or removing). Don't bury this under "documentation" — name the files.
   - **Module integration:** does this shift what the module's integration test must assert? If yes, the test itself likely needs updating — flag it here so the Step 5 `Next move:` can point to `/b-integration <module>`.
 - **Scope impact:** Does this change scope, non-goals, or close a success criterion in `scope.md`?
+- **Decision impact:** List any accepted ADR loaded in Step 1 that this change *touches* — i.e. the change either confirms it (no action needed), contradicts it (must supersede), narrows it (partial-supersession ADR), or surfaces it as drifted from the code (the ADR is stale and should be superseded). If no ADRs are touched, write `none`. Also note if this change introduces a new cross-cutting decision that does not yet have an ADR — flag it here so the reconcile step can write one.
 - **Acceptance criteria:** How we'll know this works. Be specific:
   - Tests to write, update, or remove (with brief description of what each verifies)
   - Manual verification steps if applicable
@@ -88,6 +92,17 @@ Handling:
 
 - **MISSING** is a blocker. Either write the test, or return to the user via AskUserQuestion to renegotiate the criterion. Do not proceed with MISSING items.
 - **PENDING USER** — for each manual check, ask the user via AskUserQuestion to confirm it passes. Present all manual checks in a single question. If the user confirms, mark PASS. If the user reports failure, treat as a bug and fix before proceeding. If the user defers ("I'll check later"), leave as PENDING USER and mark the feature 🚧 rather than ✓ (see Step 5).
+
+**Decision reconciliation.** After acceptance criteria are reconciled, review the **Decision impact** noted at the gate. For each touched ADR:
+
+- **Confirmed** (change implements the decision as recorded) — no action.
+- **Contradicted / drifted** (change violates an accepted ADR, or the ADR was already stale relative to the code) — invoke `/b-adr` to write a new ADR superseding the old one. Pass the rationale and the ADR-ID being superseded in the description.
+- **Narrowed** (change scopes an exception without invalidating the original) — invoke `/b-adr` to write a partial-supersession ADR (new ADR; old one stays accepted).
+- **New cross-cutting decision** (change introduces a commitment that didn't have an ADR) — invoke `/b-adr` to record it.
+
+Skip only if no Decision impact was identified at the gate (Step 2 listed it as `none`). Otherwise this is not optional — silent decision drift is exactly what the ADR mechanism exists to prevent.
+
+If the user rejects the drafted ADR at `/b-adr`'s gate, treat that as a request to redraft with their adjustments, not as permission to skip. If they want to abandon ADR creation entirely, return to this reconciliation step and re-classify the impact (likely "confirmed" rather than "new decision"). Complete any ADR work before continuing to Step 5.
 
 ## Step 5: Update Documentation
 
