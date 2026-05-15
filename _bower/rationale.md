@@ -108,14 +108,23 @@ The reference layer — principles, file layout, status markers, and update rule
 
 Process knowledge lives in commands, not documents the agent has to interpret:
 
-- **`/b-design`** — Five-stage design process for new projects and architectural revisions, with hard gates between stages; emits one ADR per Stage 2 decision
+- **`/b-design`** — Six-stage design process for new projects and architectural revisions. Stage 0 spawns the `bower-analyst` subagent to produce a **change brief**; Stages 1–5 execute against the confirmed brief, with stages of no delta emitting "nothing to do" cleanly. Emits one ADR per Stage 2 `new`/`supersedes`/`partial-supersedes` operation.
 - **`/b-feature`** — Everyday change command (add / modify / remove) with one gate before implementation; loads relevant ADRs at propose time and reconciles decision drift before close
 - **`/b-module`** — Build a whole module in one pass when it's small and well-specified
 - **`/b-integration`** — Build the module-boundary integration test
 - **`/b-adr`** — Scaffold a new ADR (or supersede an existing one); called from `/b-feature` and `/b-design`, or directly when needed
-- **`/b-recap`** — Read-only orientation
+- **`/b-recap`** — Read-only orientation across the current project state
+- **`/b-analysis`** — Read-only diagnostic. Spawns `bower-analyst` directly and prints the change brief `/b-design` would consume — useful as inspection before committing to execute
 - **`/b-index`** — Deterministic index regeneration for both `docs/index.md` and `docs/adr/index.md`
 - **`/b-spec`** — Export a single specification document
+
+### Subagents for Isolated Analysis
+
+Some Bower commands spawn subagents (via Claude Code's Agent tool) when a stage of work is read-heavy survey rather than focused decision-making. Currently this is `/b-design` Stage 0 — the `bower-analyst` subagent reads the project's design state and emits a **change brief** conforming to `_bower/brief-schema.md`. The brief tells `/b-design` what each subsequent stage needs to do, including the legitimate outcome of "nothing to do." Stages 1–5 then execute against the confirmed brief rather than re-deriving applicability.
+
+The pattern: split analysis from execution. The analyst works in isolated context against a focused prompt and produces a structured artifact; the main command works against that artifact, not against re-derived branching logic. This addresses an LLM behavioural failure mode — prompts full of "if X then A else B" tend to produce thin versions of all branches rather than committing cleanly to one — by collapsing the conditional decision to a single up-front evaluation. The brief is data; the flow that consumes it is execution.
+
+Subagents are not the default. They earn their place when (a) the analysis genuinely benefits from isolated context, (b) the output has a stable schema the main flow can execute against, and (c) the round-trip cost is amortised by the survey work that follows. `/b-feature` and `/b-module` do not currently spawn subagents because their propose stage is focused enough that running inline is faster and clearer than an Agent invocation. The threshold is deliberate — adding subagents reflexively to every command would dilute the pattern and add cost without compounding benefit.
 
 ### Consultation Gates (AskUserQuestion)
 

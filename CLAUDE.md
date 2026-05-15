@@ -1,4 +1,4 @@
-# Bower Framework v0.9
+# Bower Framework v0.10
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle.
 
@@ -180,7 +180,7 @@ Reference material is consulted during implementation but never synthesised into
 
 Design and change:
 
-- `/b-design` — Five-stage design process for new projects and architectural revisions: problem framing → design decisions (emitted as ADRs) → architecture → module planning → scaffolding. Required for greenfield (no `docs/architecture.md` yet) and for changes that genuinely shift architecture.
+- `/b-design` — Six-stage design process for new projects and architectural revisions. Stage 0 spawns the `bower-analyst` subagent to produce a **change brief** identifying the per-stage delta; Stages 1–5 execute against the confirmed brief (problem framing → decisions/ADRs → architecture → module/feature plans → scaffolding). Stages with no delta emit "nothing to do" cleanly, so the heavy flow stays proportionate to the actual change. Required for greenfield and for changes that shift architecture, decisions, scope, or module structure.
 - `/b-feature` — The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture: propose → acceptance-criteria → confirm → implement → reconcile. Loads relevant ADRs at propose time; reconcile prompts for ADR creation/supersession when a cross-cutting decision was introduced or invalidated. Redirects back to `/b-design` if the request turns out to need architectural change.
 - `/b-module` — Build all features in a module in one pass, one gate up front, one integration pass at the end. Loads relevant ADRs at propose time; reconcile prompts for ADR creation/supersession at module finalisation. Use when the module is small (≤3–4 features) and well-specified.
 - `/b-integration` — Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the test is the residual, or when a `/b-feature` change shifted what the test must assert.
@@ -189,6 +189,7 @@ Design and change:
 Orientation and export:
 
 - `/b-recap` — Read-only, advisory "where am I, what's next?" synthesis across `index.md`, `scope.md`, `module-status.md`, and any in-progress `status.md` files. Never writes.
+- `/b-analysis` — Read-only, advisory. Spawns the `bower-analyst` subagent against a proposed change and prints its **change brief** — what each `/b-design` stage would do if executed, including "nothing to do" outcomes. Same subagent runs at `/b-design` Stage 0; this is an inspection tool for the brief itself.
 - `/b-index` — Regenerate `docs/index.md` and `docs/adr/index.md` from current state.
 - `/b-spec` — Export a single specification document from project documentation, suitable for sharing with stakeholders or other teams.
 
@@ -205,6 +206,7 @@ Living documentation does the heavy lifting: `/b-feature` updates `plan.md` and 
 ## Framework Reference
 
 - `_bower/rationale.md` — Why Bower works this way, design principles, comparison to alternatives
+- `_bower/brief-schema.md` — Schema for the change brief produced by `bower-analyst` and consumed by `/b-design` Stage 0
 - `_bower/roadmap.md` — Deferred framework improvements and their revisit triggers
 - `_bower/changes.md` — Versioned log of framework changes (most recent first)
 

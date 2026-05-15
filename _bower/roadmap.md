@@ -15,8 +15,8 @@ Each item has a one-line description and a *revisit trigger*: the signal that tu
 - **`architecture.md` splitting for scale** — Keep `architecture.md` as a short overview; push component-level detail into module-scoped architecture docs.
   *Revisit trigger:* when any project's `architecture.md` passes ~500 lines.
 
-- **CLAUDE.md tiering via `_bower/conventions.md`** — A short core CLAUDE.md with non-negotiables, plus an on-demand `_bower/conventions.md` loaded by the commands that need it.
-  *Revisit trigger:* when CLAUDE.md passes a size budget to be set.
+- **CLAUDE.md tiering and single-source-of-truth pass** — Two coupled problems. (1) CLAUDE.md is auto-loaded into every session and has grown large; most sessions pay for content they don't consume. (2) Schema definitions are duplicated — the ADR schema appears in CLAUDE.md, `.claude/commands/b-adr.md`, and `_bower/rationale.md`, even though `docs/adr/index.md` is meant to be the canonical schema reference per CLAUDE.md's own posture. The fix is two coupled moves: split CLAUDE.md into a thin always-loaded layer (status markers, command list, navigation, the "what to update when" table) plus an on-demand `_bower/framework.md` that individual commands load when they need spec detail; and establish explicit single-sources-of-truth so duplications stop drifting silently. The `@`-include CLAUDE.md feature is reorganisation, not reduction — the real win is on-demand loading by commands. Worth doing as a `/b-design` pass on the bower-framework repo itself, since it crosses architecture (where framework docs live), scope (what's framework vs project), and conventions (how commands consume spec).
+  *Revisit trigger:* met — observed during Bower 0.10 work on the framework repo; ADR schema visibly duplicated across at least three files, and `docs/adr/index.md`'s intended role as canonical schema reference was not in fact load-bearing.
 
 - **Constitution template and archive rules** — A schema for `constitution.md` and explicit rules for what belongs in `_bower/archive/`.
   *Revisit trigger:* before second real project.

@@ -6,6 +6,41 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.10 — 2026-05-15
+
+### Change brief and analyst subagent; `/b-design` becomes a six-stage delta-against-current-state flow
+
+**What changed**
+
+- **New subagent: `bower-analyst`.** First subagent in the Bower framework. Read-only — restricted to `Read, Glob, Grep, Bash` — survey-shaped, single-output. Given a proposed change and a project root, it reads the project's design state and produces a **change brief** identifying, per future `/b-design` stage, whether there's a delta and what it looks like. Lives at `.claude/agents/bower-analyst.md`.
+- **New artifact: `_bower/brief-schema.md`.** The change brief's structured schema — section ordering, status sentinels, ID pre-allocation rules, and a worked example using a deliberately fictional project (a Pantry recipe app, chosen to prevent prompt anchoring when the schema is read alongside a real test case). The brief is the contract between `bower-analyst` and `/b-design`.
+- **New command: `/b-analysis`.** Thin spawner — invokes the `bower-analyst` subagent against a change description and prints its brief verbatim. Useful as a standalone inspection tool ("what would `/b-design` do for this change?") before committing to execute. Same subagent that runs at `/b-design` Stage 0.
+- **`/b-design` reshaped to six stages.** Stage 0 spawns `bower-analyst`, gates on the brief, locks it as the contract. Stages 1–5 execute against the confirmed brief rather than re-deriving applicability at each stage. Stages with `Status: nothing to do` emit a one-line acknowledgment and proceed without a gate; only stages with delta have content gates.
+- **Per-stage writes.** Each stage with non-nil delta writes its files immediately after its content gate. The 0.9 "Writing Design Outputs" consolidated write step is gone; each stage is self-contained.
+- **ADR IDs are pre-allocated in the brief.** Stage 2 operations carry real IDs (e.g. `new ADR-0034`); other stages cross-reference these IDs verbatim when drafting `scope.md`, `architecture.md`, or `plan.md` edits. This prevents the ordering bug where Stage 1 would write `ADR-NNNN` literals that downstream stages were expected to backfill. `/b-design` Stage 2 verifies the pre-allocation against current `docs/adr/` state and surfaces any drift.
+- **Stage 4 expanded to cover plan touches on revisions.** The 0.9 Stage 4 was framed around module-directory creation (greenfield). The 0.10 Stage 4 explicitly handles all four kinds of edits: plan touches (revisions), build-order updates, integration-note refreshes, and new modules. The brief's `## Stage 4` section names each touch with a one-line reason.
+
+**Why**
+
+The trigger was the recognition that significant projects spend long stretches in a design-first phase — accruing ADRs and module plans before code lands — and that even after code exists, cross-cutting changes that touch architecture, decisions, or scope are common enough to need an everyday command, not a heavy ceremony. The 0.9 `/b-design` was the right tool but the wrong shape for that work: its five stages always ran in full, with each stage doing its own applicability check, even for revisions where three stages had nothing to do. Operators avoided it; `/b-feature` got stretched past its scope to compensate.
+
+The deeper concern was LLM behaviour around branching logic. A prompt full of "if X then A else B" tends to produce thin versions of *both* A and B rather than committing cleanly to one. The fix is to evaluate the conditions once, up front, and emit a structured plan; then execute against the plan without re-evaluating. The `bower-analyst` is the once-up-front evaluator; the brief is the plan; `/b-design` Stages 1–5 are pure execution. Separating the two also pays a context-window dividend — the analyst loads the project's docs into its own isolated context; the main agent works against the compact brief.
+
+The pre-allocation of ADR IDs was a discovered fix during phase-2 testing on a real project: without it, Stage 1's drafts that cross-referenced new ADRs had no real ID to use, so the agent inserted `ADR-NNNN` literals that would have been written to disk on gate confirmation. Pre-allocation in the brief is the structural fix — IDs become available to every stage, not just the one that creates the file. This is a small thing structurally but it's the difference between the flow working and producing broken cross-references.
+
+**Migration notes**
+
+- Existing projects on v0.9: copy four artifacts from the bower-framework reference, replacing the v0.9 file where applicable:
+  - `.claude/agents/bower-analyst.md` (new — first subagent definition)
+  - `.claude/commands/b-analysis.md` (new)
+  - `.claude/commands/b-design.md` (replace)
+  - `_bower/brief-schema.md` (new)
+- CLAUDE.md updates: bump the framework version line to v0.10; update the `/b-design` description to reflect Stage 0 + delta execution; add a `/b-analysis` entry under the orientation commands; add `_bower/brief-schema.md` to the Framework Reference list.
+- No changes to existing ADRs, `plan.md`, `status.md`, `module-status.md`, `scope.md`, `architecture.md`, `problem-space.md`, or `constitution.md` formats. Existing project content is untouched.
+- No source code changes required.
+
+---
+
 ## v0.9 — 2026-05-05
 
 ### Architectural Decision Records replace `design-decisions.md`; `/b-feature` reconcile gains a decision-drift prompt; new `/b-adr` command

@@ -1,4 +1,4 @@
-# Bower Framework v0.9
+# Bower Framework v0.10
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -36,7 +36,8 @@ You should now have, at the top of your project:
 
 - `CLAUDE.md` — instructions Claude Code reads on every session
 - `.claude/commands/` — the `/b-*` slash commands
-- `_bower/` — framework rationale and roadmap (you don't normally edit these)
+- `.claude/agents/` — the `bower-analyst` subagent (used by `/b-design` and `/b-analysis`)
+- `_bower/` — framework rationale, change-brief schema, and roadmap (you don't normally edit these)
 
 ### 2. Tell Claude about your project's code standards
 
@@ -57,15 +58,13 @@ Then, at the Claude prompt, type:
 /b-design I want to build <one-sentence description of what you want>
 ```
 
-`/b-design` is the entry point. It looks at your project, decides whether you need a full design pass or a lightweight change, and routes you accordingly. You don't pick the workflow yourself — it asks you, recommends one, and waits for your answer.
+`/b-design` is the entry point for new projects and for changes that shift architecture, decisions, scope, or module structure. For changes within existing architecture — features, fixes, modifications, removals — use `/b-feature` directly instead; if you pick wrong, `/b-feature` will point you back to `/b-design`.
 
 ### What happens next
 
-`/b-design` runs the full five-stage design — problem framing, design decisions, architecture, module planning, scaffolding — with review gates at every stage. On a greenfield project this is required; on an existing project it's the right command when you're genuinely changing architecture.
+`/b-design` runs a six-stage flow. Stage 0 spawns the read-only `bower-analyst` subagent, which reads your project state and produces a **change brief** — a structured plan of what each subsequent stage needs to do, with "nothing to do" as a first-class outcome. After you confirm the brief, Stages 1–5 execute against it: problem framing, decisions (emitted as ADRs), architecture, module and feature plans, scaffolding. On a greenfield project most stages will have full drafts; on a revision typically only a few have real work and the others emit a one-line "nothing to do" and proceed.
 
-For features, fixes, and enhancements that fit within the existing architecture, use `/b-feature` directly — its propose-and-confirm gate is the lightweight design pass. If a `/b-feature` request turns out to need architectural change, it'll point you back to `/b-design`.
-
-After the first design pass, day-to-day work usually means running `/b-feature` (one feature) or `/b-module` (a whole module's worth). If you come back to the project later and don't remember where you were, run `/b-recap` — it reads the docs and tells you the current state without changing anything.
+After the first design pass, day-to-day work usually means running `/b-feature` (one feature) or `/b-module` (a whole module's worth). If you come back to the project later and don't remember where you were, run `/b-recap` — it reads the docs and tells you the current state without changing anything. To preview what `/b-design` would do for a proposed change without committing to execute, run `/b-analysis` — it produces the same brief, read-only.
 
 ## Repository Structure
 
@@ -73,17 +72,21 @@ After the first design pass, day-to-day work usually means running `/b-feature` 
 bower-framework/
 ├── CLAUDE.md                       # Always-loaded reference (copy to your project)
 ├── .claude/
-│   └── commands/
-│       ├── b-design.md         # Five-stage design: problem → decisions → architecture → modules → scaffolding
-│       ├── b-feature.md        # Lightweight change: propose → confirm → build (one feature)
-│       ├── b-module.md         # Build a whole module: one gate, one integration pass
-│       ├── b-integration.md    # Build the module-boundary integration test
-│       ├── b-adr.md            # Scaffold an Architectural Decision Record (or supersede one)
-│       ├── b-recap.md          # Read-only "where am I, what's next?" orientation
-│       ├── b-index.md          # Regenerate docs/index.md and docs/adr/index.md
-│       └── b-spec.md           # Export a single specification document
+│   ├── commands/
+│   │   ├── b-design.md         # Six-stage design with Stage 0 change brief
+│   │   ├── b-analysis.md       # Read-only: print the change brief /b-design would consume
+│   │   ├── b-feature.md        # Lightweight change: propose → confirm → build (one feature)
+│   │   ├── b-module.md         # Build a whole module: one gate, one integration pass
+│   │   ├── b-integration.md    # Build the module-boundary integration test
+│   │   ├── b-adr.md            # Scaffold an Architectural Decision Record (or supersede one)
+│   │   ├── b-recap.md          # Read-only "where am I, what's next?" orientation
+│   │   ├── b-index.md          # Regenerate docs/index.md and docs/adr/index.md
+│   │   └── b-spec.md           # Export a single specification document
+│   └── agents/
+│       └── bower-analyst.md    # Read-only subagent that produces change briefs
 ├── _bower/
 │   ├── rationale.md                # Why Bower works this way
+│   ├── brief-schema.md             # Schema for the change brief produced by bower-analyst
 │   ├── roadmap.md                  # Deferred framework improvements
 │   └── changes.md                  # Versioned log of framework changes
 └── README.md
@@ -93,7 +96,8 @@ bower-framework/
 
 | Command | Purpose |
 |---------|---------|
-| `/b-design` | Five-stage design process for new projects and architectural revisions: problem → decisions → architecture → modules → scaffolding. Hard gates at each stage; emits one ADR per Stage 2 decision; ends with an explicit handoff to implementation. |
+| `/b-design` | Six-stage design process for new projects and architectural revisions. Stage 0 spawns the `bower-analyst` subagent to produce a **change brief**; Stages 1–5 execute against the confirmed brief (problem framing → decisions/ADRs → architecture → module/feature plans → scaffolding). Stages with no delta emit "nothing to do" cleanly. Emits one ADR per `new`/`supersedes`/`partial-supersedes` Stage 2 operation. |
+| `/b-analysis` | Read-only, advisory. Spawns the `bower-analyst` subagent against a proposed change and prints its **change brief** — what each `/b-design` stage would do if executed. Useful as inspection before committing to execute. |
 | `/b-feature` | The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture. One gate before code, with relevant ADRs loaded as constraints. Reconcile step prompts for ADR creation/supersession when a cross-cutting decision was introduced or invalidated. Redirects to `/b-design` if the request requires architectural change. |
 | `/b-module` | Build all features in a module in one pass. One gate up front, one integration pass at the end. Use when the module is small and well-specified. |
 | `/b-integration` | Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the integration test is the residual. |
@@ -104,11 +108,11 @@ bower-framework/
 
 ## How It Works
 
-`/b-design` is the design command. Five stages with engineer review at each gate: problem → decisions → architecture → modules → scaffolding. Required for greenfield (no existing `docs/architecture.md`) and for changes that genuinely shift architecture. Ends with an explicit handoff naming the first module to build and the recommended command (`/b-module` or `/b-feature`).
+`/b-design` is the design command. Six stages: Stage 0 produces a change brief via the read-only `bower-analyst` subagent; Stages 1–5 execute against the confirmed brief (problem framing, decisions/ADRs, architecture, module/feature plans, scaffolding) with a content gate per non-nil stage. Stages of no delta emit "nothing to do" cleanly, so heavy ceremony only fires where there's actual work. Required for greenfield and for changes that shift architecture, decisions, scope, or module structure.
 
-`/b-feature` is the implementation command for everything else. Proposes changes and acceptance criteria, confirms with you, then implements. If the request turns out to need architectural change, it redirects to `/b-design`.
+`/b-feature` is the implementation command for changes within existing architecture. Proposes changes and acceptance criteria, confirms with you, then implements. If the request turns out to need architectural change, it redirects to `/b-design`.
 
-The agent recommends; you decide. Every gate uses explicit confirmation — no changes without your sign-off. `/b-recap` re-orients you in a fresh session without touching anything.
+The agent recommends; you decide. Every gate uses explicit confirmation — no changes without your sign-off. `/b-recap` re-orients you in a fresh session without touching anything; `/b-analysis` previews what `/b-design` would do for a proposed change without executing it.
 
 ## Project Documentation Structure
 
