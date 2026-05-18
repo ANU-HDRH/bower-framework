@@ -86,12 +86,19 @@ Stage-specific drafting and write rules follow.
 
 **Brief section consumed:** `## Stage 3 — Architecture`.
 
+`architecture.md` carries two views that must both be present on greenfield and maintained as the project evolves:
+
+- **Runtime view** — system overview, topology, components (containers, processes, external services), data flow, technology stack, known constraints, extension points. Cross-references the ADRs written in Stage 2 by ID rather than restating decisions.
+- **Software architecture view** — a `## Software architecture` section listing each Bower module with: its purpose in one line, the data concern that justifies the module boundary (per the constitution's module rubric), constituent features, and inter-module dependencies (depends on / consumed by). This is the code-structure complement to the runtime view; it is the home for *why these modules and not others*.
+
 **Drafting:**
 
-- **Greenfield:** Draft `docs/architecture.md` covering system overview, key components, data flow, technology stack, key design decisions (cross-referencing the ADRs written in Stage 2 by ID, not restating them), known constraints, and extension points.
-- **Revision:** Draft the specific edits the brief calls for — typically a paragraph or two with new ADR cross-references. Show the edit in context (the surrounding sentences) so the gate can confirm placement, not just text.
+- **Greenfield:** Draft `docs/architecture.md` covering both views. The software-architecture section is sourced from the module breakdown that Stage 4 will produce — draft it consistent with Stage 4's planned modules so the two stay aligned.
+- **Revision:** Draft the specific edits the brief calls for. The brief distinguishes runtime-view deltas from software-architecture deltas; honour that distinction in the drafted edit. Show each edit in context (surrounding sentences) so the gate can confirm placement, not just text.
 
-**Gate:** Present the drafted architecture content. Ask: "Confirm the architecture content, or adjust."
+**Cross-stage rule.** Every Stage 4 `new module` operation requires a corresponding software-architecture entry in this stage. If the brief lists a new module under Stage 4 without a Stage 3 delta covering its software-architecture entry, surface this at the Stage 3 gate as a brief inconsistency and ask the operator to amend before drafting.
+
+**Gate:** Present the drafted architecture content, grouping runtime-view edits and software-architecture edits separately so the gate is scannable. Ask: "Confirm the architecture content, or adjust."
 
 **Write:** `docs/architecture.md` (edit in place; on greenfield, full new file).
 

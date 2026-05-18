@@ -87,14 +87,23 @@ Operation semantics (per CLAUDE.md):
 
 ### `## Stage 3 — Architecture`
 
+`architecture.md` carries two views — a **runtime view** (topology, components, data flow, technology stack, constraints, extension points) and a **software architecture view** (`## Software architecture` section: per-module purpose, data-concern boundary, constituent features, inter-module dependencies). The analyst reports deltas against each view separately so `/b-design` Stage 3 can present them as distinct edits at the gate.
+
 Either `Status: nothing to do` or:
 
 ```
 Status: delta
-architecture.md: <description of edit, including any new ADR cross-references to insert>
+
+Runtime view:
+- <section name>: <description of edit, including any new ADR cross-references to insert>
+- (none, if no runtime-view changes)
+
+Software architecture view:
+- <module-name>: <new entry | edit (purpose / data concern / features / depends on / consumed by) | remove entry>
+- (none, if no software-architecture changes)
 ```
 
-If multiple sections of architecture.md change, list each with its delta.
+**Cross-stage consistency.** Every Stage 4 `new module` operation requires a corresponding `<module-name>: new entry` line in the software-architecture view here. The analyst enforces this at brief-generation time — a Stage 4 new module without a Stage 3 software-architecture entry is a brief inconsistency, not a legitimate omission.
 
 ### `## Stage 4 — Module and feature plans`
 
@@ -159,7 +168,7 @@ Change request: extend the meal planner so it considers ingredient seasonal-avai
 
 - Stage 1 (problem framing): nothing to do
 - Stage 2 (decisions): 1 new ADR (seasonal data source choice); confirms ADR-0007 (search query syntax)
-- Stage 3 (architecture): one-paragraph edit naming the new data source and its refresh cadence
+- Stage 3 (architecture): one-paragraph runtime-view edit (data sources) + new software-architecture entry (seasonal-data)
 - Stage 4 (module plans): 2 plan touches (meal-planner, ingredient-search); 1 new module (seasonal-data); 1 build-order update
 - Stage 5 (scaffolding): nothing to do
 
@@ -204,7 +213,12 @@ Status: 2 operations
 ## Stage 3 — Architecture
 
 Status: delta
-architecture.md: in the "Data sources" section, add one paragraph introducing the seasonal-availability feed, its refresh cadence, and its staleness handling. Cross-reference ADR-0010.
+
+Runtime view:
+- Data sources section: add one paragraph introducing the seasonal-availability feed, its refresh cadence, and its staleness handling. Cross-reference ADR-0010.
+
+Software architecture view:
+- seasonal-data: new entry — purpose: ingests and caches the external seasonal-availability feed, exposes a lookup API. Data concern: per-ingredient seasonality windows. Features: feed-ingest, seasonal-lookup. Depends on: (no internal dependencies; consumes the external feed). Consumed by: meal-planner, ingredient-search.
 
 ## Stage 4 — Module and feature plans
 

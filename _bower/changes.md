@@ -6,6 +6,36 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.11 — 2026-05-18
+
+### `architecture.md` becomes a two-view document: runtime + software architecture
+
+**What changed**
+
+- **`architecture.md` is now contractually a two-view document.** The existing content — topology, components, data flow, technology stack, constraints, extension points — is the **runtime view** (how the system *runs*). A new **software architecture view** (`## Software architecture` section) is the home for module decomposition (how the *code* is carved up): each Bower module gets an entry with its purpose, the data concern that justifies its boundary, constituent features, and inter-module dependencies (depends on / consumed by).
+- **`/b-design` Stage 3 updated.** Drafting rules name both views explicitly. Greenfield drafts both; revisions edit only the views the brief flags. A cross-stage rule binds Stage 4 to Stage 3: every `new module` operation in Stage 4 requires a corresponding software-architecture entry in Stage 3, surfaced at the gate as a brief inconsistency if absent.
+- **Brief schema (`_bower/brief-schema.md`) updated.** Stage 3's section now reports runtime-view deltas and software-architecture deltas as distinct subsections. The analyst is required to emit a software-architecture entry whenever Stage 4 lists a new module — the consistency check is part of brief generation, not deferred to Stage 3.
+- **CLAUDE.md updated.** The Module Definition section gains a pointer to where boundary rationale lives. The Navigation pointer and the Documentation Structure description for `architecture.md` both note the dual-view shape. The "What to Update When" table flips the "New module" cell for `architecture.md` from `Maybe` to `Yes`.
+- **`_bower/rationale.md` gains a paragraph** under Feature Modules explaining the two-senses-of-architecture problem and why both views live together in one document with named sections.
+
+**Why**
+
+The trigger was a real-project observation on the first production Bower build-out (Lyrebird): when reading along to follow Claude Code's reasoning during feature implementation, the *runtime view* of the system was richly documented in `architecture.md` (topology, components, data flows across the wire), but the *software view* — why these Bower modules and not others, what binds the features inside each one, what depends on what across modules — was nowhere. The module decomposition was implicit in the existence of `docs/modules/` directories but had no narrative home in any design-layer doc. `module-status.md` is deliberately operational and terse; `architecture.md` was answering "how does it run?" but not "how is the code carved up?"
+
+Two distinct senses of "architecture" exist in common engineering usage — system/deployment architecture and software/code architecture — and Bower's previous `architecture.md` contract conflated them by listing only runtime-view sections. Splitting the document into two named views resolves the conflation without inventing a new file. A separate `module-decomposition.md` or per-module `module.md` was considered and ruled out: the maintenance cost of a new co-authored design-layer doc isn't justified when an existing one can absorb a named section, and the two views explain one another so co-locating them is preferable to splitting them.
+
+The cross-stage rule (Stage 4 `new module` ⇒ Stage 3 software-architecture entry) closes a consistency gap that would otherwise leak partial state: without it, a brief could add a module in Stage 4 and omit its software-architecture entry, leaving the new module visible in `module-status.md` and absent from the architectural narrative. Enforcing the link at brief-generation time means `/b-design` sees the inconsistency before it writes anything.
+
+**Migration notes**
+
+- Existing projects on v0.10: replace `.claude/commands/b-design.md` and `_bower/brief-schema.md` from the v0.11 reference. Update `CLAUDE.md` (version line, Module Definition pointer, Navigation pointer for `architecture.md`, Documentation Structure description for `architecture.md`, and the "What to Update When" table cell for "New module" → `architecture.md`). Update `_bower/rationale.md` to add the boundary-rationale paragraph under Feature Modules.
+- **Forward-only migration for project `architecture.md` files.** Existing projects' `architecture.md` will not have the `## Software architecture` section. v0.11 does not retroactively scaffold it. The section will materialise naturally on the next `/b-design` that introduces a new module (Stage 3 will create it as part of the new module's entry). For projects that want the section sooner, do it by hand: list each existing module with its purpose, data-concern boundary, constituent features, and inter-module dependencies. This is a one-shot exercise typically measured in tens of minutes per project.
+- **Partial-section trap.** If a v0.10-era project's first post-upgrade `/b-design` adds a new module *without* a prior manual backfill, Stage 3 will create the `## Software architecture` section with only the new module's entry — leaving existing modules silently absent. Either backfill first, or pair the design pass with a manual write-up of the existing modules' entries.
+- No changes to ADR schema, `plan.md`, `status.md`, `module-status.md`, `scope.md`, `problem-space.md`, or `constitution.md` formats.
+- No source code changes required.
+
+---
+
 ## v0.10 — 2026-05-15
 
 ### Change brief and analyst subagent; `/b-design` becomes a six-stage delta-against-current-state flow

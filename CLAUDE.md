@@ -1,4 +1,4 @@
-# Bower Framework v0.10
+# Bower Framework v0.11
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle.
 
@@ -9,14 +9,14 @@ This project uses the Bower AI-assisted development pattern. Bower optimises for
 - **Feature modules** — Group related features into modules that persist as system boundaries post-MVP.
 - **AI-readable context** — Structure documentation for discoverability by AI agents and humans alike.
 
-**Module definition:** A module is a set of features that share data concerns and can be meaningfully integration-tested together. Data concerns are the underlying property; shared integration tests are the observable consequence. If two feature sets don't share data and don't warrant a shared integration test, they belong in separate modules.
+**Module definition:** A module is a set of features that share data concerns and can be meaningfully integration-tested together. Data concerns are the underlying property; shared integration tests are the observable consequence. If two feature sets don't share data and don't warrant a shared integration test, they belong in separate modules. Each module's boundary rationale — its purpose, the data concern that justifies the seam, constituent features, and inter-module dependencies — is recorded in `architecture.md` under `## Software architecture`.
 
 ## Navigation
 
 - **Start here:** `docs/index.md` — Auto-generated project state and navigation
 - **Current boundary:** `docs/scope.md` — What's in scope now, what's deferred, success criteria met/unmet
 - **Process conventions:** `docs/constitution.md` — How to contribute, plan, and update documentation
-- **System design:** `docs/architecture.md` — Technology choices, key decisions, data flow
+- **System design:** `docs/architecture.md` — Runtime view (topology, components, data flow, stack) plus a `## Software architecture` section listing each Bower module's boundary rationale
 - **Design context:** `docs/design/problem-space.md` — Day-1 framing of the problem (created during full design)
 - **Decision log:** `docs/adr/` — Architectural Decision Records, indexed by `docs/adr/index.md` (created when the first decision is recorded)
 - **Reference material:** `docs/reference/` — Vendored external docs for agent lookup (optional; created when needed)
@@ -48,7 +48,7 @@ docs/
 ├── index.md                          # Navigation and project state
 ├── scope.md                          # Current scope, non-goals, success criteria
 ├── constitution.md                   # Process conventions (reusable)
-├── architecture.md                   # System design (high-level structure; cross-references ADRs for decisions)
+├── architecture.md                   # System design: runtime view + `## Software architecture` (per-module boundary rationale); cross-references ADRs
 ├── design/                           # Day-1 framing
 │   └── problem-space.md
 ├── adr/                              # Architectural Decision Records
@@ -161,7 +161,7 @@ Reference material is consulted during implementation but never synthesised into
 | Bug fix | Maybe | Yes | — | — | — | — | — |
 | Feature (existing) | Yes | Yes | Maybe | Maybe | — | — | Maybe |
 | New component | Create | Create | Yes | Maybe | Yes | — | Maybe |
-| New module | Create | Create | Create | Maybe | Yes | Maybe | Maybe |
+| New module | Create | Create | Create | Maybe | Yes | Yes | Maybe |
 | Architecture change | Yes | — | Maybe | Maybe | — | Yes | Yes |
 | Scope shift / criterion closed | — | — | — | Yes | — | — | — |
 | Cross-cutting decision changed | — | — | — | — | — | Maybe | Yes |
