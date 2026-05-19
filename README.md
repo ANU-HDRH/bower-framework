@@ -1,4 +1,4 @@
-# Bower Framework v0.11
+# Bower Framework v0.13
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -21,23 +21,45 @@ Bower is a set of files you drop into a project that uses [Claude Code](https://
 
 ### 1. Put Bower into your project
 
-Either start a new project directory, or open an existing one. Then copy the Bower files in:
+Either start a new project directory, or open an existing one.
+
+**Quick way (recommended).** Clone this repo somewhere scratch and run the scaffold script — it copies the framework files into your project and seeds a `CLAUDE.md` if you don't already have one. The same script also works as an upgrade: re-running it against an existing Bower project refreshes the framework files without touching your `CLAUDE.md`, `_bower/VERSION`, or `_bower/SOURCE`.
+
+```bash
+git clone https://github.com/anu-hdrh/bower-framework /tmp/bower
+/tmp/bower/scripts/scaffold.sh /path/to/your-project
+# Windows PowerShell: \tmp\bower\scripts\scaffold.ps1 C:\path\to\your-project
+rm -rf /tmp/bower
+```
+
+The script:
+
+- Copies `_bower/` (excluding the `project-CLAUDE.md` template seed) into your project.
+- Refreshes `.claude/agents/` and `.claude/commands/` in your project.
+- Creates `CLAUDE.md` from the template **only if** your project has no `CLAUDE.md`. Existing CLAUDE.md files are left alone — your project-specific additions are safe.
+- Creates `_bower/VERSION` (the framework version this project is migrated to) and `_bower/SOURCE` (the git URL of the framework repo, read from the framework repo's `origin` remote) **only if absent**. Both are preserved on subsequent scaffolds — `VERSION` because `/b-upgrade` owns it, `SOURCE` because forks and mirrors should stay pointed at the right upstream.
+
+**Manual way (if you'd rather do it by hand).** Copy the same files in yourself:
 
 ```bash
 # from inside your project directory
 git clone https://github.com/anu-hdrh/bower-framework /tmp/bower
-cp -r /tmp/bower/CLAUDE.md /tmp/bower/.claude /tmp/bower/_bower .
+cp -r /tmp/bower/.claude /tmp/bower/_bower .
+rm _bower/project-CLAUDE.md                # template seed, not for live projects
+# Create your CLAUDE.md if you don't have one yet:
+[ -f CLAUDE.md ] || cp /tmp/bower/_bower/project-CLAUDE.md CLAUDE.md
 rm -rf /tmp/bower
 ```
 
-(Or just clone this repo and use it as your project — that works too.)
+Either way, you should now have at the top of your project:
 
-You should now have, at the top of your project:
-
-- `CLAUDE.md` — instructions Claude Code reads on every session
-- `.claude/commands/` — the `/b-*` slash commands
-- `.claude/agents/` — the `bower-analyst` subagent (used by `/b-design` and `/b-analysis`)
-- `_bower/` — framework rationale, change-brief schema, and roadmap (you don't normally edit these)
+- `CLAUDE.md` — instructions Claude Code reads on every session. The Bower-supplied content is one line: `@_bower/framework.md`, which `@`-includes the framework guidance. Everything else in this file is yours.
+- `_bower/framework.md` — the framework guidance (what `@_bower/framework.md` resolves to). Treat as read-only; refresh by re-running the scaffold script.
+- `_bower/VERSION` — the framework version this project is migrated to. Owned by `/b-upgrade`.
+- `_bower/SOURCE` — the git URL of the framework repo, used by `/b-upgrade` to clone the latest framework. Edit if you need to point at a fork or mirror (see *Upgrading*).
+- `_bower/` — framework rationale, change-brief schema, roadmap, `changes.md`, and `framework.md` (you don't normally edit these).
+- `.claude/commands/` — the `/b-*` slash commands.
+- `.claude/agents/` — the `bower-analyst` subagent (used by `/b-design` and `/b-analysis`).
 
 ### 2. Tell Claude about your project's code standards
 
@@ -66,11 +88,33 @@ Then, at the Claude prompt, type:
 
 After the first design pass, day-to-day work usually means running `/b-feature` (one feature) or `/b-module` (a whole module's worth). If you come back to the project later and don't remember where you were, run `/b-recap` — it reads the docs and tells you the current state without changing anything. To preview what `/b-design` would do for a proposed change without committing to execute, run `/b-analysis` — it produces the same brief, read-only.
 
+## Upgrading
+
+Once your project is on a given Bower version (recorded in `_bower/VERSION`), upgrading to a newer framework version is a single command in the project: `/b-upgrade`. The skill:
+
+1. Verifies your git working tree is clean — refuses to run otherwise, so `git reset --hard` is always a valid escape if anything goes wrong.
+2. Clones the framework repo (URL read from `_bower/SOURCE`) into a temp directory.
+3. Runs the scaffold against your project to refresh `_bower/` and `.claude/`.
+4. Walks each intermediate version's migration notes from `_bower/changes.md` in order — one version at a time, with a gate before applying each. If you're jumping multiple versions, it asks once whether to commit between each step or commit at the end.
+5. Bumps `_bower/VERSION` after each migration step and emits a candid self-assessment at the end so you can decide whether to trust the result or `git reset --hard`.
+
+For projects predating the `VERSION` convention (anything before v0.13), the first `/b-upgrade` will prompt you for the version you're currently on so it knows which migration steps to apply.
+
+### Forks and mirrors
+
+`_bower/SOURCE` holds the git URL of the framework repo `/b-upgrade` clones from. The scaffold script seeds it from the framework repo's `origin` remote on first install, then preserves it on subsequent scaffolds — so:
+
+- **If you cloned this repo and scaffolded from it directly,** `SOURCE` points at this upstream repo. Subsequent `/b-upgrade` runs pull from here.
+- **If you forked the framework** (to carry local modifications, to pin a specific revision, or to maintain a private variant), clone *your fork* and run its scaffold against your project. `SOURCE` will be set to your fork's URL, and `/b-upgrade` in the project will pull from your fork from then on. You're free to add commits to your fork — `/b-upgrade` honours whatever's at the tip of `main` in the cloned repo.
+- **If you need to retarget an existing project** at a different framework remote (e.g. you forked after the project was already set up), just edit `_bower/SOURCE` to the new URL. No other state needs changing.
+
+Note that `/b-upgrade` clones shallow (`--depth 1`) from whatever `SOURCE` points at, so the framework repo's `main` branch is the upgrade surface. If you want pinned upgrades against tagged framework versions, that's not the current model — fork and control the tip of `main` in your fork instead.
+
 ## Repository Structure
 
 ```
 bower-framework/
-├── CLAUDE.md                       # Always-loaded reference (copy to your project)
+├── CLAUDE.md                       # Contributor-facing — this is the framework repo, not a project
 ├── .claude/
 │   ├── commands/
 │   │   ├── b-design.md         # Six-stage design with Stage 0 change brief
@@ -81,14 +125,21 @@ bower-framework/
 │   │   ├── b-adr.md            # Scaffold an Architectural Decision Record (or supersede one)
 │   │   ├── b-recap.md          # Read-only "where am I, what's next?" orientation
 │   │   ├── b-index.md          # Regenerate docs/index.md and docs/adr/index.md
-│   │   └── b-spec.md           # Export a single specification document
+│   │   ├── b-spec.md           # Export a single specification document
+│   │   └── b-upgrade.md        # Upgrade a project to the current framework version
 │   └── agents/
 │       └── bower-analyst.md    # Read-only subagent that produces change briefs
 ├── _bower/
+│   ├── framework.md                # Project-facing guidance (a project's CLAUDE.md @-includes this)
+│   ├── project-CLAUDE.md           # Template CLAUDE.md seeded into a new project
 │   ├── rationale.md                # Why Bower works this way
 │   ├── brief-schema.md             # Schema for the change brief produced by bower-analyst
 │   ├── roadmap.md                  # Deferred framework improvements
-│   └── changes.md                  # Versioned log of framework changes
+│   ├── changes.md                  # Versioned log of framework changes
+│   └── VERSION                     # Canonical framework version (single line)
+├── scripts/
+│   ├── scaffold.sh                 # Copies _bower/ + .claude/ into a target project (bash)
+│   └── scaffold.ps1                # PowerShell equivalent for Windows
 └── README.md
 ```
 
@@ -105,6 +156,7 @@ bower-framework/
 | `/b-recap` | Read-only, advisory "where am I, what's next?" synthesis across project docs. Never writes. |
 | `/b-index` | Regenerate `docs/index.md` and `docs/adr/index.md` from current state. |
 | `/b-spec` | Export a single specification document for sharing with others. |
+| `/b-upgrade` | Upgrade this project to the current Bower framework version. Requires a clean git working tree. Clones the framework repo (URL in `_bower/SOURCE`), refreshes `_bower/` and `.claude/`, then walks each intermediate version's migration notes from `_bower/changes.md` step-by-step, bumping `_bower/VERSION` after each. Emits a self-assessment so you can decide whether to `git reset --hard` if anything looks wrong. |
 
 ## How It Works
 

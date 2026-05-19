@@ -1,216 +1,61 @@
-# Bower Framework v0.11
+# Bower Framework — Contributor Instructions
 
-This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle.
+**You are working on the Bower framework itself, not on a project built with Bower.** This repo is the source of the framework: the project-facing guidance, the skills (`/b-*` slash commands), the analyst subagent, and the supporting `_bower/` reference files. Projects consume this material by running the scaffold script; they do not edit it.
 
-## Core Principles
+## What this means in practice
 
-- **Planning before building** — Design and document before implementing. Avoid vibe coding.
-- **Living documentation** — All docs represent current state, not history. Update in place; git is the change log.
-- **Feature modules** — Group related features into modules that persist as system boundaries post-MVP.
-- **AI-readable context** — Structure documentation for discoverability by AI agents and humans alike.
+- **Do not invoke `/b-*` skills on this repo.** `/b-design`, `/b-feature`, `/b-module`, `/b-integration`, `/b-adr`, `/b-recap`, `/b-analysis`, `/b-index`, `/b-spec` are all designed for *Bower projects*. This repo has no `docs/modules/`, no `docs/architecture.md`, no `docs/scope.md` — running them here is meaningless. Edit framework files directly instead.
+- **Every framework change gets a `_bower/changes.md` entry.** Prepend a new versioned section (most recent first) describing what changed, why, and any migration notes for projects already on a previous version. Bump the version in **both** `_bower/VERSION` (the canonical source, read by tooling) **and** `_bower/framework.md`'s top heading (a human-visible label) at the same time.
+- **The project-facing CLAUDE.md is a template, not the live one.** This file (the root `CLAUDE.md`) is contributor-only. The template that projects receive lives at `_bower/project-CLAUDE.md`; it `@`-includes `_bower/framework.md`. When you change framework guidance, edit `_bower/framework.md` — projects pick up the change by re-running the scaffold script over their `_bower/` directory.
 
-**Module definition:** A module is a set of features that share data concerns and can be meaningfully integration-tested together. Data concerns are the underlying property; shared integration tests are the observable consequence. If two feature sets don't share data and don't warrant a shared integration test, they belong in separate modules. Each module's boundary rationale — its purpose, the data concern that justifies the seam, constituent features, and inter-module dependencies — is recorded in `architecture.md` under `## Software architecture`.
+## Migration-notes authoring discipline
 
-## Navigation
+Every framework change gets migration notes in its `_bower/changes.md` entry. These notes are read by the `/b-upgrade` skill running in a downstream project — a model audience walking through one version at a time. Authoring discipline matters because a vague or context-dependent note will produce inconsistent upgrades across projects, and the failure may not surface until much later.
 
-- **Start here:** `docs/index.md` — Auto-generated project state and navigation
-- **Current boundary:** `docs/scope.md` — What's in scope now, what's deferred, success criteria met/unmet
-- **Process conventions:** `docs/constitution.md` — How to contribute, plan, and update documentation
-- **System design:** `docs/architecture.md` — Runtime view (topology, components, data flow, stack) plus a `## Software architecture` section listing each Bower module's boundary rationale
-- **Design context:** `docs/design/problem-space.md` — Day-1 framing of the problem (created during full design)
-- **Decision log:** `docs/adr/` — Architectural Decision Records, indexed by `docs/adr/index.md` (created when the first decision is recorded)
-- **Reference material:** `docs/reference/` — Vendored external docs for agent lookup (optional; created when needed)
+Write notes under a `### Migration` subheading inside the version's section. Rules:
 
-## Document Layers
+- **Self-contained.** Do not write "see also v0.10's note" or "as in the previous version." `/b-upgrade` reads one version's section at a time; a cross-reference is a dangling pointer.
+- **Written for a model audience.** Be explicit about which files to read, what to look for, and what to write. "Update `architecture.md`" is too vague. "For each module under `docs/modules/`, read its `module-status.md` and any `plan.md` to understand its purpose; add a `## Software architecture` section to `docs/architecture.md` with one entry per module covering purpose, data-concern boundary, constituent features, and inter-module dependencies" is the shape.
+- **Name "no migration needed" explicitly.** If a version has no project-side migration work, write `### Migration` with a single line: `None — no project-side changes required.` Silence is ambiguous; "none" is decisive.
+- **Distinguish mechanical from judgement-required work.** If a step is a direct file edit, say so. If it requires the model to read project content and synthesise (e.g. backfilling a section with content inferred from existing files), say *that* — the operator's self-assessment in `/b-upgrade` depends on knowing where discretion was exercised.
+- **List file references inline.** Migration notes that say "read the schema in `_bower/brief-schema.md`" are fine — that file is now in the project after scaffold. Migration notes that reference files only in the framework repo (not scaffolded) need to inline the content.
+- **Discuss with the user when uncertain.** If a change has subtle migration implications you're not sure about, ask the user before settling on the notes. A bad migration note compounds across every project that runs `/b-upgrade` after this version.
 
-Bower splits documentation into three layers by *audience* and *style*, not by directory. Design-layer docs are narrative and human-primary; operational-layer docs are terse, bulleted, and agent-primary; reference-layer docs are external or vendored material consulted during implementation. Word budgets apply only to operational volatile docs.
+The historical entries (v0.8 through v0.12) use `**Migration notes**` bold paragraphs rather than `### Migration` subheadings; the skill is forgiving about that. Going forward, use the subheading form.
 
-| Document | Layer | Primary audience | Ownership | Style | Budget |
-|---|---|---|---|---|---|
-| `docs/architecture.md` | design | human | co-authored | narrative | — |
-| `docs/design/problem-space.md` | design | human | human-owned | narrative | — |
-| `docs/adr/NNNN-*.md` | design | both | append-only body, mutable status | structured (frontmatter + four sections) | ~600 words |
-| `docs/adr/index.md` | design | both | agent-generated | tables | — |
-| `docs/constitution.md` | design | human | human-owned | narrative | — |
-| `docs/scope.md` | design | human | co-authored | narrative | — |
-| `docs/modules/**/plan.md` | operational | agent | co-authored | terse bullets / tables | — |
-| `docs/modules/**/status.md` | operational | agent | agent-owned | terse bullets | ~150 words |
-| `docs/modules/**/module-status.md` | operational | agent | agent-owned | terse bullets | ~250 words |
-| `docs/index.md` | operational | agent | agent-owned | tables | — |
-| `docs/reference/**` | reference | agent | external/vendored | as-delivered | — |
+## Framework reference (read these before changing framework behaviour)
 
-**Ownership semantics:** *human-owned* docs may be drafted by the agent during full design, but must not be rewritten unprompted afterwards. *Co-authored* docs are agent-updated in place as changes land, human-reviewed and edited freely. *Agent-owned* docs are routinely maintained by the agent. *External/vendored* material is treated as read-only — consult it, don't edit it; refresh by re-vendoring. *ADR bodies* are immutable once accepted — only frontmatter (status, supersession links) is updated; new decisions go in new ADRs.
+- `_bower/rationale.md` — **Why Bower works the way it does.** Design principles, comparisons to alternatives, and the reasoning behind structural choices. Consult before changing framework behaviour so the change stays coherent with the design.
+- `_bower/changes.md` — **Versioned log of framework changes.** Most recent first. Append a new entry for every framework change in the same commit.
+- `_bower/roadmap.md` — **Deferred improvements and their revisit triggers.** Check before proposing new framework work (it may already be deferred with a stated reason); update when deferring something new.
+- `_bower/brief-schema.md` — **Schema the `bower-analyst` subagent emits** and `/b-design` Stage 0 consumes. Touch alongside any change to the analyst, the brief format, or Stage 0.
+- `_bower/framework.md` — **The project-facing guidance** that gets `@`-included into a Bower project's CLAUDE.md. Edit this when changing how Bower projects are *used*, as opposed to how the framework itself is *built*.
+- `_bower/VERSION` — **The canonical framework version.** Single line, the version string only (no `v` prefix). Read by the scaffold script and by `/b-upgrade` in projects. Bump this in the same commit as a `_bower/changes.md` entry; the heading in `_bower/framework.md` is a derived label that should match but is not read by tooling.
 
-## Documentation Structure
+## Repository layout
 
 ```
-docs/
-├── index.md                          # Navigation and project state
-├── scope.md                          # Current scope, non-goals, success criteria
-├── constitution.md                   # Process conventions (reusable)
-├── architecture.md                   # System design: runtime view + `## Software architecture` (per-module boundary rationale); cross-references ADRs
-├── design/                           # Day-1 framing
-│   └── problem-space.md
-├── adr/                              # Architectural Decision Records
-│   ├── index.md                      # Schema reference + decision index (regenerated by /b-index)
-│   └── NNNN-kebab-title.md           # One file per decision; body immutable once accepted
-├── reference/                        # Vendored external docs for lookup (optional)
-└── modules/
-    └── <module-name>/
-        ├── <feature-name>/
-        │   ├── plan.md               # How it works, components, testing, trajectory
-        │   └── status.md             # Resumption snapshot
-        └── module-status.md          # Integration testing notes
+CLAUDE.md                  # This file — contributor-facing
+README.md                  # Public README
+_bower/
+├── framework.md           # Project-facing guidance (the `@`-include target)
+├── project-CLAUDE.md      # Template seeded into new projects
+├── rationale.md           # Design principles (above)
+├── changes.md             # Version log (above)
+├── roadmap.md             # Deferred work (above)
+├── brief-schema.md        # Change-brief schema (above)
+└── VERSION                # Canonical framework version (single line)
+.claude/
+├── agents/                # Subagents (e.g. bower-analyst)
+└── commands/              # Slash-command skills (/b-design, /b-feature, …)
+scripts/
+├── scaffold.sh            # Copies _bower/ + .claude/ into a target project (bash)
+└── scaffold.ps1           # PowerShell equivalent for Windows
+docs/                      # Material for the README / external readers (not a Bower project's docs/)
 ```
 
-## Status Markers
+## Scaffolding a project from this repo
 
-Used in `index.md` and `status.md` files:
+`scripts/scaffold.sh <target-dir>` (or `scripts\scaffold.ps1 <target-dir>` on Windows) copies `_bower/` and the `.claude/` agents and commands into the target. If the target has no `CLAUDE.md`, the script seeds one from `_bower/project-CLAUDE.md`. If it already has one, the script leaves it alone — the assumption is that the project's CLAUDE.md already `@`-includes `_bower/framework.md`, so re-copying `_bower/` is sufficient to upgrade the project to the current framework version.
 
-| Marker | Meaning |
-|--------|---------|
-| ✓ | Complete and stable |
-| 🚧 | In active development |
-| ⏸ | Planned but not started |
-| 🟡 | Complete with known issues |
-| 🔴 | Broken or degraded |
-| 🔧 | Under revision/refactor |
-
-## status.md — Resumption Framing
-
-`status.md` answers one question: *if I picked this up tomorrow, what's the state and what's the next move?* Current state in a short paragraph or bullets; next move explicit; open issues only if they affect resumption. No history, no changelog, no solved-issue residue. Bug backlog belongs in the external tracker, not here. Budget ~150 words — over budget is a signal to compress, not to split.
-
-If any acceptance criterion agreed at the gate has not yet been verified (typically manual checks the user deferred), include a `Pending verification:` line listing those checks. Empty or omitted means fully verified. A feature with pending verification is marked 🚧 in `module-status.md`, not ✓.
-
-## module-status.md — Integration and Build Order
-
-`module-status.md` captures three things: the module-boundary integration test (its location and status), the build order of features within the module, and any free-form integration notes. Build order and the module-integration placeholder are populated during full design (Stage 4) and maintained as features progress.
-
-Module-integration schema:
-
-```markdown
-## Module integration
-
-Test: <path or "not yet defined"> — ✓ | 🚧 | ⏸ | 🟡 | 🔴
-Notes: <one-line behavioural rationale carried forward from Stage 4>
-```
-
-Only `/b-integration` (or `/b-module`'s in-pass integration step) flips this marker. `/b-feature` may refresh `Notes:` when a feature shifts what the integration test will need to assert, but does not touch the marker.
-
-Build-order schema:
-
-```markdown
-## Build order
-
-1. <feature-name> — ✓ | 🚧 | ⏸ | 🟡 | 🔴 | 🔧
-2. <feature-name> — ⏸
-3. <feature-name> — ⏸
-```
-
-Order reflects intra-module dependencies identified at design time. Reorderings should be rare and driven by a genuine plan change, not preference. `/b-feature` and `/b-module` update build-order markers as features complete. Budget ~250 words total.
-
-**Module-level status is a floor, not a sum.** `/b-index` derives a module's status as the worst across both feature markers and the module-integration marker. A module with all features ✓ but `## Module integration` still ⏸ surfaces as 🚧 — making the constitution's verified-for-✓ rule observable rather than aspirational.
-
-## ADRs — Architectural Decision Records
-
-`docs/adr/` is the project's decision log. One file per decision, named `NNNN-kebab-case-title.md` with a zero-padded four-digit ID. IDs are immutable and never reused, even if a decision is later superseded; gaps are fine. ADRs cover any **cross-cutting commitment** — a choice that constrains more than one feature and would surprise a future reader if not written down (technology choices, data-flow patterns, contract decisions, operational constraints). Single-feature implementation detail belongs in that feature's `plan.md`, not in an ADR.
-
-**Frontmatter schema:**
-
-```yaml
----
-id: ADR-NNNN
-title: <Title>
-status: accepted | superseded | deprecated
-date: YYYY-MM-DD
-modules: [<bower-module-name>, ...]   # omit entirely for cross-cutting decisions
-supersedes: [ADR-NNNN, ...]           # omit if empty
-superseded-by: [ADR-NNNN, ...]        # omit if empty
----
-```
-
-`modules` references **exact Bower module names** (the directory names under `docs/modules/`). Omit the field entirely for cross-cutting decisions; do not use sentinels.
-
-**Body:** four sections, in this order, no exceptions — `## Context`, `## Decision`, `## Consequences`, `## Alternatives considered`. A good ADR is 200–600 words. If it's longer than a page, it's probably two decisions.
-
-**Lifecycle rules.** ADR bodies are **immutable once accepted**. Reversals are not edits — write a new ADR with `supersedes: [ADR-NNNN]` and update the old ADR's frontmatter (`status: superseded`, `superseded-by: [ADR-NNNN]`). Both files in one commit. Partial supersession (a new decision scopes an exception to an old one) is handled by writing a new ADR and *not* marking the old one superseded — both remain `accepted`, with the relationship described in the new ADR's body.
-
-**Access pattern.** `docs/adr/index.md` is the canonical entry point — it's the schema reference and the navigable index, regenerated from frontmatter by `/b-index`. Read the index first; open individual ADRs only when one is relevant to the current change. Do not grep frontmatter directly — schema evolution would break searches; the index absorbs that change. Filter by **status: accepted** for "what's true now"; older statuses are historical.
-
-**Code is truth, ADR is hypothesis.** An `accepted` ADR records what the project *decided*, not necessarily what the code currently *does*. Libraries get swapped, flags get removed, decisions drift from reality. If an ADR names a specific library, file, or flag and the current code contradicts it, the ADR is the stale one — flag it and supersede, do not silently trust it. This is the same posture as the memory system's verify-before-relying rule: read ADRs as constraints to confirm, not as ground truth to act on.
-
-**When to write a new ADR.** During `/b-design` Stage 2, every major decision gets an ADR. During `/b-feature` or `/b-module` reconcile, if the change introduced or invalidated a cross-cutting decision, write or supersede an ADR before closing the change. Don't pre-emptively write ADRs for decisions that haven't been made; don't retroactively backfill historical decisions unless the project is migrating from `design-decisions.md`.
-
-## Implementation Trajectory (multi-session features)
-
-Multi-session features maintain an `## Implementation trajectory` section in `plan.md`. As each phase completes, its description is rewritten in place as a one-paragraph précis of *why* that direction was taken — not the steps, which are in git. Current and future phases stay detailed. Single-session features skip the section entirely.
-
-## Reference Material
-
-Two kinds of persistent reference material have a home in Bower:
-
-- **Vendored external docs** (e.g. LLM-friendly framework indexes) live in `docs/reference/`. Create the directory only when needed. Treat contents as read-only; refresh by re-vendoring.
-- **Out-of-tree source references** (e.g. a sibling prototype treated as a behavioural oracle) are pointed to from `docs/constitution.md` under working conventions, with the rationale for the pointer logged as an ADR in `docs/adr/`. The material itself stays where it lives on disk.
-
-Reference material is consulted during implementation but never synthesised into project docs — if insight from it needs to persist, it belongs in `plan.md` or in an ADR, not copied into `docs/reference/`.
-
-## What to Update When
-
-| Change Type | plan.md | status.md | module-status.md | scope.md | index.md | architecture.md | adr/ |
-|-------------|---------|-----------|------------------|----------|----------|-----------------|------|
-| Bug fix | Maybe | Yes | — | — | — | — | — |
-| Feature (existing) | Yes | Yes | Maybe | Maybe | — | — | Maybe |
-| New component | Create | Create | Yes | Maybe | Yes | — | Maybe |
-| New module | Create | Create | Create | Maybe | Yes | Yes | Maybe |
-| Architecture change | Yes | — | Maybe | Maybe | — | Yes | Yes |
-| Scope shift / criterion closed | — | — | — | Yes | — | — | — |
-| Cross-cutting decision changed | — | — | — | — | — | Maybe | Yes |
-
-## Working Conventions
-
-**Before touching any component:** Read its `plan.md` first — it contains purpose, source file locations, and integration points. Don't search the codebase when the map exists.
-
-**Testing:** End-to-end tests for pipelines and workflows, integration tests at module boundaries, unit tests for complex logic. Generate tests alongside implementation when the plan is clear. Project-specific test location, fixtures, runner commands, and verification-required-for-✓ rules live in `docs/constitution.md` — consult it before declaring a feature complete.
-
-**Documentation style:** Design layer is narrative and explains *why*; operational layer is terse bullets and tables. Write for future-you in 6 months. Update docs as part of implementation, not after.
-
-**Literal-command handoffs.** Every command that emits a "next move" — in `status.md`, in handoff blocks, in `/b-recap` output — names the exact slash command the operator should type next. "`Run /b-integration foundation`" — yes. "Write the integration test next" — no. The point is to remove the gap between *knowing what should happen next* and *being able to do it without thinking*. If there is genuinely no next command, the explicit form is `(none — <reason>)`.
-
-## Bower Commands
-
-Design and change:
-
-- `/b-design` — Six-stage design process for new projects and architectural revisions. Stage 0 spawns the `bower-analyst` subagent to produce a **change brief** identifying the per-stage delta; Stages 1–5 execute against the confirmed brief (problem framing → decisions/ADRs → architecture → module/feature plans → scaffolding). Stages with no delta emit "nothing to do" cleanly, so the heavy flow stays proportionate to the actual change. Required for greenfield and for changes that shift architecture, decisions, scope, or module structure.
-- `/b-feature` — The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture: propose → acceptance-criteria → confirm → implement → reconcile. Loads relevant ADRs at propose time; reconcile prompts for ADR creation/supersession when a cross-cutting decision was introduced or invalidated. Redirects back to `/b-design` if the request turns out to need architectural change.
-- `/b-module` — Build all features in a module in one pass, one gate up front, one integration pass at the end. Loads relevant ADRs at propose time; reconcile prompts for ADR creation/supersession at module finalisation. Use when the module is small (≤3–4 features) and well-specified.
-- `/b-integration` — Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the test is the residual, or when a `/b-feature` change shifted what the test must assert.
-- `/b-adr` — Scaffold a new ADR (or supersede an existing one). Auto-increments ID, fills date, prompts for the four body sections. Called from `/b-feature` and `/b-design`; can also be invoked directly when a decision needs recording outside those flows.
-
-Orientation and export:
-
-- `/b-recap` — Read-only, advisory "where am I, what's next?" synthesis across `index.md`, `scope.md`, `module-status.md`, and any in-progress `status.md` files. Never writes.
-- `/b-analysis` — Read-only, advisory. Spawns the `bower-analyst` subagent against a proposed change and prints its **change brief** — what each `/b-design` stage would do if executed, including "nothing to do" outcomes. Same subagent runs at `/b-design` Stage 0; this is an inspection tool for the brief itself.
-- `/b-index` — Regenerate `docs/index.md` and `docs/adr/index.md` from current state.
-- `/b-spec` — Export a single specification document from project documentation, suitable for sharing with stakeholders or other teams.
-
-## Post-MVP Work: When to Use Which
-
-Once the initial design is in place, the bias is toward `/b-feature`. The framework is for lightweight cases — don't reach for design when a change command will do.
-
-- **Use `/b-feature`** for adding a new feature within an existing module (just append to `## Build order`), modifying behaviour of an existing feature, fixing bugs, removing features, and adjusting tests. The build order is a living document, not a Stage-4 contract — appending to it during a `/b-feature` add is normal.
-- **Use `/b-design`** when the change crosses architectural boundaries: introducing a new module, adopting a new technology, fundamentally re-shaping data flow, or expanding scope in a way that warrants re-examining `scope.md` and `architecture.md`. If you're unsure, start with `/b-feature` — its propose-and-confirm gate will redirect to `/b-design` if the request turns out to be bigger than it looked.
-- **Don't run both pre-emptively.** Updating `architecture.md` "just in case" before a feature change is the kind of large-process overhead Bower is meant to avoid. Run `/b-design` only when you actually need design treatment.
-
-Living documentation does the heavy lifting: `/b-feature` updates `plan.md` and the relevant sibling plans in place, so post-MVP docs stay accurate without a separate "documentation pass" between feature work.
-
-## Framework Reference
-
-- `_bower/rationale.md` — Why Bower works this way, design principles, comparison to alternatives
-- `_bower/brief-schema.md` — Schema for the change brief produced by `bower-analyst` and consumed by `/b-design` Stage 0
-- `_bower/roadmap.md` — Deferred framework improvements and their revisit triggers
-- `_bower/changes.md` — Versioned log of framework changes (most recent first)
-
-
-## Project-Specific Code Standards
-
-<!-- Add your project's code standards below this line -->
+The script never touches the target's `docs/`, `.claude/settings.local.json`, or anything outside the framework footprint.

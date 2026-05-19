@@ -6,6 +6,68 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.13 — 2026-05-19
+
+### Per-project version stamp; `/b-upgrade` skill walks migrations against `_bower/changes.md`
+
+**What changed**
+
+- **`_bower/VERSION`** is now the canonical framework version — a single-line file in the framework repo, scaffolded into projects on first install, then owned by `/b-upgrade` in the project. The `# Bower Framework vX.Y` heading in `_bower/framework.md` remains as a human-visible label but tooling reads `VERSION`. Bump both in the same commit when releasing a framework change.
+- **`_bower/SOURCE`** is a new per-project file holding the git URL of the framework repo to clone from when `/b-upgrade` runs. Seeded by the scaffold script from the framework repo's `origin` remote on first install; preserved on subsequent scaffolds so forks/mirrors stay pointed at the right upstream.
+- **`scripts/scaffold.sh` and `scaffold.ps1` updated.** Both now preserve `_bower/VERSION` and `_bower/SOURCE` if they already exist in the target (`VERSION` because the project owns it after first install; `SOURCE` because the project may legitimately point at a fork). Scaffold reads `_bower/VERSION` as the canonical version source, prints the framework's current version, and, when the project was on an older version, prints a hint to run `/b-upgrade` next.
+- **New skill `/b-upgrade`.** Runs in a Bower project. Requires a clean git working tree. Clones the framework repo (URL from `_bower/SOURCE`) into a temp directory, runs the scaffold against the project to refresh `_bower/` and `.claude/`, then walks each intermediate version's migration notes from `_bower/changes.md` in order — one version at a time, gating each step, bumping `_bower/VERSION` after each, optionally committing between steps. Ends with a candid self-assessment paragraph so the operator can decide whether to `git reset --hard` if a step looks wrong. Lives at `.claude/commands/b-upgrade.md`.
+- **Contributor `CLAUDE.md` gains a "Migration-notes authoring discipline" section.** Codifies the convention that each `_bower/changes.md` entry should carry a `### Migration` subheading (or, for legacy entries, the existing `**Migration notes**` paragraph) written for a model audience: self-contained, explicit about files and actions, "none" when there's no work, with judgement-required steps flagged. The discipline is load-bearing because `/b-upgrade` reads one version's notes at a time, often against project state that has drifted from the version the notes were written for.
+- **`_bower/framework.md` gains entries for the new files** (`VERSION`, `SOURCE`) and a Maintenance subsection in the commands list documenting `/b-upgrade`.
+
+**Why**
+
+The framework's adoption is starting to show signs of moving past the original two-or-three users. Even at this scale, manual upgrades — the user hand-running scaffold, then writing a per-version prompt describing the backfill work — are a friction tax that compounds as the version count grows. Worse, they're inconsistent: each project's upgrade is whatever the operator remembered to ask for, with no audit trail of what was actually applied.
+
+A deterministic migration script was ruled out: Bower's artifacts are unstructured prose (`architecture.md` sections, `module-status.md` notes, ADRs) and the migrations are often "read each module's existing content and synthesise a new section." That's exactly the work LLMs do well and deterministic code does badly. The right shape is a model-driven walk with strong guardrails: clean-git precondition (so `git reset --hard` is always a valid escape), one-version-at-a-time stepping (so each migration sees the state the previous step produced), per-step gating (so the operator can abort mid-run), and a candid self-assessment at the end (so the operator has a basis for deciding whether to trust the result).
+
+The walk-versions-sequentially shape mirrors traditional database migrations and addresses the multi-version-jump risk: a project at v0.10 upgrading to v0.13 applies v0.11's notes, then v0.12's, then v0.13's, with VERSION moving step-by-step. This matches the mental model contributors already have when writing migration notes — each note describes the delta from the previous version, not from some arbitrary baseline.
+
+The "artifacts jump to latest, only VERSION moves step-by-step" choice (vs. checking out per-version tags and scaffolding each in turn) keeps the framework lighter — no tag discipline required, no multiple scaffold runs — and is sufficient because migration notes are now expected to be self-contained per version. If a future change makes per-version artifact state matter (e.g. a migration that depends on an old format of a framework file), the tag-based approach is the upgrade path; until then this is unnecessary complexity.
+
+### Migration
+
+For existing Bower projects on v0.12, the upgrade to v0.13 is mechanical:
+
+1. Run `scripts/scaffold.sh <project>` (or `scaffold.ps1`) from the framework repo against the project. The scaffold will refresh `_bower/` and `.claude/`, and — because the project has no `_bower/VERSION` yet — seed `_bower/VERSION` at `0.13` and `_bower/SOURCE` from the framework repo's `origin` remote.
+2. No project files need editing. There is no content backfill for this version — the change is entirely in framework tooling and contributor discipline.
+3. Future upgrades (v0.13 → v0.14 and onwards) will run via `/b-upgrade` in the project rather than manual scaffold. On first use, verify the project's `_bower/SOURCE` points at the framework repo you intend to upgrade from.
+
+For projects on v0.11 or earlier: complete the v0.12 migration first (replace the project's `CLAUDE.md` framework body with `@_bower/framework.md`), then run scaffold once for the combined v0.12 + v0.13 upgrade.
+
+No source code changes required. No changes to ADR schema, design-layer doc formats, or any `/b-*` skill other than the new `/b-upgrade`.
+
+---
+
+## v0.12 — 2026-05-19
+
+### Framework guidance extracted to `_bower/framework.md`; scaffold script added
+
+**What changed**
+
+- **Framework guidance moved out of the project's `CLAUDE.md`.** The body that used to live in a Bower project's `CLAUDE.md` (Core Principles, Navigation, Document Layers, Status Markers, ADR conventions, Commands, etc.) now lives in `_bower/framework.md`. A project's `CLAUDE.md` becomes a thin shim that `@`-includes it, plus a `## Project-Specific Code Standards` section the project owns.
+- **New template seed:** `_bower/project-CLAUDE.md` is the starter `CLAUDE.md` used when scaffolding a new project. It is a template, not a live instruction file in this repo — the scaffold script copies it to `<target>/CLAUDE.md` only when the target has no existing `CLAUDE.md`.
+- **New scaffold script:** `scripts/scaffold.sh <target-dir>` (bash, with `scripts/scaffold.ps1` as a PowerShell equivalent for Windows) copies `_bower/` (excluding `project-CLAUDE.md`) and `.claude/agents/` + `.claude/commands/` into the target. It seeds `CLAUDE.md` only if one doesn't exist; otherwise it leaves the existing one alone. Idempotent — re-running upgrades a project to the current framework version.
+- **The repo-root `CLAUDE.md` is now contributor-facing only.** It instructs the agent that this repo *is* the framework: edit framework files directly, do not invoke `/b-*` skills on this repo, log every change in `_bower/changes.md`. It points to the framework reference files (`rationale.md`, `roadmap.md`, `brief-schema.md`, `changes.md`, `framework.md`) that matter when changing framework behaviour.
+
+**Why**
+
+The project's `CLAUDE.md` was carrying ~200 lines of framework guidance that the user neither wrote nor wanted to maintain — and that buried the *user's* content (project standards, conventions, anything specific to their codebase) at the bottom of a wall of framework text. v0.12 gives `CLAUDE.md` back to the user: their file is now a short, hand-curated document of their own content, with a single `@_bower/framework.md` line pulling in the framework guidance. The framework's bulk lives in `_bower/`, where it belongs — encapsulated, versioned, and refreshable by re-running the scaffold script without ever touching the user's CLAUDE.md.
+
+A secondary benefit: this repo (the framework source) and a Bower project no longer share the same `CLAUDE.md` shape. The repo-root `CLAUDE.md` here is now unambiguously contributor-facing, which removes a recurring source of confusion when working on Bower itself.
+
+**Migration notes (for existing Bower projects)**
+
+1. Replace the framework body of your project's `CLAUDE.md` (everything from the v0.11 `# Bower Framework v0.11` heading down through `## Framework Reference`) with a single line: `@_bower/framework.md`. Keep your project's title heading above it and your `## Project-Specific Code Standards` (or equivalent) below it.
+2. Run `scripts/scaffold.sh <your-project-dir>` from this repo to refresh `_bower/` and the `.claude/` agents and commands. Your CLAUDE.md is preserved because it already exists.
+3. Verify your project's CLAUDE.md now resolves the framework guidance via the include (the `@`-include is relative to the CLAUDE.md's own location, so `@_bower/framework.md` works as long as `_bower/` is a sibling of `CLAUDE.md`).
+
+---
+
 ## v0.11 — 2026-05-18
 
 ### `architecture.md` becomes a two-view document: runtime + software architecture
