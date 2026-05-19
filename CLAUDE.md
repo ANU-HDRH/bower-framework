@@ -39,7 +39,8 @@ CLAUDE.md                  # This file — contributor-facing
 README.md                  # Public README
 _bower/
 ├── framework.md           # Project-facing guidance (the `@`-include target)
-├── project-CLAUDE.md      # Template seeded into new projects
+├── project-CLAUDE.md      # Template seeded into new projects' CLAUDE.md
+├── project-settings.json  # Template seeded into new projects' .claude/settings.json
 ├── rationale.md           # Design principles (above)
 ├── changes.md             # Version log (above)
 ├── roadmap.md             # Deferred work (above)
@@ -56,6 +57,6 @@ docs/                      # Material for the README / external readers (not a B
 
 ## Scaffolding a project from this repo
 
-`scripts/scaffold.sh <target-dir>` (or `scripts\scaffold.ps1 <target-dir>` on Windows) copies `_bower/` and the `.claude/` agents and commands into the target. If the target has no `CLAUDE.md`, the script seeds one from `_bower/project-CLAUDE.md`. If it already has one, the script leaves it alone — the assumption is that the project's CLAUDE.md already `@`-includes `_bower/framework.md`, so re-copying `_bower/` is sufficient to upgrade the project to the current framework version.
+`scripts/scaffold.sh <target-dir>` (or `scripts\scaffold.ps1 <target-dir>` on Windows) copies `_bower/` and the `.claude/` agents and commands into the target. If the target has no `CLAUDE.md`, the script seeds one from `_bower/project-CLAUDE.md`. If it already has one, the script leaves it alone — the assumption is that the project's CLAUDE.md already `@`-includes `_bower/framework.md`, so re-copying `_bower/` is sufficient to upgrade the project to the current framework version. Similarly, if the target has no `.claude/settings.json`, the script seeds one from `_bower/project-settings.json` with safe read-only Bash permission defaults; if it already has one, the script leaves it alone.
 
 The script never touches the target's `docs/`, `.claude/settings.local.json`, or anything outside the framework footprint.

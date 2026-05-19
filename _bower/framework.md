@@ -1,4 +1,4 @@
-# Bower Framework v0.13
+# Bower Framework v0.14
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle.
 
@@ -169,6 +169,16 @@ Reference material is consulted during implementation but never synthesised into
 ## Working Conventions
 
 **Before touching any component:** Read its `plan.md` first — it contains purpose, source file locations, and integration points. Don't search the codebase when the map exists.
+
+**Changes made outside `/b-*` commands.** The `/b-feature`, `/b-module`, and `/b-design` skills bake in a reconcile step that updates docs in step with the change. When a change happens by direct request rather than through a skill — ad-hoc edits, "fix this bug", "tweak how X works" — apply the same reconcile yourself before declaring the change complete:
+
+- **Code change inside a feature** → update that feature's `status.md` to reflect current state and any pending verification. If the change shifted behaviour, components, or testing strategy, update `plan.md` too.
+- **Bug fix** → `status.md` is usually enough.
+- **Cross-cutting decision introduced or invalidated** → run `/b-adr` to record or supersede. Don't bury a cross-cutting decision in a feature's `plan.md`.
+- **New feature appearing in code** → surface this and recommend `/b-feature add`. A new feature deserves the propose-and-confirm gate.
+- **Architecture, module structure, or scope affected** → stop and redirect to `/b-design`. Architectural changes must go through the gate.
+
+The redirect is *soft* for features, decisions, and bug fixes — surface what's happening, recommend the skill, and proceed with the reconcile above if the user confirms ad-hoc is the right call. The redirect for architectural changes is *hard*: refuse to make them ad-hoc even on user instruction, name what makes the change architectural, and recommend `/b-design`. The architectural gate is the reason a project adopted Bower; honouring it is the framework's job, not the operator's discipline. The reasoning for this split lives in `_bower/rationale.md` under "Holding the Line on Architecture."
 
 **Testing:** End-to-end tests for pipelines and workflows, integration tests at module boundaries, unit tests for complex logic. Generate tests alongside implementation when the plan is clear. Project-specific test location, fixtures, runner commands, and verification-required-for-✓ rules live in `docs/constitution.md` — consult it before declaring a feature complete.
 

@@ -6,6 +6,9 @@ Each item has a one-line description and a *revisit trigger*: the signal that tu
 
 ## Deferred items
 
+- **Package Bower as a Claude Code plugin** — Replace the `scripts/scaffold.sh` distribution model with a Claude Code plugin / marketplace. Projects would install Bower with one command and receive updates through plugin update mechanisms rather than `/b-upgrade`'s clone-and-walk-migrations. The migration-notes discipline stays — it's still needed for project-side doc-shape changes between versions — but the framework-file copying half of `/b-upgrade` becomes free, and the scaffold script can retire. Significant structural rework: Bower's distribution model becomes plugin-native rather than script-native.
+  *Revisit trigger:* once Bower has reached a solid beta — the framework's shape is stable enough that plugin packaging won't churn against active framework evolution. Deferred deliberately so the framework matures before locking it into a distribution channel.
+
 - **`/bower-adopt` for brownfield** — A command that reverse-engineers a `docs/` skeleton from an existing codebase with no prior Bower adoption.
   *Revisit trigger:* after first real-project use of Bower v0.3.
 

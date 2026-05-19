@@ -5,24 +5,35 @@
 # Usage: scripts/scaffold.sh <target-dir>
 #
 # Always copies (overwrites):
-#   - _bower/                 (excluding project-CLAUDE.md, VERSION, and SOURCE —
-#                              VERSION is owned by /b-upgrade in the project;
-#                              SOURCE is preserved so forks/mirrors are respected)
+#   - _bower/                 (excluding project-CLAUDE.md, project-settings.json,
+#                              VERSION, and SOURCE — VERSION is owned by /b-upgrade
+#                              in the project; SOURCE is preserved so forks/mirrors
+#                              are respected; the two templates are seeded out, not
+#                              copied in.)
 #   - .claude/agents/         (Bower subagents)
 #   - .claude/commands/       (Bower /b-* slash commands)
 #
 # Conditionally creates:
-#   - <target>/CLAUDE.md      only if the target has no CLAUDE.md, seeded from
-#                             _bower/project-CLAUDE.md.
-#   - <target>/_bower/VERSION only if absent. Holds the framework version this
-#                             project was last migrated to. /b-upgrade in the
-#                             project bumps this step-by-step as migrations apply.
-#   - <target>/_bower/SOURCE  only if absent. Holds the git URL of the framework
-#                             repo to clone from when /b-upgrade runs. Written
-#                             from this repo's `origin` remote.
+#   - <target>/CLAUDE.md             only if the target has no CLAUDE.md, seeded
+#                                    from _bower/project-CLAUDE.md.
+#   - <target>/.claude/settings.json only if absent, seeded from
+#                                    _bower/project-settings.json. Pre-allows
+#                                    safe read-only Bash patterns Bower skills
+#                                    use (find, ls, git status/diff/log/show,
+#                                    rg, grep, wc) to cut permission-prompt
+#                                    friction. The project owns this file
+#                                    afterwards; edit freely.
+#   - <target>/_bower/VERSION        only if absent. Holds the framework version
+#                                    this project was last migrated to.
+#                                    /b-upgrade in the project bumps this
+#                                    step-by-step as migrations apply.
+#   - <target>/_bower/SOURCE         only if absent. Holds the git URL of the
+#                                    framework repo to clone from when
+#                                    /b-upgrade runs. Written from this repo's
+#                                    `origin` remote.
 #
 # Does not touch:
-#   - target's existing CLAUDE.md, _bower/VERSION, _bower/SOURCE
+#   - target's existing CLAUDE.md, .claude/settings.json, _bower/VERSION, _bower/SOURCE
 #   - target's docs/, .claude/settings.local.json, or anything else.
 #
 # Idempotent: re-running upgrades an existing project to the current framework
@@ -51,13 +62,15 @@ if [[ -f "$target/_bower/VERSION" ]]; then
   old_version="$(cat "$target/_bower/VERSION" | tr -d '[:space:]')"
 fi
 
-# 1. _bower/ — copy everything except the project-CLAUDE.md template seed,
-#    VERSION (owned by /b-upgrade), and SOURCE (preserved across upgrades).
+# 1. _bower/ — copy everything except the template seeds (project-CLAUDE.md,
+#    project-settings.json), VERSION (owned by /b-upgrade), and SOURCE
+#    (preserved across upgrades).
 mkdir -p "$target/_bower"
 for f in "$src"/_bower/*; do
   name="$(basename "$f")"
   case "$name" in
     project-CLAUDE.md) continue ;;
+    project-settings.json) continue ;;
     VERSION) continue ;;
     SOURCE)  continue ;;
   esac
@@ -80,14 +93,21 @@ if [[ ! -f "$target/CLAUDE.md" ]]; then
   claude_action="created from _bower/project-CLAUDE.md"
 fi
 
-# 4. _bower/VERSION — seed only if absent. /b-upgrade owns it from then on.
+# 4. .claude/settings.json — seed only if absent. The project owns it after that.
+settings_action="preserved (already exists)"
+if [[ ! -f "$target/.claude/settings.json" ]]; then
+  cp "$src/_bower/project-settings.json" "$target/.claude/settings.json"
+  settings_action="created from _bower/project-settings.json"
+fi
+
+# 5. _bower/VERSION — seed only if absent. /b-upgrade owns it from then on.
 version_action="preserved (already exists, was $old_version)"
 if [[ -z "$old_version" ]]; then
   cp "$src/_bower/VERSION" "$target/_bower/VERSION"
   version_action="created at $framework_version"
 fi
 
-# 5. _bower/SOURCE — seed only if absent. Used by /b-upgrade to find the
+# 6. _bower/SOURCE — seed only if absent. Used by /b-upgrade to find the
 #    framework repo to clone from. Read from this repo's `origin` remote so
 #    forks naturally point projects back at themselves.
 source_action="preserved (already exists)"
@@ -101,12 +121,13 @@ if [[ ! -f "$target/_bower/SOURCE" ]]; then
 fi
 
 echo "Bower v$framework_version → $target"
-echo "  _bower/             refreshed"
-echo "  .claude/agents/     refreshed"
-echo "  .claude/commands/   refreshed"
-echo "  CLAUDE.md           $claude_action"
-echo "  _bower/VERSION      $version_action"
-echo "  _bower/SOURCE       $source_action"
+echo "  _bower/                  refreshed"
+echo "  .claude/agents/          refreshed"
+echo "  .claude/commands/        refreshed"
+echo "  CLAUDE.md                $claude_action"
+echo "  .claude/settings.json    $settings_action"
+echo "  _bower/VERSION           $version_action"
+echo "  _bower/SOURCE            $source_action"
 
 # Hint about /b-upgrade when the project was already on an older version.
 if [[ -n "$old_version" && "$old_version" != "$framework_version" ]]; then

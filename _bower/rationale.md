@@ -71,6 +71,16 @@ The posture toward ADRs is the same as the posture toward memory in Claude Code:
 
 ADR creation is wired into the existing flow rather than relying on operator memory. `/b-design` Stage 2 emits one ADR per major design decision. `/b-feature` reconcile prompts the agent to write a new ADR (or supersede an existing one) whenever the change introduced or invalidated a cross-cutting decision. Without that reconcile-step prompt, the framework would be back to the same failure mode that retired `design-decisions.md`: a doc with no command-driven reason to be touched.
 
+### Holding the Line on Architecture
+
+Bower asks the operator to invest in design discipline — propose-and-confirm gates, ADRs, module boundaries, living documentation. That investment only pays off if the discipline is actually maintained: a project that bypasses `/b-design` whenever the operator is in a hurry rots into the same shape as a project that never used Bower at all.
+
+Most everyday changes (features, bug fixes, decision shifts) can absorb a *soft* redirect. When work happens outside a `/b-*` skill, the agent surfaces what should have happened, applies a best-effort reconcile of the relevant docs, and lets the operator confirm whether to proceed ad-hoc. The operator retains discretion; the framework is opinionated but not coercive.
+
+Architectural changes are different. The reason someone chose Bower over vibe coding is the assurance that architecture won't be made on the fly — that introducing a new module, swapping a technology, or reshaping data flow goes through a gate that surfaces alternatives, considers consequences, and records the rationale. An operator who casually asks "just refactor this into a new module" mid-conversation is, in that moment, side-stepping the very protection they signed up for; they're trusting the framework to remember the discipline they're momentarily setting aside. The redirect here is *hard*: the agent refuses to make the architectural change ad-hoc, names what's architectural about it, and recommends `/b-design`.
+
+The principle is symmetric. Soft where the cost of bypass is small and recoverable; hard where bypass is the failure mode the framework exists to prevent. Apply the same lens when adding new conventions or commands: if breaking the rule sometimes is fine, the redirect is soft; if breaking the rule undoes the framework's premise, the redirect is hard. Most rules sit on the soft side — Bower is a lightweight framework, not a process cage — but the few hard rules earn that status precisely because they protect what the rest of the framework is built around.
+
 ## Roadmap
 
 Deferred framework improvements live in [`_bower/roadmap.md`](./roadmap.md), each with a revisit trigger. Anything named but not yet acted on belongs there, not in active docs.

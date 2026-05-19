@@ -3,24 +3,35 @@
 # Usage: scripts\scaffold.ps1 <target-dir>
 #
 # Always copies (overwrites):
-#   - _bower\                 (excluding project-CLAUDE.md, VERSION, and SOURCE —
-#                              VERSION is owned by /b-upgrade in the project;
-#                              SOURCE is preserved so forks/mirrors are respected)
+#   - _bower\                 (excluding project-CLAUDE.md, project-settings.json,
+#                              VERSION, and SOURCE — VERSION is owned by /b-upgrade
+#                              in the project; SOURCE is preserved so forks/mirrors
+#                              are respected; the two templates are seeded out, not
+#                              copied in.)
 #   - .claude\agents\         (Bower subagents)
 #   - .claude\commands\       (Bower /b-* slash commands)
 #
 # Conditionally creates:
-#   - <target>\CLAUDE.md      only if the target has no CLAUDE.md, seeded from
-#                             _bower\project-CLAUDE.md.
-#   - <target>\_bower\VERSION only if absent. Holds the framework version this
-#                             project was last migrated to. /b-upgrade in the
-#                             project bumps this step-by-step as migrations apply.
-#   - <target>\_bower\SOURCE  only if absent. Holds the git URL of the framework
-#                             repo to clone from when /b-upgrade runs. Written
-#                             from this repo's `origin` remote.
+#   - <target>\CLAUDE.md             only if the target has no CLAUDE.md, seeded
+#                                    from _bower\project-CLAUDE.md.
+#   - <target>\.claude\settings.json only if absent, seeded from
+#                                    _bower\project-settings.json. Pre-allows
+#                                    safe read-only Bash patterns Bower skills
+#                                    use (find, ls, git status/diff/log/show,
+#                                    rg, grep, wc) to cut permission-prompt
+#                                    friction. The project owns this file
+#                                    afterwards; edit freely.
+#   - <target>\_bower\VERSION        only if absent. Holds the framework version
+#                                    this project was last migrated to.
+#                                    /b-upgrade in the project bumps this
+#                                    step-by-step as migrations apply.
+#   - <target>\_bower\SOURCE         only if absent. Holds the git URL of the
+#                                    framework repo to clone from when
+#                                    /b-upgrade runs. Written from this repo's
+#                                    `origin` remote.
 #
 # Does not touch:
-#   - target's existing CLAUDE.md, _bower\VERSION, _bower\SOURCE
+#   - target's existing CLAUDE.md, .claude\settings.json, _bower\VERSION, _bower\SOURCE
 #   - target's docs\, .claude\settings.local.json, or anything else.
 #
 # Idempotent: re-running upgrades an existing project to the current framework
@@ -51,13 +62,14 @@ if (Test-Path -LiteralPath $oldVersionPath) {
     $oldVersion = (Get-Content -LiteralPath $oldVersionPath -Raw).Trim()
 }
 
-# 1. _bower\ — copy everything except project-CLAUDE.md, VERSION, SOURCE.
+# 1. _bower\ — copy everything except template seeds (project-CLAUDE.md,
+#    project-settings.json), VERSION, and SOURCE.
 $bowerDst = Join-Path $Target '_bower'
 if (-not (Test-Path -LiteralPath $bowerDst)) {
     New-Item -ItemType Directory -Path $bowerDst | Out-Null
 }
 Get-ChildItem -LiteralPath (Join-Path $src '_bower') -Force | Where-Object {
-    $_.Name -notin @('project-CLAUDE.md', 'VERSION', 'SOURCE')
+    $_.Name -notin @('project-CLAUDE.md', 'project-settings.json', 'VERSION', 'SOURCE')
 } | ForEach-Object {
     Copy-Item -LiteralPath $_.FullName -Destination $bowerDst -Recurse -Force
 }
@@ -87,7 +99,16 @@ if (Test-Path -LiteralPath $claudeMd) {
     $claudeAction = 'created from _bower\project-CLAUDE.md'
 }
 
-# 4. _bower\VERSION — seed only if absent. /b-upgrade owns it from then on.
+# 4. .claude\settings.json — seed only if absent. The project owns it after that.
+$settingsPath = Join-Path $claudeDst 'settings.json'
+if (Test-Path -LiteralPath $settingsPath) {
+    $settingsAction = 'preserved (already exists)'
+} else {
+    Copy-Item -LiteralPath (Join-Path $src '_bower\project-settings.json') -Destination $settingsPath
+    $settingsAction = 'created from _bower\project-settings.json'
+}
+
+# 5. _bower\VERSION — seed only if absent. /b-upgrade owns it from then on.
 if ([string]::IsNullOrEmpty($oldVersion)) {
     Copy-Item -LiteralPath (Join-Path $src '_bower\VERSION') -Destination $oldVersionPath
     $versionAction = "created at $frameworkVersion"
@@ -95,7 +116,7 @@ if ([string]::IsNullOrEmpty($oldVersion)) {
     $versionAction = "preserved (already exists, was $oldVersion)"
 }
 
-# 5. _bower\SOURCE — seed only if absent.
+# 6. _bower\SOURCE — seed only if absent.
 $sourcePath = Join-Path $Target '_bower\SOURCE'
 if (Test-Path -LiteralPath $sourcePath) {
     $sourceAction = 'preserved (already exists)'
@@ -115,12 +136,13 @@ if (Test-Path -LiteralPath $sourcePath) {
 }
 
 Write-Host "Bower v$frameworkVersion -> $Target"
-Write-Host "  _bower\             refreshed"
-Write-Host "  .claude\agents\     refreshed"
-Write-Host "  .claude\commands\   refreshed"
-Write-Host "  CLAUDE.md           $claudeAction"
-Write-Host "  _bower\VERSION      $versionAction"
-Write-Host "  _bower\SOURCE       $sourceAction"
+Write-Host "  _bower\                  refreshed"
+Write-Host "  .claude\agents\          refreshed"
+Write-Host "  .claude\commands\        refreshed"
+Write-Host "  CLAUDE.md                $claudeAction"
+Write-Host "  .claude\settings.json    $settingsAction"
+Write-Host "  _bower\VERSION           $versionAction"
+Write-Host "  _bower\SOURCE            $sourceAction"
 
 if ($oldVersion -and $oldVersion -ne $frameworkVersion) {
     Write-Host ''

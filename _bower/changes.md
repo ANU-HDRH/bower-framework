@@ -6,6 +6,46 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.14 — 2026-05-19
+
+### Ad-hoc reconcile convention; "Holding the Line on Architecture" principle; default `.claude/settings.json`
+
+**What changed**
+
+- **`_bower/framework.md` gains a new Working Convention: "Changes made outside `/b-*` commands."** Mirrors the existing "Before touching any component" rule as its *after* counterpart. When a change happens by direct request rather than through a `/b-*` skill, the agent applies the same reconcile the skill would have applied — `status.md` for code changes, `plan.md` for behavioural shifts, `/b-adr` for cross-cutting decisions, redirect to `/b-feature add` for new features, redirect to `/b-design` for architectural changes. The redirect is *soft* (operator may confirm "just do it") for features, decisions, and bug fixes; *hard* for architectural changes, where the agent refuses ad-hoc work and recommends `/b-design` regardless of operator instruction.
+- **`_bower/rationale.md` gains a new Core Principle: "Holding the Line on Architecture."** Names the soft/hard distinction as a framework-wide principle and gives the lens for future judgement calls: soft where bypass is small and recoverable, hard where bypass is the failure mode the framework exists to prevent. Architectural changes earn the hard line because the architectural gate is the reason a project adopted Bower over vibe coding.
+- **New template `_bower/project-settings.json`.** Default `.claude/settings.json` seeded into new projects with safe read-only Bash permissions Bower skills routinely use (`find docs:*`, `find _bower:*`, `find .claude:*`, `ls:*`, `git status:*`, `git diff:*`, `git log:*`, `git show:*`, `git branch:*`, `rg:*`, `grep:*`, `wc:*`). Cuts permission-prompt friction during normal Bower work without granting any write or destructive permissions.
+- **Scaffold scripts updated.** `scripts/scaffold.sh` and `scripts/scaffold.ps1` now seed `<target>/.claude/settings.json` from `_bower/project-settings.json` if absent. Preserved on subsequent scaffolds — the project owns the file once seeded. The template file is excluded from the routine `_bower/` refresh (sibling of `project-CLAUDE.md`'s exclusion).
+- **New roadmap item: "Package Bower as a Claude Code plugin."** Plugin-based distribution would replace the scaffold-script model and let plugin updates absorb the framework-file-copying half of `/b-upgrade`. Deferred until Bower reaches solid beta — packaging into a fixed distribution channel before the framework's shape settles would churn the package against framework evolution. Trigger to revisit: solid beta.
+
+**Why**
+
+The trigger was reading Anthropic's *Claude Code in Large Codebases* guidance and comparing it line-by-line against Bower. Three of its recommendations had a genuine fit with Bower's small-project remit: shared `.claude/settings.json` permissions (cuts daily friction), a session-level mechanism to reconcile docs when work happens outside structured commands, and plugin packaging for distribution. The fourth — `.claudeignore` — was dropped after consideration: Claude Code already respects `.gitignore`, so the case for shipping a default exclusion list in Bower projects (which are typically small and clean) is thin.
+
+The reconcile convention is the centrepiece. Bower's discipline lives in the `/b-*` skills, but operators often work conversationally — "fix this bug", "tweak X" — without invoking a skill. Without a convention, those changes leave `status.md` and `plan.md` to rot; with one, the agent applies the same reconcile inline. A hook-based mechanism was considered and rejected: hooks fire every turn and would either be noisy (firing mid-flow) or require ad-hoc detection of "is this a real handoff?" — both fragile. Putting the reconcile into framework guidance and trusting the model is more Bower-shaped: the rest of the framework is instruction-driven, not mechanism-driven, and the after-rule symmetric-pairs cleanly with the existing "Before touching any component" before-rule.
+
+The soft/hard distinction was the substantive design question. Architecture is what Bower exists to protect: the propose-and-confirm gate of `/b-design`, the ADR record of why a decision was made, the module-boundary discipline. An operator who casually asks for an architectural change mid-conversation is, in that moment, side-stepping the very protection they signed up for. A *soft* redirect there would defeat the purpose; a *hard* redirect — the agent refuses ad-hoc and recommends `/b-design` — is the framework keeping faith with the discipline the operator chose. For everyday changes, where bypass is small and recoverable, soft is right: opinionated but not coercive. Naming the principle in `rationale.md` makes the lens explicit so future framework decisions about "should this be soft or hard?" have something to reflect on.
+
+The default `settings.json` is the smallest of the three changes but earns its place by being friction reduction with no downside. Read-only patterns; no destructive permissions; the project owns the file after first scaffold and can edit freely. Existing projects with a settings.json keep it; new projects get the defaults out of the box.
+
+### Migration
+
+For projects on v0.13 upgrading to v0.14:
+
+1. Re-run the scaffold script against the project (`scripts/scaffold.sh <project>` or `scripts\scaffold.ps1 <project>` from the framework repo). This refreshes `_bower/framework.md` (with the new "Changes made outside `/b-*` commands" working convention) and `_bower/rationale.md` (with the "Holding the Line on Architecture" Core Principle). The agent picks up the new guidance on the next session.
+
+2. **If the project has no `.claude/settings.json`:** the scaffold will create one from `_bower/project-settings.json` with safe read-only Bash defaults. No further action.
+
+3. **If the project already has `.claude/settings.json`:** the scaffold preserves it. To pick up Bower's read-only defaults, open `_bower/project-settings.json` (now present in the project after scaffold) and merge any of its `permissions.allow` entries that aren't already in the project's `settings.json`. The entries are namespaced enough (`find docs:*`, `git diff:*`, etc.) that conflict with project-specific permissions is unlikely; merge is additive. This is a one-time manual step. Mechanical, no judgement required.
+
+4. **No content backfill required.** No existing project files need editing for the framework-guidance changes; the new working convention and rationale principle are read by the agent going forward. No ADR schema change, no doc-shape change.
+
+5. **No source code changes required.**
+
+After step 1, the project's `_bower/VERSION` will be at `0.14`. Verify by reading it.
+
+---
+
 ## v0.13 — 2026-05-19
 
 ### Per-project version stamp; `/b-upgrade` skill walks migrations against `_bower/changes.md`
