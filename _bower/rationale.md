@@ -10,6 +10,24 @@ The pattern optimises for:
 - Rapid iteration without sacrificing maintainability
 - AI agents that need to discover context efficiently
 
+## Two Axes Shape the Trade-offs
+
+Bower's choices navigate two axes that pull in different directions:
+
+- **Specifications sufficient for maintenance.** Enough documentation that someone — human or agent — could rebuild the system or take over its maintenance without the original engineer's tacit knowledge. The operational form of this is the rebuild test: hand someone `docs/` and no code, could they reproduce a recognisable version of the system? Each design-layer doc earns its place because removing it breaks that test.
+- **Developer experience for an indy-style research engineer.** Velocity-first, minimal ceremony, deliberate redirects rather than process cages. The framework is opinionated about what to do but light about how to do it. Friction is paid only where it protects something genuinely worth protecting.
+
+These pull against each other. Maximal specs at every gate would yield a maintainable but unusable framework; maximal DX with no specs would be vibe coding. Every significant Bower choice sits somewhere on the spectrum between them, and naming where each choice sits is part of the design discipline.
+
+A few visible examples of where the trade-off has been resolved:
+
+- The **architectural hard-redirect** favours specs absolutely: `/b-design` is required for architectural changes regardless of operator instruction, because architectural drift is the failure mode Bower exists to prevent.
+- **`/b-feature`'s propose-confirm-reconcile gate** sits in the middle: a small ceremony is paid in exchange for durable documentation of feature changes and a recorded acceptance contract.
+- **UI's three-path model** (see [`framework.md`](./framework.md) → *UI Changes — Paths and the Gate*) favours DX for the everyday case: ad-hoc visual and well-specified structural changes skip the gate, and only structural-and-underspecified changes invoke `/b-ui`. The protection that remains is the architectural hard-redirect.
+- **Living documentation** serves both axes: temporal docs are a tax on maintenance (the agent reads contradictory phase-N artifacts) and on DX (the engineer writes them); a single current-state doc is cheaper to maintain and clearer to read.
+
+When proposing new framework conventions, name which axis the convention favours and what's being traded. Anything that costs both axes is unlikely to earn its keep.
+
 ## Core Principles
 
 ### Planning Before Building
@@ -81,6 +99,24 @@ Architectural changes are different. The reason someone chose Bower over vibe co
 
 The principle is symmetric. Soft where the cost of bypass is small and recoverable; hard where bypass is the failure mode the framework exists to prevent. Apply the same lens when adding new conventions or commands: if breaking the rule sometimes is fine, the redirect is soft; if breaking the rule undoes the framework's premise, the redirect is hard. Most rules sit on the soft side — Bower is a lightweight framework, not a process cage — but the few hard rules earn that status precisely because they protect what the rest of the framework is built around.
 
+### Surfaces of Specification
+
+The set of design-layer docs — `architecture.md`, ADRs, `scope.md`, `constitution.md`, `problem-space.md` — earns its keep by passing the rebuild test: someone with `docs/` and no code could reproduce a recognisable version of the system. Architecture covers topology and module decomposition, ADRs cover decision rationale, scope covers what's in, constitution covers conventions, problem-space covers framing. Each is load-bearing because removing it breaks the rebuild.
+
+Run that test on a project with an interface — web frontend, TUI, desktop GUI, mobile, or otherwise — and the gap becomes visible: the docs name the features but not the *experience surface* — no navigation map, no layout grammar, no inventory of screens, no interaction patterns. Someone rebuilding from docs alone would produce a different app that happened to satisfy the feature list. The features pass the rebuild test; the UI fails it.
+
+`docs/ui.md` exists to close that gap. It is design-layer, co-authored, narrative-and-list, with the same disposition as `architecture.md` but covering a different axis: architecture describes the *runtime / code* view, ui.md describes the *experience* view. The two are orthogonal — a single UI module in `architecture.md` can host ten screens with a complex navigation; the views explain different things. They sit alongside, not nested.
+
+Three choices distinguish the surface:
+
+**Invariants, not pixels.** Pixel-level UI changes every commit; a doc at that granularity is a maintenance tax nobody pays and the agent stops trusting. `ui.md` records what stays stable: navigation, layout grammar, interaction patterns, visual-language pointers. Code remains the truth at the pixel level — same posture as the *code is truth, ADR is hypothesis* rule applied to a different surface.
+
+**Rapid paths are the default; the skill is for branching choices.** UI iteration is exploratory in a way feature work usually isn't — operators often discover the right answer by trying, not by designing it up front. The framework leans into that with the three-path model in [`framework.md`](./framework.md): non-structural changes happen ad-hoc with no doc impact, structural-but-specified changes happen ad-hoc and reconcile `ui.md`, and structural-and-underspecified changes invoke `/b-ui` for propose-with-alternatives. The gate sits at the moment commitment to options is being made, not at every UI tweak. Structural-ness alone does not warrant a gate; *branching choices* do.
+
+**Lazy creation.** `docs/ui.md` does not exist in projects without a UI, and is not scaffolded eagerly even in projects that will have one. The first structural UI change creates it with whatever sections are relevant; the doc grows as the UI grows. This avoids the failure mode that retired `design-decisions.md`: a doc with no command-driven reason to be touched. Here the reason is built in — every path 2 or path 3 change reconciles it.
+
+The DX trade-off here is sharp and visible. Path 1 and Path 2 are fast because they skip the gate; the cost is that bad iterations are recovered by `git`, not by an in-tool undo. That's a deliberate position on the *DX vs specs* axis named in the introduction: speed is favoured for the everyday case, with the architectural hard-redirect and the no-ad-hoc-cross-cutting-decisions rule remaining as the only behavioural guards. Out-of-band UI chat is, by design, cheaper than out-of-band feature chat — read that as the point, not as a hole.
+
 ## Roadmap
 
 Deferred framework improvements live in [`_bower/roadmap.md`](./roadmap.md), each with a revisit trigger. Anything named but not yet acted on belongs there, not in active docs.
@@ -122,6 +158,7 @@ Process knowledge lives in commands, not documents the agent has to interpret:
 
 - **`/b-design`** — Six-stage design process for new projects and architectural revisions. Stage 0 spawns the `bower-analyst` subagent to produce a **change brief**; Stages 1–5 execute against the confirmed brief, with stages of no delta emitting "nothing to do" cleanly. Emits one ADR per Stage 2 `new`/`supersedes`/`partial-supersedes` operation.
 - **`/b-feature`** — Everyday change command (add / modify / remove) with one gate before implementation; loads relevant ADRs at propose time and reconciles decision drift before close
+- **`/b-ui`** — Gated path for structural-and-underspecified UI changes; mirrors `/b-feature`'s shape but tuned for the experience surface and reconciles against `docs/ui.md`. Most UI work skips the skill — the framework's three-path model covers ad-hoc visual and well-specified structural changes
 - **`/b-module`** — Build a whole module in one pass when it's small and well-specified
 - **`/b-integration`** — Build the module-boundary integration test
 - **`/b-adr`** — Scaffold a new ADR (or supersede an existing one); called from `/b-feature` and `/b-design`, or directly when needed

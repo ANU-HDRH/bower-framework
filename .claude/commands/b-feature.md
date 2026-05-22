@@ -10,7 +10,14 @@ This command covers three intents:
 
 The shape is the same across all three: read context → propose → gate → implement → reconcile → update docs. The differences show up in *which* files you read in Step 1 and *which* docs you update in Step 5; those branches are called out where they apply.
 
-If the change requires architectural revision (new module, new technology, scope expansion) recommend `/b-design` instead — see the constraint at the bottom of this file.
+<intent_redirects>
+Before proceeding, check whether this request is actually for this skill:
+
+- **Architectural revision** (new module, new technology, scope expansion) → recommend `/b-design`. **Hard** redirect — see the constraint at the bottom of this file.
+- **Pure experience-surface change** (navigation, screen composition, layout grammar, interaction patterns) → recommend `/b-ui` for branching choices, or the appropriate ad-hoc path in `_bower/framework.md` → *UI Changes — Paths and the Gate*. **Soft** redirect.
+
+Backend feature work and small under-the-hood code changes belong here. **Mixed work stays here** — a feature that includes backend (model, API, controller) plus UI scaffolding (a new screen, components) runs in `/b-feature` and reconciles `docs/ui.md` in Step 5 alongside the feature's `plan.md`. Pure-UI work routes out; mixed work stays.
+</intent_redirects>
 
 The user's description of what they want to change: $ARGUMENTS
 
@@ -27,10 +34,13 @@ The user's description of what they want to change: $ARGUMENTS
 1. Read `docs/index.md` to understand project structure
 2. Read `docs/architecture.md` for system context
 3. Read `docs/scope.md` to understand current scope, non-goals, and success-criteria state
-4. Read the plan.md and status.md of any components likely affected
-5. Read the `module-status.md` of the affected module (if it exists) — check the `## Build order` section and the `## Module integration` `Notes:`
-6. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) list the affected module(s) under `modules`, (b) have no `modules` field at all (cross-cutting), or (c) have a title topically relevant to the change — e.g. an ADR about caching strategy when the change touches a cache, even if it's filed under another module. Open and read each. These are the constraints the proposal must respect or explicitly contradict. Skip if no `docs/adr/` exists.
-7. Read relevant source code to understand current implementation
+4. Read `docs/ui.md` if it exists — needed when the change touches a screen, adds UI scaffolding for a new feature, or has any chance of shifting navigation, layout grammar, or interaction patterns. Even backend-heavy work often introduces a screen as scaffolding; the experience surface needs to reconcile in Step 5.
+5. Read the plan.md and status.md of any components likely affected
+6. Read the `module-status.md` of the affected module (if it exists) — check the `## Build order` section and the `## Module integration` `Notes:`
+7. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) list the affected module(s) under `modules`, (b) have no `modules` field at all (cross-cutting), or (c) have a title topically relevant to the change — e.g. an ADR about caching strategy when the change touches a cache, even if it's filed under another module. Open and read each. These are the constraints the proposal must respect or explicitly contradict. Skip if no `docs/adr/` exists.
+8. Read relevant source code to understand current implementation
+
+**Intent re-check.** After reading, ask once: is this work primarily on the experience surface (navigation, screens, interaction patterns, layout, copy) with at most incidental backend? If yes, stop and recommend `/b-ui` for branching choices or the ad-hoc path described in `_bower/framework.md`. Mixed work (backend + UI scaffolding for a new feature) stays here; pure-UI work routes out. The intro redirect handles the obvious cases; this re-check catches the ones that become clear only after reading.
 
 **ADR posture.** Treat accepted ADRs as constraints to confirm against current code, not as ground truth. If an ADR names a specific library, file, or flag and the code contradicts it, the ADR is the stale one — flag it in the proposal so the gate can decide whether to supersede. Do not silently rely on a stale ADR.
 
@@ -49,6 +59,7 @@ Prepare a proposal covering:
   - **Source:** integration points and any callers / consumers of changed behaviour
   - **Tests:** which existing tests need updating or removing; which new tests are needed
   - **Docs:** **list each `plan.md` that needs updating by path** (the one for this feature, plus any sibling features whose plans reference behaviour you're changing or removing). Don't bury this under "documentation" — name the files.
+  - **UI:** if the change introduces, removes, or restructures any screen/view/component, name which sections of `docs/ui.md` will be created or updated (navigation, screens, layout grammar, interaction patterns, visual language). If `docs/ui.md` does not yet exist and the change introduces UI, this is the first UI in the project — Step 5 will create the file with the sections this change requires. Write `none` if the change is pure under-the-hood code.
   - **Module integration:** does this shift what the module's integration test must assert? If yes, the test itself likely needs updating — flag it here so the Step 5 `Next move:` can point to `/b-integration <module>`.
 - **Scope impact:** Does this change scope, non-goals, or close a success criterion in `scope.md`?
 - **Decision impact:** List any accepted ADR loaded in Step 1 that this change *touches* — i.e. the change either confirms it (no action needed), contradicts it (must supersede), narrows it (partial-supersession ADR), or surfaces it as drifted from the code (the ADR is stale and should be superseded). If no ADRs are touched, write `none`. Also note if this change introduces a new cross-cutting decision that does not yet have an ADR — flag it here so the reconcile step can write one.
@@ -131,7 +142,11 @@ The exact set of documents to touch depends on the intent. Common to all intents
 
 **All intents:**
 
-6. Rewrite this feature's `status.md` from scratch as a **resumption snapshot** — current state, next move. ≤150 words. Do not append to the previous contents. If any criteria are still PENDING USER, include a `Pending verification:` line listing them. (Skip this for remove — the file is gone; resumption guidance lives in the next-move handoff below.)
+6. **`docs/ui.md`** — if Step 2's Impact section listed UI sections to update, reconcile now:
+   - If `docs/ui.md` exists, update affected sections to reflect the new state (current-state doc, not history).
+   - If it does not exist *and* this change introduced UI (the project's first interface scaffolding), create `docs/ui.md` with only the sections this change requires. Stay at invariant-level: navigation map, screen inventory, layout grammar, interaction patterns, visual-language pointers. Pixel-level detail belongs in code, not the doc.
+   - If Step 2 listed UI impact as `none`, skip.
+7. Rewrite this feature's `status.md` from scratch as a **resumption snapshot** — current state, next move. ≤150 words. Do not append to the previous contents. If any criteria are still PENDING USER, include a `Pending verification:` line listing them. (Skip this for remove — the file is gone; resumption guidance lives in the next-move handoff below.)
 
    The `Next move:` line is **a literal slash command, not prose**. Pick exactly one of:
 
@@ -142,9 +157,9 @@ The exact set of documents to touch depends on the intent. Common to all intents
    - `Run /b-recap` — if next steps depend on user judgement and you want them to orient.
    - `(none — change complete and no further action required)` — only when the project is genuinely done.
 
-7. Update `scope.md` if the change shifted scope, changed non-goals, or closed a success criterion.
-8. Update `module-status.md`: update the `## Build order` marker for this feature. Use ✓ only if all criteria are PASS; use 🚧 if manual checks remain PENDING USER; use 🟡 or 🔴 if something is broken. Do **not** flip the `## Module integration` marker here — that belongs to `/b-integration`.
-9. Run `/b-index` or update `docs/index.md` if module status markers changed.
+8. Update `scope.md` if the change shifted scope, changed non-goals, or closed a success criterion.
+9. Update `module-status.md`: update the `## Build order` marker for this feature. Use ✓ only if all criteria are PASS; use 🚧 if manual checks remain PENDING USER; use 🟡 or 🔴 if something is broken. Do **not** flip the `## Module integration` marker here — that belongs to `/b-integration`.
+10. Run `/b-index` or update `docs/index.md` if module status markers changed.
 
 If during implementation you discover the approach needs to change significantly, stop and consult the user again via AskUserQuestion before continuing.
 

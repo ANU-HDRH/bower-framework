@@ -6,6 +6,95 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.15 — 2026-05-22
+
+### Experience surface: `docs/ui.md` and `/b-ui`; rapid UI iteration as a first-class path
+
+**What changed**
+
+- **New design-layer document `docs/ui.md`.** Top-tier doc, sibling of `architecture.md`, describing the *experience surface* — navigation map, screen inventory, layout grammar, interaction patterns, visual-language pointers. Co-authored, narrative-and-list style, captures invariants rather than pixels. Lazy: exists only when the project has UI work to record.
+- **New skill `/b-ui`.** Gated path for *structural and underspecified* UI changes. Mirrors `/b-feature`'s propose-confirm-implement-reconcile spine but is tuned for the experience surface: lighter reading list, proposal includes at least two alternatives where branching choices are real, mock-up-or-description rather than component/caller/contract analysis. Reconciles against `docs/ui.md` and any affected feature plans. Lives at `.claude/commands/b-ui.md`.
+- **`_bower/framework.md` gains a new "UI Changes — Paths and the Gate" section.** Names the three-path model: (1) non-structural changes happen ad-hoc with no doc impact; (2) structural-but-tightly-specified changes happen ad-hoc and reconcile `docs/ui.md`; (3) structural-and-underspecified changes invoke `/b-ui`. The gate sits at the moment commitment to branching options is being made, not at structural-ness alone. Architectural changes remain hard-redirected to `/b-design`. The section also documents the commit-discipline assumption: rapid path-1/path-2 work assumes a clean working tree so `git` is the undo button.
+- **`_bower/rationale.md` gains a new Core Principle: "Surfaces of Specification."** Frames `docs/ui.md` against the rebuild test ("could someone with docs and no code reproduce a recognisable version of the system?"), explains why pixel-level capture would rot, why the rapid default is deliberate DX, and why the gate sits at branching choices rather than at structural-ness.
+- **`_bower/rationale.md` gains a new top-level section: "Two Axes Shape the Trade-offs."** Names the axes — *specifications sufficient for maintenance* and *DX for an indy-style research engineer* — and the discipline of stating where each significant Bower choice sits on the spectrum between them. Future framework decisions inherit this lens.
+- **`_bower/framework.md` "What to Update When" table extended** with `ui.md` as a column and rows for "UI change (structural)" and "UI change (visual only)."
+- **`.claude/commands/b-feature.md` gains an `<intent_redirects>` block, an intent re-check after Step 1, a UI sub-bullet in Step 2 Impact, and a `docs/ui.md` reconcile in Step 5.** The intro redirect now wraps architectural (hard) and experience-surface (soft) cases as parallel scoped checks the model can find. The intent re-check after the reading list catches UI-heavy work that becomes clear only after reading affected `plan.md` files. The Step 2 Impact UI sub-bullet names which `docs/ui.md` sections will be touched (or `none`). Step 5 reconciles `docs/ui.md` — including creating it when this change introduced the first UI in the project. Mixed work (backend + UI scaffolding for a new feature) stays in `/b-feature`; pure-UI work routes to `/b-ui` or ad-hoc.
+- **`.claude/commands/b-design.md` Stage 3 reads `docs/ui.md` on revisions.** Architectural revisions in projects with an interface often shift logic-UI interactions (routing, state, data flow into and out of screens); the existing experience surface is the constraint those edits have to respect. Greenfield is unchanged — `docs/ui.md` is still created lazily on the first path-2 or path-3 change.
+- **`.claude/commands/b-ui.md` Important Behavioural Rules gains scoped tag blocks.** `<lighter_path_check>` wraps the "is this skill the right shape?" judgement and adds the "specific shape vs only a goal" anchor. `<branching_judgment>` near Step 2 anchors the alternatives-required call by the same anchor and warns against inventing alternatives just to fill the gate. Step 4 gains a manual-check framing template: state what changed visually, name one or two specific things to look at, *then* ask via AskUserQuestion — compensates for the absence of screenshot tooling.
+- **`_bower/framework.md` "UI Changes — Paths and the Gate" gains scoped tag blocks for the model.** `<path_decision>` wraps the three-question procedural test (is this UI? structural? well-specified?) and the 2x2 matrix in one place the model can find. `<path_examples>` lists ~12 concrete request→path mappings as anchors for the structural and well-specified judgements. `<commit_discipline>` replaces the vague clean-tree paragraph with an operational test (check `git status` before non-trivial Path 1 or Path 2 bursts; surface once if dirty and unrelated; "non-trivial" = touches multiple files / includes deletions or renames / can't describe rollback in one sentence).
+- **`_bower/framework.md` "Changes made outside `/b-*` commands" list gains three UI rows.** The ad-hoc reconcile list is where the model looks for guidance when no slash command is typed; UI is now a first-class entry there, with rows for visual-only (no doc), structural-and-specified (reconcile `docs/ui.md`), and structural-with-branching-choices (soft-redirect to `/b-ui`). The "UI Changes — Paths and the Gate" section below it remains the explainer; this list is the operational hook.
+- **`.claude/commands/b-index.md` reads `docs/ui.md` (not just check for existence)** so the index link can carry a brief description (the file's leading summary if present, otherwise the canonical "Experience surface (navigation, screens, interaction patterns)"). Parallel to how `architecture.md` is scanned for the system overview. The link is also included in `docs/index.md`'s Core System section when the file exists.
+- **`_bower/framework.md` "What to Update When" `UI change (visual only)` row** is annotated `— no doc update; git is the undo` in the change-type column so the all-dashes row reads as intentional rather than missing data.
+- **`README.md`** gains a brief UI/UX section for external readers, the commands table picks up the `/b-ui` row, and the repository-structure listing names `b-ui.md`.
+- **Two new roadmap items added.** *Interface-observation tooling wired into `/b-ui`* — graceful-enhancement integration of an observation tool (e.g. `chrome-devtools-mcp` for web) into `/b-ui` Step 4, so the screenshot-before-confirm replaces today's "go look at it yourself" manual check when the tool is available. *Living invariants for `ui.md` via test harness* — treating invariants written in `docs/ui.md` (modals trap focus, destructive actions are undoable, etc.) as testable contracts asserted by Playwright / Textual / equivalent. Both deferred pending real-project pain: the first is cheap but not worth pre-emptive work, the second is project-specific and likely belongs in `constitution.md` rather than as a framework default.
+
+**Why**
+
+The trigger was real-project observation while scaffolding the next major Bower-based build-out. Bower's discipline works cleanly for backend and architectural work, but the framework had nothing tuned to offer when work shifted to UI iteration. `/b-feature`'s propose-confirm-implement-reconcile cycle is too heavy for "move the icon left a bit" and the wrong shape for "what should this navigation feel like?" — UI iteration is often exploratory rather than committal. A junior engineer using Bower in this regime independently wrote a UI-specific skill to fill the gap; the dissatisfaction was structural, not ergonomic.
+
+Diagnosis split into two gaps:
+
+1. **No doc-of-record for the experience surface.** The existing design-layer docs collectively pass the rebuild test for the backend ("could someone with docs but no code rebuild this?") but fail it for the UI — there's no surface that captures navigation, layout grammar, or interaction patterns at a level that stays stable enough to be useful.
+2. **No graduated path for UI work.** The framework offered the architectural hard-redirect (rare) and `/b-feature`'s soft gate (heavy). UI work spans a range — from "move the icon" to "introduce tab navigation" to "redesign the nav system" — and a single gated path serves none of them well.
+
+`docs/ui.md` closes the first gap; the three-path model closes the second. `/b-ui` is deliberately narrower than `/b-feature`: it covers only the structural-and-underspecified subset, which is the case where propose-with-alternatives genuinely pays for itself. Paths 1 and 2 leave the rapid UI iteration loop unobstructed — the agent makes the change, reconciles the doc if structural, moves on. The architectural hard-redirect remains intact; ADR-worthy cross-cutting decisions still get reconciled. What's lifted is the proposal-and-acceptance ceremony for changes that don't warrant it.
+
+The trade-off framing in `rationale.md` is the meta-contribution. Naming the two axes — specs-sufficient-for-maintenance vs DX-for-an-indy-research-engineer — and stating that each significant Bower choice sits visibly on that spectrum makes the design coherent. The UI section sits visibly on the DX side, deliberately; the architectural redirect sits visibly on the specs side; `/b-feature`'s gate sits in the middle. Future framework decisions get the same lens.
+
+A few alternatives considered and ruled out:
+
+- **Extending `scope.md`** to cover the experience surface. Rejected on update-cadence and audience grounds: scope changes when the product roadmap shifts (rare, human-led); a UI surface changes whenever the interface evolves (frequent, agent-led). Co-habiting would either cause noisy scope churn or quiet doc erosion as UI updates skipped scope.md to avoid the friction.
+- **A third section in `architecture.md` ("Experience surface")** alongside the existing runtime and software-architecture views. Rejected for similar reasons — `architecture.md` would bloat and the cadence mismatch would still bite. The two-view precedent makes a third view defensible if `ui.md` ever feels overweight in practice, but the separate file is the cleaner starting point.
+- **Eager scaffolding of `docs/ui.md` at `/b-design`.** Rejected for v0.15 — many Bower projects (data pipelines, research scripts, CLI tools) have no UI, and a placeholder doc with no reason to be touched is exactly the failure mode that retired `design-decisions.md`. Lazy creation on first path-2 or path-3 change is the discipline. Eager scaffolding remains a candidate for a future revision once the lazy-creation pattern is proven.
+
+### Migration
+
+For projects on v0.14 upgrading to v0.15:
+
+1. **Re-run the scaffold script (or run `/b-upgrade`).** This refreshes `_bower/framework.md` (with the new "UI Changes — Paths and the Gate" section, scoped tag blocks for `<path_decision>` / `<path_examples>` / `<commit_discipline>`, three new UI rows in the "Changes made outside `/b-*` commands" list, and the updated "What to Update When" table), `_bower/rationale.md` (with the new "Surfaces of Specification" principle and the "Two Axes Shape the Trade-offs" section), and `.claude/commands/` (with the new `b-ui.md` skill including `<lighter_path_check>` and `<branching_judgment>` and the manual-check template; the `b-feature.md` `<intent_redirects>` block, intent re-check, Step 2 UI sub-bullet, and Step 5 `docs/ui.md` reconcile; the `b-design.md` Stage 3 read of `docs/ui.md` on revisions; the `b-index.md` read of `docs/ui.md` for index-link description). Mechanical; the agent picks up the new guidance and the new skill on the next session.
+
+2. **No `docs/ui.md` is created retroactively.** The doc is lazy — it exists when there is a UI to describe. If the project has interface work already underway (web, TUI, desktop, or otherwise), the first `/b-ui` invocation (or the first out-of-band structural UI change that triggers the path-2 reconcile) will create `docs/ui.md` with whatever sections that change requires. If the project has no UI, no action is needed.
+
+3. **Backfill `docs/ui.md` from existing interface code.** Judgement-required, not skippable when an interface is present. The point is to bring the project to the same coverage that lazy creation would have produced if `/b-ui` had existed since the interface was first built. "Interface" here is deliberately broad: web frontend, TUI, native desktop, mobile, or any other surface through which a user interacts with the system. `docs/ui.md` is not web-specific.
+
+   **First, detect whether the project has an interface worth documenting.** Check for any of:
+   - **Web / Electron / Tauri.** Frontend frameworks declared in `package.json` or equivalent (React, Vue, Svelte, Solid, Next.js, Remix, SvelteKit, etc.); source files like `*.tsx`, `*.jsx`, `*.vue`, `*.svelte`; routing config (Next.js `app/` or `pages/`, React Router, Vue Router, SvelteKit `routes/`); theme/token config (`tailwind.config.*`, `theme.{ts,js}`, `design-tokens.*`).
+   - **Python web / dashboard.** Streamlit, Gradio, Dash, FastHTML, Flask/Django with templates, NiceGUI.
+   - **TUIs.** Textual, Rich layouts, urwid, blessed, prompt-toolkit (Python); Bubble Tea, tview (Go); Ratatui (Rust); Ink (Node).
+   - **Native desktop GUI.** Qt / PyQt / PySide / QML, GTK / PyGObject, wxPython / wxWidgets, Tkinter, JavaFX, Avalonia, WPF, AppKit / SwiftUI, Jetpack Compose Desktop.
+   - **Mobile.** SwiftUI / UIKit (iOS), Jetpack Compose / Android Views, React Native, Flutter.
+   - **Source layout.** Files under `frontend/`, `web/`, `ui/`, `client/`, `gui/`, `tui/`, `views/`, `screens/`, `components/`, `app/`, or framework-conventional locations for any of the above.
+
+   If none of these are present, the project has no interface surface; write a one-line note in the upgrade self-assessment ("no interface surface detected — `docs/ui.md` not backfilled") and proceed. Do not create an empty `ui.md`.
+
+   **Surface the detection result before drafting.** Use AskUserQuestion to name what was detected and what will be written: "I detected an interface surface (web frontend / TUI / desktop / etc.) at <paths>. I'll read <entry point, N representative screens, theme/token config> and draft `docs/ui.md` with sections: <list>. Confirm to proceed, or tell me what to adjust (false positive, different files to read, different sections)." This is the cheap gate — letting the operator correct misreadings of the code *before* a draft exists is much cheaper than correcting a wrong draft.
+
+   **If an interface is present, draft the doc.** Read enough of the code to identify invariants — do not attempt a complete tour. Sufficient reads typically include:
+   - The entry point or routing/screen definitions, to map navigation between views/screens.
+   - A representative sample of screens/views/components (the 3–5 most-touched, or the most architecturally typical) to identify layout grammar and interaction patterns.
+   - Any shared layout, theme, or style configuration (token files for web, stylesheet conventions for desktop, colour/typography conventions for TUI).
+
+   **Draft `docs/ui.md` with sections that apply.** The doc covers whichever surface the project has — adapt terminology accordingly. Use only sections that have content; do not invent empty headers. Typical sections:
+   - `## Navigation` — top-level routes / views / screens and how they relate (small tree or list).
+   - `## Screens` (or `## Views`) — one line per screen, naming purpose and key components.
+   - `## Layout grammar` — shared patterns across screens (header/sidebar/content for web; window/panel/widget arrangement for desktop; focus regions, panes, and split layouts for TUI).
+   - `## Interaction patterns` — modal vs inline editing, notification/toast/status-line placement, dismissal and undo conventions, keyboard and focus model, command-palette / hotkey conventions.
+   - `## Visual language` (web/desktop) or `## Style conventions` (TUI) — pointers to the token/theme/palette config files (not the contents). For TUIs, the colour palette and typography conventions; for desktop, the theme/QSS/stylesheet pointers.
+
+   **Aim for invariants, not implementation detail.** What stays stable as the interface evolves is what belongs in the doc. Pixel positions, character offsets, exact copy strings, and per-component implementation belong in code. If a section is reading like a layout spec or a stylesheet, compress it back to the pattern level.
+
+   **Present the draft to the operator before writing.** Use AskUserQuestion: "I've drafted an initial `docs/ui.md` from the existing interface code. Confirm to commit, or tell me what to adjust." This is the gate that lets the operator correct misreadings of the code before the doc is committed.
+
+   For minimal interfaces (a single Streamlit demo, a one-screen TUI, a CLI with light formatting), a one-paragraph `docs/ui.md` is fine. Capture what little structure exists; the doc grows if and when the interface does.
+
+4. **No source code changes required.** No ADR schema changes. No changes to existing `architecture.md`, `scope.md`, `module-status.md`, `plan.md`, or `status.md` formats.
+
+5. **`/b-design` Stage 3 now reads `docs/ui.md` on revisions** — no project-side migration work; the change is behavioural on the agent's side. On greenfield, Stage 3 still does not draft `docs/ui.md` — that's deferred until the lazy-creation pattern is proven in practice.
+
+After step 1, the project's `_bower/VERSION` will be at `0.15`.
+
+---
+
 ## v0.14 — 2026-05-19
 
 ### Ad-hoc reconcile convention; "Holding the Line on Architecture" principle; default `.claude/settings.json`

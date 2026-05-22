@@ -6,11 +6,12 @@ Regenerate `docs/index.md` and (if `docs/adr/` exists) `docs/adr/index.md` by sc
 
 1. Read `docs/architecture.md` for the system overview (if it exists)
 2. Read `docs/constitution.md` to confirm it exists
-3. Scan `docs/design/` for design documents
-4. Scan `docs/adr/` for ADR files (any file matching `NNNN-*.md`); parse frontmatter from each
-5. Scan `docs/modules/` for all modules, features, and their status files
-6. For each feature, read its `status.md` to determine the current status marker
-7. For each module, read its `module-status.md` for both the `## Build order` markers and the `## Module integration` `Test:` marker
+3. Read `docs/ui.md` if it exists. Its presence enables the `UI` link in the index; if the file has a leading summary sentence or paragraph, use it for the link description (otherwise use the canonical "Experience surface (navigation, screens, interaction patterns)"). Parallel to how `architecture.md` is scanned for the system overview.
+4. Scan `docs/design/` for design documents
+5. Scan `docs/adr/` for ADR files (any file matching `NNNN-*.md`); parse frontmatter from each
+6. Scan `docs/modules/` for all modules, features, and their status files
+7. For each feature, read its `status.md` to determine the current status marker
+8. For each module, read its `module-status.md` for both the `## Build order` markers and the `## Module integration` `Test:` marker
 
 ## Output: `docs/index.md`
 
@@ -21,6 +22,7 @@ Write `docs/index.md` with the following structure:
 
 ## Core System
 - [Architecture](architecture.md) — System overview and key decisions
+- [UI](ui.md) — Experience surface (navigation, screens, interaction patterns)
 - [Constitution](constitution.md) — Development conventions and standards
 
 ## Design Context
@@ -36,7 +38,7 @@ Write `docs/index.md` with the following structure:
 - [Module Status](modules/<module>/module-status.md)
 ```
 
-The Decision Log line is included only if `docs/adr/` exists and contains at least one ADR. Counts come from frontmatter `status` fields. Omit the Design Context section entirely if neither `docs/design/` nor `docs/adr/` exists.
+The UI line is included only if `docs/ui.md` exists. The Decision Log line is included only if `docs/adr/` exists and contains at least one ADR. Counts come from frontmatter `status` fields. Omit the Design Context section entirely if neither `docs/design/` nor `docs/adr/` exists.
 
 ## Output: `docs/adr/index.md`
 

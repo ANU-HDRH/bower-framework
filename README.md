@@ -1,4 +1,4 @@
-# Bower Framework v0.13
+# Bower Framework v0.15
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -120,6 +120,7 @@ bower-framework/
 │   │   ├── b-design.md         # Six-stage design with Stage 0 change brief
 │   │   ├── b-analysis.md       # Read-only: print the change brief /b-design would consume
 │   │   ├── b-feature.md        # Lightweight change: propose → confirm → build (one feature)
+│   │   ├── b-ui.md             # Gated path for structural-and-underspecified UI changes
 │   │   ├── b-module.md         # Build a whole module: one gate, one integration pass
 │   │   ├── b-integration.md    # Build the module-boundary integration test
 │   │   ├── b-adr.md            # Scaffold an Architectural Decision Record (or supersede one)
@@ -149,7 +150,8 @@ bower-framework/
 |---------|---------|
 | `/b-design` | Six-stage design process for new projects and architectural revisions. Stage 0 spawns the `bower-analyst` subagent to produce a **change brief**; Stages 1–5 execute against the confirmed brief (problem framing → decisions/ADRs → architecture → module/feature plans → scaffolding). Stages with no delta emit "nothing to do" cleanly. Emits one ADR per `new`/`supersedes`/`partial-supersedes` Stage 2 operation. |
 | `/b-analysis` | Read-only, advisory. Spawns the `bower-analyst` subagent against a proposed change and prints its **change brief** — what each `/b-design` stage would do if executed. Useful as inspection before committing to execute. |
-| `/b-feature` | The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture. One gate before code, with relevant ADRs loaded as constraints. Reconcile step prompts for ADR creation/supersession when a cross-cutting decision was introduced or invalidated. Redirects to `/b-design` if the request requires architectural change. |
+| `/b-feature` | The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture. One gate before code, with relevant ADRs loaded as constraints. Reconcile step prompts for ADR creation/supersession when a cross-cutting decision was introduced or invalidated. Redirects to `/b-design` for architectural changes, or `/b-ui` for experience-surface work. |
+| `/b-ui` | Gated path for **structural and underspecified** UI changes (e.g. "add tab-based content navigation" with multiple viable shapes). Propose-with-alternatives → confirm → implement → reconcile `docs/ui.md`. Most UI work skips the skill — visual tweaks and tightly-specified structural changes happen out-of-band; see *UI / UX Work* below. |
 | `/b-module` | Build all features in a module in one pass. One gate up front, one integration pass at the end. Use when the module is small and well-specified. |
 | `/b-integration` | Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the integration test is the residual. |
 | `/b-adr` | Scaffold an Architectural Decision Record, or supersede an existing one. Auto-increments ID, writes the new ADR (and frontmatter update for supersession) in one pass. Called from `/b-feature` and `/b-design`; can be invoked directly. |
@@ -162,9 +164,19 @@ bower-framework/
 
 `/b-design` is the design command. Six stages: Stage 0 produces a change brief via the read-only `bower-analyst` subagent; Stages 1–5 execute against the confirmed brief (problem framing, decisions/ADRs, architecture, module/feature plans, scaffolding) with a content gate per non-nil stage. Stages of no delta emit "nothing to do" cleanly, so heavy ceremony only fires where there's actual work. Required for greenfield and for changes that shift architecture, decisions, scope, or module structure.
 
-`/b-feature` is the implementation command for changes within existing architecture. Proposes changes and acceptance criteria, confirms with you, then implements. If the request turns out to need architectural change, it redirects to `/b-design`.
+`/b-feature` is the implementation command for changes within existing architecture. Proposes changes and acceptance criteria, confirms with you, then implements. If the request turns out to need architectural change, it redirects to `/b-design`; if it's primarily about the experience surface, it redirects to `/b-ui` or one of the ad-hoc UI paths.
 
 The agent recommends; you decide. Every gate uses explicit confirmation — no changes without your sign-off. `/b-recap` re-orients you in a fresh session without touching anything; `/b-analysis` previews what `/b-design` would do for a proposed change without executing it.
+
+## UI / UX Work
+
+UI work has a different cadence from backend work, and Bower handles it differently. This applies whether the interface is a web frontend, a TUI, a native desktop app, or otherwise — `docs/ui.md` is surface-agnostic. Most UI iteration — visual tweaks, copy edits, small structural changes the operator can specify cleanly — happens out-of-band without invoking a skill: the agent makes the change, and (if structural) updates `docs/ui.md` as part of the reconcile. The propose-and-acceptance ceremony of `/b-feature` is too heavy for "move the icon left" and the wrong shape for "what should this feel like?"
+
+For structural UI changes where there are real branching choices — "should this be tabs, accordion, or a separate modal?" — there's `/b-ui`. It runs a propose-with-alternatives gate, implements the chosen option, and reconciles `docs/ui.md`.
+
+`docs/ui.md` is the experience-surface counterpart to `architecture.md`. It records what stays stable as the UI evolves: navigation map, screen inventory, layout grammar, interaction patterns, visual-language (or style-convention) pointers. Implementation detail lives in code; the doc captures invariants. The file is created lazily on the first structural UI change — projects without an interface never grow one.
+
+Architectural UI changes (swapping the UI framework, adopting new state-management for the UI layer, introducing a new top-level navigation pattern) still route through `/b-design`. The hard line is the same as elsewhere in the framework: speed where it doesn't cost protection, gates where it does.
 
 ## Project Documentation Structure
 
@@ -176,6 +188,7 @@ docs/
 ├── scope.md                    # Current scope, non-goals, success criteria
 ├── constitution.md             # Process conventions
 ├── architecture.md             # System design (high-level structure; cross-references ADRs for decisions)
+├── ui.md                       # Experience surface: navigation, screens, layout, interactions (created lazily)
 ├── design/                     # Day-1 problem framing
 │   └── problem-space.md
 ├── adr/                        # Architectural Decision Records (one file per decision)

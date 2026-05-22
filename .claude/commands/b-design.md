@@ -94,7 +94,7 @@ Stage-specific drafting and write rules follow.
 **Drafting:**
 
 - **Greenfield:** Draft `docs/architecture.md` covering both views. The software-architecture section is sourced from the module breakdown that Stage 4 will produce — draft it consistent with Stage 4's planned modules so the two stay aligned.
-- **Revision:** Draft the specific edits the brief calls for. The brief distinguishes runtime-view deltas from software-architecture deltas; honour that distinction in the drafted edit. Show each edit in context (surrounding sentences) so the gate can confirm placement, not just text.
+- **Revision:** Draft the specific edits the brief calls for. The brief distinguishes runtime-view deltas from software-architecture deltas; honour that distinction in the drafted edit. Show each edit in context (surrounding sentences) so the gate can confirm placement, not just text. **If `docs/ui.md` exists, read it first** — architectural revisions in projects with an interface often shift logic-UI interactions (routing, state, data flow into and out of screens), and the existing experience surface is the constraint those edits have to respect. The drafted architecture edit should name any `docs/ui.md` reconciliation it implies, so Stage 4 (or follow-up `/b-ui` / ad-hoc work) picks it up.
 
 **Cross-stage rule.** Every Stage 4 `new module` operation requires a corresponding software-architecture entry in this stage. If the brief lists a new module under Stage 4 without a Stage 3 delta covering its software-architecture entry, surface this at the Stage 3 gate as a brief inconsistency and ask the operator to amend before drafting.
 
