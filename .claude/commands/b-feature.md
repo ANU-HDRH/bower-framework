@@ -8,7 +8,7 @@ This command covers three intents:
 - **Modify** — change the behaviour, contract, or implementation of something that already exists.
 - **Remove** — delete a feature, component, or capability that's no longer wanted.
 
-The shape is the same across all three: read context → propose → gate → implement → reconcile → update docs. The differences show up in *which* files you read in Step 1 and *which* docs you update in Step 5; those branches are called out where they apply.
+The shape is the same across all three: read context → propose → gate → implement → reconcile → update docs. The differences show up in *which* files you read in Step 1 and *which* docs you update in Step 6; those branches are called out where they apply.
 
 <intent_redirects>
 Before proceeding, check whether this request is actually for this skill:
@@ -16,7 +16,7 @@ Before proceeding, check whether this request is actually for this skill:
 - **Architectural revision** (new module, new technology, scope expansion) → recommend `/b-design`. **Hard** redirect — see the constraint at the bottom of this file.
 - **Pure experience-surface change** (navigation, screen composition, layout grammar, interaction patterns) → recommend `/b-ui` for branching choices, or the appropriate ad-hoc path in `_bower/framework.md` → *UI Changes — Paths and the Gate*. **Soft** redirect.
 
-Backend feature work and small under-the-hood code changes belong here. **Mixed work stays here** — a feature that includes backend (model, API, controller) plus UI scaffolding (a new screen, components) runs in `/b-feature` and reconciles `docs/ui.md` in Step 5 alongside the feature's `plan.md`. Pure-UI work routes out; mixed work stays.
+Backend feature work and small under-the-hood code changes belong here. **Mixed work stays here** — a feature that includes backend (model, API, controller) plus UI scaffolding (a new screen, components) runs in `/b-feature` and reconciles `docs/ui.md` in Step 6 alongside the feature's `plan.md`. Pure-UI work routes out; mixed work stays.
 </intent_redirects>
 
 The user's description of what they want to change: $ARGUMENTS
@@ -27,6 +27,7 @@ The user's description of what they want to change: $ARGUMENTS
 - **Read first.** Read the existing architecture, relevant module docs, and any affected plan.md/status.md files before proposing changes.
 - **Scope tightly.** Only propose changes needed for this specific request. Don't redesign what works.
 - **Acceptance is explicit.** Propose how the change will be verified (tests, manual checks, or both) and get agreement on that too.
+- **Plan is the recovery anchor.** Write `plan.md` immediately after the gate, before any code is touched (Step 3). The plan is intent on disk — if the session crashes mid-implementation, this file plus `git status` is what makes recovery possible. The completion stamp and any implementation footnotes are appended at Step 6, not written from scratch there.
 - **Literal-command handoff.** Every "next move" you emit (in `status.md`, in any handoff line) names the exact slash command to type next, never free prose. "Run `/b-integration foundation`" — yes. "Write the integration test next" — no.
 
 ## Step 1: Understand Context
@@ -34,7 +35,7 @@ The user's description of what they want to change: $ARGUMENTS
 1. Read `docs/index.md` to understand project structure
 2. Read `docs/architecture.md` for system context
 3. Read `docs/scope.md` to understand current scope, non-goals, and success-criteria state
-4. Read `docs/ui.md` if it exists — needed when the change touches a screen, adds UI scaffolding for a new feature, or has any chance of shifting navigation, layout grammar, or interaction patterns. Even backend-heavy work often introduces a screen as scaffolding; the experience surface needs to reconcile in Step 5.
+4. Read `docs/ui.md` if it exists — needed when the change touches a screen, adds UI scaffolding for a new feature, or has any chance of shifting navigation, layout grammar, or interaction patterns. Even backend-heavy work often introduces a screen as scaffolding; the experience surface needs to reconcile in Step 6.
 5. Read the plan.md and status.md of any components likely affected
 6. Read the `module-status.md` of the affected module (if it exists) — check the `## Build order` section and the `## Module integration` `Notes:`
 7. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) list the affected module(s) under `modules`, (b) have no `modules` field at all (cross-cutting), or (c) have a title topically relevant to the change — e.g. an ADR about caching strategy when the change touches a cache, even if it's filed under another module. Open and read each. These are the constraints the proposal must respect or explicitly contradict. Skip if no `docs/adr/` exists.
@@ -46,7 +47,7 @@ The user's description of what they want to change: $ARGUMENTS
 
 **For modify or remove intents, also read sibling features in the same module.** Other features' `plan.md` files often describe interactions with the thing you're changing — those references go stale if you don't catch them. Skim each sibling `plan.md` for outbound references to the feature/component being modified or removed; list any that need updating in the Step 2 Impact section.
 
-**Build order check:** If the requested change is **adding a new feature** to a module, append it to the module's `## Build order` as part of Step 5 — the build order is a living document, not a Stage-4 contract. If the requested change is on a feature that is part of a module with a `## Build order` and earlier features in that order are not yet complete (not ✓), surface this to the user as part of the proposal in Step 2. Do not hard-block — warn and let the user proceed anyway. Working out of order is sometimes the right call; the warning exists so it's a conscious choice.
+**Build order check:** If the requested change is **adding a new feature** to a module, append it to the module's `## Build order` as part of Step 6 — the build order is a living document, not a Stage-4 contract. If the requested change is on a feature that is part of a module with a `## Build order` and earlier features in that order are not yet complete (not ✓), surface this to the user as part of the proposal in Step 2. Do not hard-block — warn and let the user proceed anyway. Working out of order is sometimes the right call; the warning exists so it's a conscious choice.
 
 ## Step 2: Propose Changes
 
@@ -59,8 +60,8 @@ Prepare a proposal covering:
   - **Source:** integration points and any callers / consumers of changed behaviour
   - **Tests:** which existing tests need updating or removing; which new tests are needed
   - **Docs:** **list each `plan.md` that needs updating by path** (the one for this feature, plus any sibling features whose plans reference behaviour you're changing or removing). Don't bury this under "documentation" — name the files.
-  - **UI:** if the change introduces, removes, or restructures any screen/view/component, name which sections of `docs/ui.md` will be created or updated (navigation, screens, layout grammar, interaction patterns, visual language). If `docs/ui.md` does not yet exist and the change introduces UI, this is the first UI in the project — Step 5 will create the file with the sections this change requires. Write `none` if the change is pure under-the-hood code.
-  - **Module integration:** does this shift what the module's integration test must assert? If yes, the test itself likely needs updating — flag it here so the Step 5 `Next move:` can point to `/b-integration <module>`.
+  - **UI:** if the change introduces, removes, or restructures any screen/view/component, name which sections of `docs/ui.md` will be created or updated (navigation, screens, layout grammar, interaction patterns, visual language). If `docs/ui.md` does not yet exist and the change introduces UI, this is the first UI in the project — Step 6 will create the file with the sections this change requires. Write `none` if the change is pure under-the-hood code.
+  - **Module integration:** does this shift what the module's integration test must assert? If yes, the test itself likely needs updating — flag it here so the Step 6 `Next move:` can point to `/b-integration <module>`.
 - **Scope impact:** Does this change scope, non-goals, or close a success criterion in `scope.md`?
 - **Decision impact:** List any accepted ADR loaded in Step 1 that this change *touches* — i.e. the change either confirms it (no action needed), contradicts it (must supersede), narrows it (partial-supersession ADR), or surfaces it as drifted from the code (the ADR is stale and should be superseded). If no ADRs are touched, write `none`. Also note if this change introduces a new cross-cutting decision that does not yet have an ADR — flag it here so the reconcile step can write one.
 - **Acceptance criteria:** How we'll know this works. Be specific:
@@ -81,15 +82,37 @@ Include the acceptance criteria in the question — these are part of the agreem
 
 **Do not write any code until the user confirms.**
 
-## Step 3: Implement
+## Step 3: Write the Plan
 
-After confirmation:
+After the user confirms at the gate, write `plan.md` *before* any code is touched. The plan is the durable record of intent: if the session crashes mid-implementation, this file plus `git status` is what makes recovery possible. Most of `plan.md`'s content is plannable — the proposal you just got confirmed names it. Write that content now; only the retrospective tail (final test counts, implementation footnotes worth keeping, the completion stamp) is deferred to Step 6.
+
+**For add intent:** create `docs/modules/<module>/<feature>/plan.md` with the sections the feature warrants:
+
+- **Purpose** — what the feature does, what it does *not* do (from the proposal's intent and "What you won't change").
+- **Components** — a file table from the proposal's "Technical approach": each file by path with a one-line purpose. This is the spine of the recovery anchor.
+- **Schema / API surface / Access model** — if the feature introduces a table, API, or access boundary, document the shape now. The proposal already named these.
+- **Configuration** — env vars, settings, or dependency mounts the feature requires (write `No new env vars.` if none).
+- **Integration points** — which other modules this feature consumes from or exposes to.
+- **Testing** — the acceptance criteria from the gate expressed as test *categories* (e.g. "CRUD round-trip", "non-owner returns 404", "FK ON DELETE RESTRICT"). Specific counts ("12 cases") and pass/fail evidence are filled in at Step 6.
+- **Implementation trajectory** (multi-session features only) — phase plan; compress earlier phases to one-paragraph précis as they complete.
+
+**For modify intent:** rewrite the affected sections of the existing `plan.md` to reflect the *intended end state*. Delete claims that no longer hold; the doc represents current state, not history. The file becomes briefly aspirational (reflects the change before the code does) — this is intentional. It is the recovery anchor.
+
+**For remove intent:** no plan.md work at this step; the file is deleted in Step 6.
+
+The plan written here is what survives a crash. Implementation footnotes that emerge during Step 4 (a workaround for a specific bug, a hand-edited migration, a non-obvious cast) and the `Confirmed YYYY-MM-DD` stamp are appended at Step 6.
+
+## Step 4: Implement
+
+After plan.md is written:
 
 1. Implement the changes as proposed
 2. Write/update tests per the agreed acceptance criteria
 3. Run tests; confirm they pass
 
-## Step 4: Acceptance Reconciliation
+If implementation reveals the approach in the plan won't work, update `plan.md` to reflect the new direction as you change course — and if the divergence is significant, stop and consult the user via AskUserQuestion before continuing.
+
+## Step 5: Acceptance Reconciliation
 
 Before marking the feature done, produce an explicit reconciliation of every acceptance criterion agreed at the gate. Each criterion maps to evidence:
 
@@ -102,7 +125,7 @@ Before marking the feature done, produce an explicit reconciliation of every acc
 Handling:
 
 - **MISSING** is a blocker. Either write the test, or return to the user via AskUserQuestion to renegotiate the criterion. Do not proceed with MISSING items.
-- **PENDING USER** — for each manual check, ask the user via AskUserQuestion to confirm it passes. Present all manual checks in a single question. If the user confirms, mark PASS. If the user reports failure, treat as a bug and fix before proceeding. If the user defers ("I'll check later"), leave as PENDING USER and mark the feature 🚧 rather than ✓ (see Step 5).
+- **PENDING USER** — for each manual check, ask the user via AskUserQuestion to confirm it passes. Present all manual checks in a single question. If the user confirms, mark PASS. If the user reports failure, treat as a bug and fix before proceeding. If the user defers ("I'll check later"), leave as PENDING USER and mark the feature 🚧 rather than ✓ (see Step 6).
 
 **Decision reconciliation.** After acceptance criteria are reconciled, review the **Decision impact** noted at the gate. For each touched ADR:
 
@@ -113,21 +136,28 @@ Handling:
 
 Skip only if no Decision impact was identified at the gate (Step 2 listed it as `none`). Otherwise this is not optional — silent decision drift is exactly what the ADR mechanism exists to prevent.
 
-If the user rejects the drafted ADR at `/b-adr`'s gate, treat that as a request to redraft with their adjustments, not as permission to skip. If they want to abandon ADR creation entirely, return to this reconciliation step and re-classify the impact (likely "confirmed" rather than "new decision"). Complete any ADR work before continuing to Step 5.
+If the user rejects the drafted ADR at `/b-adr`'s gate, treat that as a request to redraft with their adjustments, not as permission to skip. If they want to abandon ADR creation entirely, return to this reconciliation step and re-classify the impact (likely "confirmed" rather than "new decision"). Complete any ADR work before continuing to Step 6.
 
-## Step 5: Update Documentation
+## Step 6: Update Documentation
 
 The exact set of documents to touch depends on the intent. Common to all intents: `status.md` is rewritten from scratch, `module-status.md` build-order markers reflect reality, and `scope.md` is updated if the change shifted scope.
 
 **For add intent:**
 
-1. Create or update `plan.md` for the new feature (purpose, components, testing, trajectory section if multi-session).
+1. Finalise `plan.md`. The bulk of the file already exists from Step 3 — this step appends the retrospective tail:
+   - Update the **Testing** section with final test counts and any test names worth surfacing (e.g. "12 cases against per-test schema").
+   - Append any **implementation footnotes worth keeping** to the relevant section: workarounds for specific bugs, hand-edited migrations, non-obvious casts at boundaries — the kind of detail a future reader would otherwise have to dig out of git. Skip if nothing surprising came up.
+   - Add a closing line: `Confirmed YYYY-MM-DD` (today's date) once acceptance criteria reconcile. This line is the visible completion flag; a `plan.md` without it is not done.
 2. Append the new feature to `module-status.md` `## Build order`. Place it where its dependencies dictate; if it has none, append to the end. Mark ✓ if all criteria PASS, 🚧 if PENDING USER.
 3. Refresh `## Module integration` `Notes:` if the new feature widens what the integration test must assert. Do not flip the marker.
 
 **For modify intent:**
 
-1. Update this feature's `plan.md` to reflect the new behaviour. Delete claims that no longer hold; the doc represents *current state*, not history.
+1. Finalise `plan.md`. The intended-end-state edits already landed in Step 3. This step appends the retrospective tail:
+   - Update the **Testing** section with final test counts for any new/changed tests.
+   - Append implementation footnotes worth keeping (workarounds, hand-edits, non-obvious decisions).
+   - Refresh or add the `Confirmed YYYY-MM-DD` line.
+   - If during Step 4 the approach diverged from the Step 3 plan, the plan should already reflect reality — verify and tidy any stale fragments.
 2. Update each sibling `plan.md` listed in the Step 2 Impact section — fix outbound references to the changed behaviour. If the proposal didn't list any but you now realise a sibling plan is stale, update it and note this in the resumption summary.
 3. Refresh `## Module integration` `Notes:` if the test's assertions need to shift. If yes, the `Next move:` below points to `/b-integration` so the test itself gets updated.
 4. If the feature is multi-session, update `## Implementation trajectory` in `plan.md`: compress the just-completed phase into a one-paragraph précis (why-focused, not steps); leave future phases detailed.
@@ -167,6 +197,7 @@ If during implementation you discover the approach needs to change significantly
 ## What NOT To Do
 
 - Do not start coding before the gate
+- Do not start coding before `plan.md` is written (Step 3) — the plan is the recovery anchor; writing it only at completion defeats the point
 - Do not expand scope beyond what was confirmed
 - Do not skip documentation updates
 - Do not propose architectural changes — if the change requires them, recommend the user runs `/b-design` instead

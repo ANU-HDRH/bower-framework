@@ -6,6 +6,34 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.16 — 2026-05-25
+
+### `/b-feature`: write `plan.md` after the gate, before implementing
+
+**What changed**
+
+- **`.claude/commands/b-feature.md` splits plan authorship in two.** A new **Step 3 ("Write the Plan")** writes `plan.md` immediately after gate confirmation, before any code is touched. It captures the spec-shaped content the proposal just confirmed: purpose, components (file table), schema / API surface / access model where applicable, configuration, integration points, and the testing strategy as test *categories*. Step 4 (Implement, formerly Step 3) and Step 5 (Acceptance Reconciliation, formerly Step 4) shift one number along. **Step 6 (Update Documentation, formerly Step 5)** now describes a *finalisation* of `plan.md` — appending the retrospective tail (final test counts, implementation footnotes worth keeping, the `Confirmed YYYY-MM-DD` stamp) — rather than creating the file from scratch.
+- **New "Important Behavioural Rule": *Plan is the recovery anchor.*** Anchors the discipline at the top of the file so the model treats the post-gate plan write as a non-optional step, on equal footing with "Consult before building" and "Read first."
+- **Step 6 reworded for add and modify intents.** For *add*, the first item changes from "Create or update `plan.md`" to "Finalise `plan.md`" (the bulk already exists from Step 3 — this step appends the retrospective tail and adds the `Confirmed YYYY-MM-DD` line). For *modify*, the plan rewrite happens at Step 3 (intended end state) and Step 6 only appends the retrospective tail. *Remove* is unchanged — `plan.md` is still deleted at Step 6.
+- **In-skill cross-references re-numbered.** Every "Step 5" reference elsewhere in `b-feature.md` (the intro line, the UI-reconcile callout in Step 1, the build-order callout, the Step 2 Impact UI sub-bullet, the Step 2 module-integration sub-bullet, the ✓/🚧 marker callout in Step 5, and the ADR-completion sentence) now reads "Step 6", matching the new numbering.
+- **`What NOT To Do` gains an entry:** "Do not start coding before `plan.md` is written (Step 3) — the plan is the recovery anchor; writing it only at completion defeats the point."
+
+**Why**
+
+Operating experience surfaced the failure mode. `plan.md` was being written only at the end of the flow, after implementation completed. Mid-implementation crashes therefore left no durable artefact of intent in the feature folder: the design conversation was in the agent's context window (volatile), partial code on disk may not even compile, and the gate-approval was a verbal handshake. Recovery meant reconstructing the plan from `git diff` plus the operator's memory — which is exactly the situation `plan.md` was supposed to prevent.
+
+Re-reading a representative completed `plan.md` revealed that the bulk of its content (purpose, components table, schema, API surface, access model, integration points, testing strategy) is *plannable* — the proposal at the gate already names every one of those sections. Only the retrospective tail — final test counts ("12 cases"), specific implementation footnotes ("hand-edited to reference `\"users\"` unqualified"), and the `Confirmed YYYY-MM-DD` stamp — is genuinely retrospective. Splitting authorship in time keeps the completion-flag function of `plan.md` intact (a `plan.md` without `Confirmed` is not done) while ensuring the gate-time content lives on disk from the moment the gate is passed.
+
+The split also strengthens the gate itself. Today the gate is a verbal handshake on a verbal proposal; with the new Step 3, the model writes the proposal's substance to disk immediately after confirmation — making the agreement a concrete file rather than a conversation artefact. If implementation later drifts from the plan during Step 4, that drift is visible against a written reference.
+
+An alternative considered and ruled out: a "thin plan at gate, full plan at end" two-document approach. Rejected for token cost and drift risk — two documents either duplicate content or fall out of sync, and the cleanest discipline is one file written in two passes against the same headings.
+
+### Migration
+
+None — no project-side changes required. The change is behavioural on the agent's side; existing `plan.md` files from prior versions remain valid as-is. Projects upgrading from v0.15 pick up the new `/b-feature` step ordering on the next session after `scripts/scaffold.sh <project>` (or `/b-upgrade`). After scaffold, the project's `_bower/VERSION` will be at `0.16`. Verify by reading it.
+
+---
+
 ## v0.15 — 2026-05-22
 
 ### Experience surface: `docs/ui.md` and `/b-ui`; rapid UI iteration as a first-class path

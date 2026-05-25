@@ -1,4 +1,4 @@
-# Bower Framework v0.15
+# Bower Framework v0.16
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle.
 
