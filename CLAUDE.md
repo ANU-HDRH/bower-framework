@@ -60,3 +60,15 @@ docs/                      # Material for the README / external readers (not a B
 `scripts/scaffold.sh <target-dir>` (or `scripts\scaffold.ps1 <target-dir>` on Windows) copies `_bower/` and the `.claude/` agents and commands into the target. If the target has no `CLAUDE.md`, the script seeds one from `_bower/project-CLAUDE.md`. If it already has one, the script leaves it alone — the assumption is that the project's CLAUDE.md already `@`-includes `_bower/framework.md`, so re-copying `_bower/` is sufficient to upgrade the project to the current framework version. Similarly, if the target has no `.claude/settings.json`, the script seeds one from `_bower/project-settings.json` with safe read-only Bash permission defaults; if it already has one, the script leaves it alone.
 
 The script never touches the target's `docs/`, `.claude/settings.local.json`, or anything outside the framework footprint.
+
+## Releasing a framework version
+
+Framework versions are cut as GitHub releases so downstream watchers (Releases-only or All Activity) get notified when a new version lands. Releases are manual: after a version-bump commit hits `main`, run `scripts/release.sh`.
+
+The script reads `_bower/VERSION`, extracts the matching `## vX.Y — DATE` section from `_bower/changes.md`, and creates a GitHub release tagged `vX.Y` with that section as the release notes. It aborts if the tag already exists (locally or on origin) or if the `changes.md` section is missing — both signal that something is out of sync. Use `scripts/release.sh --dry-run` to preview before cutting.
+
+Tags use the `vX.Y` form (`v0.17`); `_bower/VERSION` itself stays unprefixed (`0.17`) because that's what tooling reads. The script tags `origin/main`'s current HEAD, so push the version-bump commit before running it — and don't push unrelated follow-up commits ahead of the release if you want the tag to land on the version commit specifically.
+
+Backfilling earlier versions as releases is not required — anyone needing older versions can read `_bower/changes.md` or check out the commit that bumped `_bower/VERSION`. Backfilling would fire a notification per version, which is noise rather than signal.
+
+This is repo-tooling, not framework behaviour: it does not change anything downstream Bower projects experience, and does not warrant a `_bower/changes.md` entry of its own.
