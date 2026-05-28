@@ -12,6 +12,7 @@ Read these and only these, and only if they exist:
 2. `docs/scope.md` — current scope and success-criteria state (met/unmet)
 3. `docs/modules/**/module-status.md` — `## Build order` and `## Module integration` state for each module
 4. `docs/modules/**/<feature>/status.md` — only for features currently at 🚧, 🟡, 🔴, or 🔧 (skip ✓ and ⏸)
+5. `docs/modules/**/review-plan.md` — only check for existence; if present, a `/b-review` left reconciliation owed. Read its `## Reconciliations` checklist to count done/total. Do not read it for any other purpose — it is a transient work list, not project state.
 
 If `docs/index.md` does not exist, the project has not been designed yet. Say so in one line and recommend `/b-design`. Stop.
 
@@ -29,6 +30,7 @@ From those inputs, compose:
   - Else, the first ⏸ feature in the first not-yet-complete module's build order. Recommend `/b-module <module>` if remaining features are few and unambiguous, else `/b-feature <feature>`.
   - If everything is ✓ (features and module integration) and success criteria in `scope.md` are met, emit `(none — project complete)`.
 - **Module integration state** — list any module where features are ✓ but the integration marker is ⏸/🚧/🟡/🔴, with the marker shown
+- **Open review plans** — any module with a `review-plan.md`, shown as reconciliations done/total, with `Run /b-review <module>` to continue. An open plan means a prior review left reconciliation owed
 - **Awaiting manual verification** — any feature whose `status.md` contains a `Pending verification:` line, with the checks listed
 - **Open questions / blockers** — anything explicitly flagged in `status.md` files
 
@@ -53,6 +55,9 @@ Degraded / blocked:
 
 Module integration:
   - (none pending) | <module> — Test: <path or "not yet defined"> <marker>
+
+Open review plans:
+  - (none) | <module> — 2 of 5 reconciliations done — Run /b-review <module>
 
 Awaiting manual verification:
   - (none) | <module>/<feature> — <pending check>

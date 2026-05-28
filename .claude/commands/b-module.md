@@ -115,6 +115,7 @@ Module <name>: <state summary>
 
 Next move:
   - <one of:>
+    Run /b-review <name>                       (optional — fresh-eyes review now the module is complete)
     Run /b-module <name>                       (next module in inter-module build order)
     Run /b-feature <name>                      (next ⏸ feature, if next module is exploratory)
     Run /b-integration <module>         (re-run after fixing PENDING USER items)
@@ -122,7 +123,7 @@ Next move:
     (none — all modules ✓ and scope criteria met)
 ```
 
-Pick exactly one recommended next command. Mention at most one alternative on a second line.
+Pick exactly one recommended next command. Mention at most one alternative on a second line. `/b-review` is optional — if the module completed cleanly and the project is small, the operator may reasonably skip it; name it so it's one keystroke away, but don't force it ahead of the next module's build.
 
 ## Partial Failure
 

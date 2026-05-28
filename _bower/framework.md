@@ -1,4 +1,4 @@
-# Bower Framework v0.16
+# Bower Framework v0.18
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle.
 
@@ -253,6 +253,7 @@ Design and change:
 - `/b-ui` — Gated path for **structural and underspecified** UI changes — propose with alternatives → confirm → implement → reconcile `docs/ui.md`. Narrower than `/b-feature`: most UI work happens out-of-band (see *UI Changes — Paths and the Gate* above). Use when the change touches navigation, screen composition, layout grammar, or interaction patterns *and* the request has branching choices the user should pick between.
 - `/b-module` — Build all features in a module in one pass, one gate up front, one integration pass at the end. Loads relevant ADRs at propose time; reconcile prompts for ADR creation/supersession at module finalisation. Use when the module is small (≤3–4 features) and well-specified.
 - `/b-integration` — Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the test is the residual, or when a `/b-feature` change shifted what the test must assert.
+- `/b-review` — Fresh-eyes review of one **completed** module. Spawns the read-only `bower-reviewer` subagent to survey the module's plans, status, ADRs, and code, then surfaces drift across six dimensions a feature-at-a-time build can't see (test coverage, spec↔code drift, cross-feature consistency, status honesty, ADR drift, boundary integrity). Reconciles the drift it can resolve itself (stale docs, missing tests for agreed behaviour, dishonest markers, drifted ADRs) behind one triage gate; routes behavioural fixes to `/b-feature` and boundary erosion to `/b-design`. Accepted reconciliations land in a transient `docs/modules/<module>/review-plan.md` checklist that is the recovery anchor mid-apply and is deleted on completion. Optional — offered at module completion, not forced.
 - `/b-adr` — Scaffold a new ADR (or supersede an existing one). Auto-increments ID, fills date, prompts for the four body sections. Called from `/b-feature` and `/b-design`; can also be invoked directly when a decision needs recording outside those flows.
 
 Orientation and export:
@@ -277,10 +278,26 @@ Once the initial design is in place, the bias is toward `/b-feature` (or, for UI
 
 Living documentation does the heavy lifting: `/b-feature` updates `plan.md` and the relevant sibling plans in place, so post-MVP docs stay accurate without a separate "documentation pass" between feature work.
 
+## Module Review
+
+When a module reaches completion — every feature ✓ and the `## Module integration` marker ✓ — `/b-feature` and `/b-module` offer `/b-review <module>` as an *optional* next move. It is the one moment the module's emergent properties first become reviewable: whether the tests cover the *interactions* between features and not just each in isolation, whether the docs still match the code, whether features built weeks apart answer the same question the same way, whether an accepted ADR has quietly drifted from the implementation. A feature-at-a-time build cannot see these; a whole-module pass can.
+
+Review delegates diagnosis to the read-only `bower-reviewer` subagent. The isolation is the point — the implementing agent had every rationalisation for the current code in context and is biased to read it as correct; a subagent given only the docs, the acceptance criteria, the ADRs, and the code looks for where they *disagree*. It returns a report scoped to six dimensions (test coverage, spec↔code drift, cross-feature consistency, status honesty, ADR drift, boundary integrity) — deliberately not a linter, style checker, or security audit, which tools and `/security-review` already own.
+
+Each finding carries a **resolution class** that splits what `/b-review` *does* from what it *routes*:
+
+- **Owned** (`/b-review` reconciles them itself behind one triage gate): stale `plan.md`/`status.md` lines (a doc reconcile, already gate-free), missing tests for already-agreed behaviour, dishonest status markers, and ADRs that drifted from the code (superseded via `/b-adr`).
+- **Routed** (surfaced as literal-command next moves, never actioned here): behavioural fixes and consistency changes that need the propose-confirm gate go to `/b-feature`; **boundary erosion** — the module no longer integration-testing cleanly in isolation — is *always* hard-redirected to `/b-design`.
+
+This is why a review fix pass is safe despite touching several things out-of-band: every owned class is *individually* ad-hoc-safe under the rules above, and the one unsafe category is routed out by construction. The architectural hard-redirect still holds.
+
+Accepted owned reconciliations are written to `docs/modules/<module>/review-plan.md` *before* any are applied — the recovery anchor, same discipline as `/b-feature`'s post-gate `plan.md`. It is a **transient work list, not living documentation**: while it exists, the module has reconciliation owed (`/b-recap` surfaces it); when every item is checked, the file is deleted. There is never a dated pile of old review plans — one open plan per module, finished and deleted before the next review. Re-invoking `/b-review <module>` while a plan is open resumes the apply rather than re-diagnosing.
+
 ## Framework Reference
 
 - `_bower/rationale.md` — Why Bower works this way, design principles, comparison to alternatives
 - `_bower/brief-schema.md` — Schema for the change brief produced by `bower-analyst` and consumed by `/b-design` Stage 0
+- `_bower/review-schema.md` — Schema for the review report produced by `bower-reviewer` and consumed by `/b-review`
 - `_bower/roadmap.md` — Deferred framework improvements and their revisit triggers
 - `_bower/changes.md` — Versioned log of framework changes (most recent first)
 - `_bower/framework.md` — This file. Project CLAUDE.md `@`-includes it so framework guidance can be refreshed by re-copying `_bower/` without touching project-specific content in CLAUDE.md.

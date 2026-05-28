@@ -1,4 +1,4 @@
-# Bower Framework v0.15
+# Bower Framework v0.18
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -123,18 +123,21 @@ bower-framework/
 │   │   ├── b-ui.md             # Gated path for structural-and-underspecified UI changes
 │   │   ├── b-module.md         # Build a whole module: one gate, one integration pass
 │   │   ├── b-integration.md    # Build the module-boundary integration test
+│   │   ├── b-review.md         # Fresh-eyes review of a completed module; reconcile drift
 │   │   ├── b-adr.md            # Scaffold an Architectural Decision Record (or supersede one)
 │   │   ├── b-recap.md          # Read-only "where am I, what's next?" orientation
 │   │   ├── b-index.md          # Regenerate docs/index.md and docs/adr/index.md
 │   │   ├── b-spec.md           # Export a single specification document
 │   │   └── b-upgrade.md        # Upgrade a project to the current framework version
 │   └── agents/
-│       └── bower-analyst.md    # Read-only subagent that produces change briefs
+│       ├── bower-analyst.md    # Read-only subagent that produces change briefs
+│       └── bower-reviewer.md   # Read-only subagent that produces module review reports
 ├── _bower/
 │   ├── framework.md                # Project-facing guidance (a project's CLAUDE.md @-includes this)
 │   ├── project-CLAUDE.md           # Template CLAUDE.md seeded into a new project
 │   ├── rationale.md                # Why Bower works this way
 │   ├── brief-schema.md             # Schema for the change brief produced by bower-analyst
+│   ├── review-schema.md            # Schema for the review report produced by bower-reviewer
 │   ├── roadmap.md                  # Deferred framework improvements
 │   ├── changes.md                  # Versioned log of framework changes
 │   └── VERSION                     # Canonical framework version (single line)
@@ -154,6 +157,7 @@ bower-framework/
 | `/b-ui` | Gated path for **structural and underspecified** UI changes (e.g. "add tab-based content navigation" with multiple viable shapes). Propose-with-alternatives → confirm → implement → reconcile `docs/ui.md`. Most UI work skips the skill — visual tweaks and tightly-specified structural changes happen out-of-band; see *UI / UX Work* below. |
 | `/b-module` | Build all features in a module in one pass. One gate up front, one integration pass at the end. Use when the module is small and well-specified. |
 | `/b-integration` | Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the integration test is the residual. |
+| `/b-review` | Fresh-eyes review of one completed module. Spawns the read-only `bower-reviewer` subagent to find drift a feature-at-a-time build can't see — test coverage, spec↔code drift, cross-feature consistency, status honesty, ADR drift, boundary integrity — then reconciles what it safely can behind one gate and routes the rest to `/b-feature` or `/b-design`. Accepted fixes track in a transient `review-plan.md` deleted on completion. Optional; offered at module completion. |
 | `/b-adr` | Scaffold an Architectural Decision Record, or supersede an existing one. Auto-increments ID, writes the new ADR (and frontmatter update for supersession) in one pass. Called from `/b-feature` and `/b-design`; can be invoked directly. |
 | `/b-recap` | Read-only, advisory "where am I, what's next?" synthesis across project docs. Never writes. |
 | `/b-index` | Regenerate `docs/index.md` and `docs/adr/index.md` from current state. |
@@ -162,9 +166,19 @@ bower-framework/
 
 ## How It Works
 
+At a glance — states are where the project (or a module) sits; the labels on each arrow are the command that moves it there:
+
+![Bower SDD state flow](docs/bower-state.svg)
+
+`Complete` means a module is built and its boundary integration test passes; `/b-review` is an optional polish pass at that point, which is why it loops back to the same state. The one arrow that runs *backwards* — `Building → Designed` on an architectural change — is the framework's hard redirect: structural change can't be made on the fly, it goes back through `/b-design`.
+
+The diagram is the spine, not the whole picture. Several commands apply at any point and aren't shown: `/b-recap` (orient in a fresh session), `/b-analysis` (preview what a `/b-design` would do), `/b-adr` (record a cross-cutting decision), `/b-ui` (experience-surface changes), `/b-index` (regenerate the indexes), `/b-spec` (export a spec), and `/b-upgrade` (move to a newer framework version).
+
 `/b-design` is the design command. Six stages: Stage 0 produces a change brief via the read-only `bower-analyst` subagent; Stages 1–5 execute against the confirmed brief (problem framing, decisions/ADRs, architecture, module/feature plans, scaffolding) with a content gate per non-nil stage. Stages of no delta emit "nothing to do" cleanly, so heavy ceremony only fires where there's actual work. Required for greenfield and for changes that shift architecture, decisions, scope, or module structure.
 
 `/b-feature` is the implementation command for changes within existing architecture. Proposes changes and acceptance criteria, confirms with you, then implements. If the request turns out to need architectural change, it redirects to `/b-design`; if it's primarily about the experience surface, it redirects to `/b-ui` or one of the ad-hoc UI paths.
+
+`/b-module` and `/b-integration` are the other two arrows into `Complete` on the diagram. `/b-module` applies the same gate to a whole module at once — build all its features in one pass when the module is small and well-specified — and `/b-integration` writes the module-boundary test that actually flips a module to `Complete`. Feature-by-feature work reaches the same state by repeated `/b-feature` followed by a final `/b-integration`.
 
 The agent recommends; you decide. Every gate uses explicit confirmation — no changes without your sign-off. `/b-recap` re-orients you in a fresh session without touching anything; `/b-analysis` previews what `/b-design` would do for a proposed change without executing it.
 

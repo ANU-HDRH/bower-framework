@@ -35,3 +35,10 @@ Each item has a one-line description and a *revisit trigger*: the signal that tu
 
 - **Durable-ephemeral proposals on disk** — `docs/proposals/<slug>.md` written at the gate, deleted on completion, to survive session boundaries.
   *Revisit trigger:* if session-boundary pain shows up after first real use.
+  *Partially realised (v0.18):* `/b-review` instantiates this pattern for the review use-case — `docs/modules/<module>/review-plan.md` is written at the triage gate and deleted on completion, surviving a mid-apply crash. The *general* convention (a `docs/proposals/` home for any gated, multi-step change) is still deferred; review proved the shape works before generalising it.
+
+- **ADR index Decision summary per row** — Add a one-line Decision summary to each row of `docs/adr/index.md`, so bundled ADRs (several commitments under one umbrella title) surface their commitments via the index without opening each file. A `/b-index` change. First discussed and deferred during v0.17 (the lightweight-ADR work) on the grounds that no failure had yet surfaced.
+  *Revisit trigger:* when a reader has to open multiple ADRs to recover commitments a title-only index hid. `/b-review` is now a structured source of this signal — its `bower-reviewer` records "an ADR's commitments weren't visible from the index row" as a non-actionable observation. Two or more such observations across real reviews is the trigger to add the column.
+
+- **Token optimisation pass** - A pass through all framework instructions to tighten up the language reduce the token count as a speed and cost optimisation. Overall framework token use is still on the light side compared to many frameworks, and there is no active harm on the overly verbose instructions. Implementing this requires a definition of "token optimisation" which is a mini research project in itself.
+  *Revisit trigger:* Possibly for a 1.0 release, when the framework shape is stable.

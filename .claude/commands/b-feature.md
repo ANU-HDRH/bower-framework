@@ -182,6 +182,7 @@ The exact set of documents to touch depends on the intent. Common to all intents
 
    - `Run /b-feature <name>` — for the next ⏸ feature in the module's build order, or for follow-up work on this feature if PENDING USER items will need a new gate.
    - `Run /b-integration <module>` — if (a) this change shifted what the module's integration test must assert and the test now needs updating, **or** (b) this was the last non-✓ entry in the module's build order and the `## Module integration` marker is still ⏸ or 🚧.
+   - `Run /b-review <module>` *(optional)* — if this change just brought the module to completion (every feature ✓ **and** the `## Module integration` marker ✓), offer a fresh-eyes review of the whole module: test coverage, spec↔code drift, cross-feature consistency, ADR drift. This is the moment those module-level properties first become reviewable. Frame it as optional — on a small project the operator may reasonably skip it — but name the command so it's one keystroke away.
    - `Run /b-module <name>` — if the next module is small and well-specified.
    - `Run /b-design` — if the change revealed an architectural shift that needs design treatment (rare; usually surfaced earlier).
    - `Run /b-recap` — if next steps depend on user judgement and you want them to orient.

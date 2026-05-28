@@ -105,3 +105,4 @@ The schema section is **fixed boilerplate** — write it verbatim every time, re
 - If no modules exist yet, write the Core System and Design Context sections only
 - For ADR tables: if a row's `modules` field is empty/missing, the ADR belongs in the cross-cutting table; otherwise module-scoped. Order ADRs by ID ascending. Do **not** invent rows — read frontmatter literally.
 - If an ADR is malformed (missing required field, unknown status), include it in a final `## Malformed` section with the file path and the issue, so it can be fixed manually. This is the only way schema violations surface.
+- Ignore any `docs/modules/*/review-plan.md` — it is a transient `/b-review` work list, not project state, and never appears in the index.
