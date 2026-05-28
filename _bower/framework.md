@@ -31,7 +31,7 @@ Bower splits documentation into three layers by *audience* and *style*, not by d
 | `docs/architecture.md` | design | human | co-authored | narrative | — |
 | `docs/ui.md` | design | both | co-authored | narrative + lists | — |
 | `docs/design/problem-space.md` | design | human | human-owned | narrative | — |
-| `docs/adr/NNNN-*.md` | design | both | append-only body, mutable status | structured (frontmatter + four sections) | ~600 words |
+| `docs/adr/NNNN-*.md` | design | both | append-only body, mutable status | structured (frontmatter + two required sections, two optional) | ~150 words |
 | `docs/adr/index.md` | design | both | agent-generated | tables | — |
 | `docs/constitution.md` | design | human | human-owned | narrative | — |
 | `docs/scope.md` | design | human | co-authored | narrative | — |
@@ -134,7 +134,7 @@ superseded-by: [ADR-NNNN, ...]        # omit if empty
 
 `modules` references **exact Bower module names** (the directory names under `docs/modules/`). Omit the field entirely for cross-cutting decisions; do not use sentinels.
 
-**Body:** four sections, in this order, no exceptions — `## Context`, `## Decision`, `## Consequences`, `## Alternatives considered`. A good ADR is 200–600 words. If it's longer than a page, it's probably two decisions.
+**Body:** two required sections (`## Context`, `## Decision`) and two optional (`## Consequences` when there's a non-obvious cost or ongoing burden not already implied by the Decision; `## Alternatives considered` when real alternatives were weighed). Order is fixed when sections are present. A good ADR is **~150 words** and rarely over 300. ADRs may bundle several closely-related decisions under one coherent umbrella title — the split test is whether the title honestly covers the scope, not whether more than one commitment is named in the body. If the title would have to be "X and also Y," that's two ADRs.
 
 **Lifecycle rules.** ADR bodies are **immutable once accepted**. Reversals are not edits — write a new ADR with `supersedes: [ADR-NNNN]` and update the old ADR's frontmatter (`status: superseded`, `superseded-by: [ADR-NNNN]`). Both files in one commit. Partial supersession (a new decision scopes an exception to an old one) is handled by writing a new ADR and *not* marking the old one superseded — both remain `accepted`, with the relationship described in the new ADR's body.
 

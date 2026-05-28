@@ -6,6 +6,37 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.17 — 2026-05-28
+
+### Lightweight ADR shape: cut wordcount, keep umbrella scope
+
+**What changed**
+
+- **`.claude/commands/b-adr.md` rewrites the body-length and section-shape guidance.** The target moves from `200–600 words` to `~150 words typical, 300 ceiling`. The four-section template becomes **two required** (`## Context`, `## Decision`) and **two optional** (`## Consequences`, `## Alternatives considered`). `## Consequences` is now omitted by default and included only when there's a non-obvious cost, ongoing maintenance burden, or downstream commitment not already implied by the Decision sentence. `## Context` is reframed as a pointer (two sentences max, naming the question and pointing to the doc that frames it) rather than a restatement of framing material. `## Alternatives considered` is unchanged in spirit — one sentence per alternative, with rejection reason — and is named as the section that earns the ADR's keep.
+- **The "one decision per ADR" Behavioural Rule becomes "one coherent scope per ADR."** ADRs may bundle several closely-related decisions under an umbrella title (e.g. "sidecar accommodation for patterns" covering artefact layout, build-time merging, and provenance rendering). The split test is whether the title honestly covers the scope, not whether more than one commitment is named in the body. The "and also we decided…" smell is reframed to fire only when the additional commitment falls outside the umbrella ("and also we switched the build tool").
+- **The Step 3 gate self-audit gains three checks** before presenting the draft to the user: does the Decision sentence fit under the title (or is a second ADR lurking)? Is `## Consequences`, if included, naming a real non-obvious cost or merely restating the Decision? Is `## Context` paraphrasing a doc already referenced (tighten if so)?
+- **`What NOT To Do` is expanded** to forbid padding to length, restating framing docs in Context, and writing pseudo-Consequences sections. The old "do not bundle multiple decisions into one ADR" rule is replaced with the umbrella-test phrasing.
+- **`_bower/framework.md` ADR section updated.** The body description names the required/optional split, the ~150-word target with 300 ceiling, and the umbrella-scope bundling rule. The Living-Documentation table row for `docs/adr/NNNN-*.md` moves from `~600 words` to `~150 words` and updates the structure note.
+- **`_bower/rationale.md` "ADRs as Decision Log" gains a closing paragraph** on the lightweight posture — why brevity, why bundling under an umbrella title is encouraged (the model already wants to reason about meaningful units of software), why `## Alternatives considered` is the one section that earns growth, and why splitting every sub-decision into its own file would inflate the index without helping the agent.
+
+**Why**
+
+ADRs in real projects were bloating to ~500 words across four sections of mixed-quality prose. A representative example: a downstream project's ADR-0005 ("sidecar accommodation for patterns") landed at ~480 words, with a Context section that paraphrased its referenced doc, a Consequences section split between justification, forward plans, and alternatives-rebuttals, and overlap with the Alternatives section. Inside the 200–600 budget, but still bloated — because the budget was anchoring high and the four mandatory bins were inviting fill.
+
+The fix is per-ADR wordcount, not per-ADR scope. ADR-0005's scope (three closely-related commitments under one umbrella) is honest; its prose is not. An earlier candidate fix — splitting bundled ADRs into separate files — was rejected because it relocates the consumability problem rather than solving it: more ADRs means a heavier index, more "is this the one I need" decisions per change, and a worse fit for Bower's small-project posture (1–3 people, agent-as-frequent-reader, no enterprise audit obligation). The model is not having trouble bundling related decisions under a coherent title; the framework should not fight what the model wants to do when that intent is reasonable.
+
+The `## Consequences`-optional move does most of the trimming on its own. The pseudo-consequence is the most common bloat mode: when there is no real cost to name, the section gets filled with restated Decision content, forward implementation plans, or alternatives-rebuttals — all of which belong elsewhere or nowhere. Making the section earn its place removes the bin without removing the signal when there's genuine signal to record.
+
+An adjacent change to the ADR index format — adding a one-line Decision summary per row, so bundled ADRs surface their commitments via the index — was discussed and deferred. No evidence of failure yet, and the lightweight-framework axis suggests waiting for the failure mode before adding `/b-index` complexity.
+
+### Migration
+
+None — no project-side changes required. ADR bodies remain immutable; existing ADRs at any length are valid as-written. The new shape applies only to ADRs created after the upgrade. Projects upgrading from v0.16 pick up the new `/b-adr` behaviour on the next session after running `scripts/scaffold.sh <project>` (or `/b-upgrade`). After scaffold, the project's `_bower/VERSION` will be at `0.17`; verify by reading it.
+
+If a project wants to retroactively tighten older ADRs, do not edit existing bodies (the immutability rule still applies). Supersede with a new ADR only when the *decision* has actually changed, not when its prose is just verbose.
+
+---
+
 ## v0.16 — 2026-05-25
 
 ### `/b-feature`: write `plan.md` after the gate, before implementing

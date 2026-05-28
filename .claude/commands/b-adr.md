@@ -8,7 +8,7 @@ The user's description of the decision: $ARGUMENTS
 
 ## Important Behavioural Rules
 
-- **One decision per ADR.** If you find yourself drafting "and also we decided…", that's a second ADR.
+- **One coherent scope per ADR.** An ADR may bundle several closely-related decisions under an umbrella title (e.g. "sidecar accommodation for patterns" covering artefact layout, build-time merging, and provenance rendering). The split test is whether the title honestly covers the scope — if you find yourself drafting "and also we switched the build tool," that's a second ADR. Naming more than one commitment in the body is fine when the umbrella holds.
 - **Bodies are immutable once accepted.** This command writes a new ADR or amends frontmatter only. It never edits an existing ADR's body.
 - **Consult before writing.** Use AskUserQuestion to confirm the draft before committing it to disk.
 - **Use exact Bower module names.** The `modules` field references directories under `docs/modules/`. Omit the field entirely for cross-cutting decisions; do not invent sentinels like `[*]` or `[all]`.
@@ -31,7 +31,7 @@ Do **not** load every ADR. The point of the index is that you don't have to.
 
 ## Step 3: Draft the ADR
 
-Compose the file:
+Compose the file. Two sections are required (`## Context`, `## Decision`); two are optional and earn their place only when they carry real content (`## Consequences`, `## Alternatives considered`). Order is fixed.
 
 ```markdown
 ---
@@ -45,27 +45,30 @@ supersedes: [ADR-NNNN]
 
 ## Context
 
-<What's the situation that forced a decision? What constraints, observations, or
-prior decisions are in play? Two or three paragraphs max. Name the problem,
-don't solve it yet.>
+<Two sentences max. Name the question that forced a decision and point to the
+doc that frames it — `architecture.md`, an earlier ADR, a referenced design doc.
+Do not restate what those docs already say.>
 
 ## Decision
 
-<What did we decide. Active voice, present tense. "We will use X." One paragraph,
-maybe two. This is the load-bearing sentence — if someone reads only this section,
-they should know what's true.>
+<What did we decide. Active voice, present tense. "We will use X." One paragraph.
+Lead with the load-bearing sentence — if someone reads only the first line, they
+should know what's true. An ADR may name more than one commitment here when they
+share the umbrella scope of the title.>
 
-## Consequences
+## Consequences   <!-- OPTIONAL -->
 
-<What follows from this decision — both good and bad. What becomes easier, what
-becomes harder, what we've now committed to maintaining. Be honest about the
-costs; future-you needs to know what trade-off was accepted, not just the win.>
+<Include only when there is a non-obvious cost, an ongoing maintenance burden,
+or a downstream commitment that is not already implied by the Decision sentence.
+If the consequence is "this means X will be true" — that's already in Decision;
+omit this section. When in doubt, leave it out.>
 
 ## Alternatives considered
 
-<What else was on the table and why it lost. Even one sentence per alternative
-is enough — "Considered Redis; rejected because [reason]." This is the section
-everyone skips and everyone later wishes existed.>
+<One sentence per alternative + the rejection reason. "Considered Redis; rejected
+because [reason]." This is the section that earns the ADR's keep — the trace of
+why x and not y, which a future reader (human or model) can't reconstruct from
+the code. Include it whenever real alternatives were weighed.>
 ```
 
 Frontmatter rules:
@@ -77,7 +80,7 @@ Frontmatter rules:
 
 Filename: `docs/adr/NNNN-kebab-case-title.md`. Lowercase, hyphens, no punctuation, no trailing period. The kebab title should match the frontmatter title.
 
-Body length: aim for 200–600 words across all four sections combined. If you're past a page, you probably have two decisions; surface this to the user.
+Body length: aim for ~150 words across all sections combined, ceiling 300. If you're approaching 300, check whether the prose is doing real work or just filling sections — pad Context with restatement of framing docs, or write pseudo-Consequences that just rephrase the Decision, and you've blown the budget without adding signal. The Alternatives section is the one that may legitimately grow when several real alternatives were weighed.
 
 ## Gate: Confirm or Adjust
 
@@ -86,6 +89,8 @@ Present the drafted ADR to the user via AskUserQuestion. Show:
 - The proposed filename and ID
 - The full frontmatter
 - The full body
+
+Before presenting, self-audit: does the Decision section's load-bearing sentence fit under the title? If not, flag a possible second ADR. Does `## Consequences`, if included, name a non-obvious cost — or is it restating the Decision? If the latter, propose omitting it. Is `## Context` paraphrasing a doc already referenced? If so, tighten to one or two sentences pointing at the doc.
 
 If this is a supersession, also show the frontmatter change to the older ADR (status, superseded-by, date).
 
@@ -129,7 +134,10 @@ Next move:
 - Do not write the ADR before the gate
 - Do not skip the supersession frontmatter update on the older ADR
 - Do not invent sentinels for cross-cutting decisions — omit the `modules:` field
-- Do not bundle multiple decisions into one ADR — one decision per file
+- Do not bundle decisions the title can't honestly cover — that's two ADRs (but bundling related commitments under a coherent umbrella title is fine)
+- Do not pad sections to hit a length — ~150 words is the target, not a floor
+- Do not restate framing docs in `## Context` — point to them in one or two sentences
+- Do not write a `## Consequences` section when the consequences are already implied by the Decision sentence — omit the heading
 - Do not write code, modify plans, or update status files — this command is ADR-only
 - Do not emit free-prose next moves — use a literal slash command or the `(none — ...)` form
 </critical_constraints>
