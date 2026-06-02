@@ -1,4 +1,4 @@
-# Bower Framework v0.18
+# Bower Framework v0.19
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle.
 
@@ -42,6 +42,8 @@ Bower splits documentation into three layers by *audience* and *style*, not by d
 | `docs/reference/**` | reference | agent | external/vendored | as-delivered | — |
 
 **Ownership semantics:** *human-owned* docs may be drafted by the agent during full design, but must not be rewritten unprompted afterwards. *Co-authored* docs are agent-updated in place as changes land, human-reviewed and edited freely. *Agent-owned* docs are routinely maintained by the agent. *External/vendored* material is treated as read-only — consult it, don't edit it; refresh by re-vendoring. *ADR bodies* are immutable once accepted — only frontmatter (status, supersession links) is updated; new decisions go in new ADRs.
+
+**The two index files are derived-state-with-preserved-structure.** `docs/index.md` and `docs/adr/index.md` are agent-owned, but `/b-index` does not own their *prose*. On regeneration it recomputes only the derived state — status markers, ADR table rows, counts — and updates those in place, preserving any curated structure the project has grown around them (status dashboards, documentation maps, rationale narrative, an elaborated ADR schema reference). You may hand-author such narrative into these files; `/b-index` will refresh the numbers without flattening it. The skill's templates are first-generation seeds, not a required shape.
 
 ## Documentation Structure
 

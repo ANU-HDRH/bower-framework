@@ -2,6 +2,16 @@
 
 Regenerate `docs/index.md` and (if `docs/adr/` exists) `docs/adr/index.md` by scanning the current state of project documentation.
 
+## Regeneration contract
+
+`docs/index.md` and `docs/adr/index.md` are **derived-state files with preserved structure**. Both jobs matter, and they are not the same job:
+
+- **Derived state is authoritative.** Status markers, ADR table rows, and counts are recomputed from the current `status.md` / `module-status.md` / ADR frontmatter and overwrite whatever the file currently shows. This is the whole point of the command — never carry a stale marker forward.
+- **Curated structure is preserved.** If a file already exists, update its derived values *in place* and leave everything else untouched: section ordering, hand-written narrative (status dashboards, documentation maps, parallelism/rationale prose), a richer schema reference, legend tables. **Do not flatten an existing file to the templates below** — projects routinely grow a richer index than the seed template, and that curation is not yours to discard.
+- **The templates below are first-generation seeds, not a ceiling.** Use them verbatim only when the file does **not yet exist**. When the file exists, the template tells you which derived values to refresh and where they live structurally; the project's own layout wins.
+
+Deciding derived vs. curated: a section is *derived* only if its content is mechanically reproducible from status markers or ADR frontmatter — the module table's status column, the three ADR tables, the accepted/superseded counts. Everything else is curated; preserve it verbatim. If you cannot tell, preserve it.
+
 ## Process
 
 1. Read `docs/architecture.md` for the system overview (if it exists)
@@ -15,7 +25,7 @@ Regenerate `docs/index.md` and (if `docs/adr/` exists) `docs/adr/index.md` by sc
 
 ## Output: `docs/index.md`
 
-Write `docs/index.md` with the following structure:
+If `docs/index.md` already exists, follow the **Regeneration contract** above: refresh the derived status markers in place and preserve the project's structure. The structure below is the seed used only on first generation:
 
 ```markdown
 # Project Index
@@ -42,7 +52,7 @@ The UI line is included only if `docs/ui.md` exists. The Decision Log line is in
 
 ## Output: `docs/adr/index.md`
 
-If `docs/adr/` does not exist, skip. Otherwise write `docs/adr/index.md` with the following structure:
+If `docs/adr/` does not exist, skip. If `docs/adr/index.md` already exists, follow the **Regeneration contract** above: refresh the three derived tables and the accepted/superseded counts in place, and preserve the project's schema reference, section ordering, and any prose. The structure below is the seed used only on first generation:
 
 ```markdown
 # Architectural Decision Records
@@ -93,10 +103,11 @@ Filter by `status: accepted` for "what's true now." Older statuses are historica
 (Listed by ascending ID. Includes `status: superseded` and `deprecated`. Omit the section heading if empty.)
 ```
 
-The schema section is **fixed boilerplate** — write it verbatim every time, regardless of project. It is the canonical schema reference for the project. The tables underneath are derived from frontmatter.
+The schema section is **boilerplate** — on first generation, write it verbatim. It is the canonical schema reference for the project. On regeneration, treat it as curated: if the project has elaborated it (e.g. expanded the field notes, added lifecycle or access-pattern prose), leave that intact rather than overwriting it with this seed. The tables underneath are derived from frontmatter and are always recomputed.
 
 ## Rules
 
+- **Preserve, don't flatten.** When an index file already exists, update derived values in place per the Regeneration contract; never replace a richer existing file with the seed template. The templates in this skill are minimums, not the required shape.
 - Order modules in `docs/index.md` by dependency sequence (build order), not alphabetically
 - Derive status markers from status.md files: ✓ 🚧 ⏸ 🟡 🔴 🔧
 - Module-level status is the "worst" status across both its feature markers *and* its `## Module integration` `Test:` marker (🔴 > 🟡 > 🚧 > ⏸ > 🔧 > ✓). A module with all features ✓ but module integration ⏸ surfaces as 🚧 — the constitution's verified-for-✓ rule made observable.

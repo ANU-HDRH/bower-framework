@@ -6,6 +6,28 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.19 — 2026-06-03
+
+### `/b-index`: structure-preserving regeneration, not template clobber
+
+**What changed**
+
+- **`.claude/commands/b-index.md` gains a `## Regeneration contract` section** that splits the command's job in two: *derived state* (status markers, ADR table rows, accepted/superseded counts) is authoritative and recomputed on every run; *curated structure* (status dashboards, documentation maps, parallelism/rationale prose, an elaborated ADR schema reference, legend tables, custom section ordering) is preserved verbatim. When an index file already exists, derived values are updated **in place**; the file is never flattened to the skill's template.
+- **The two `## Output:` templates are reframed as first-generation seeds.** Each now opens with an explicit "if the file already exists, refresh derived values in place and preserve structure" instruction; the literal template is used verbatim only when the file does not yet exist.
+- **The ADR-index schema block is no longer "write verbatim every time."** It is verbatim on first generation, but treated as curated on regeneration — if a project has elaborated the schema reference (expanded field notes, added lifecycle/access-pattern prose), `/b-index` leaves it intact. The three tables underneath remain always-recomputed.
+- **A new top Rule — "Preserve, don't flatten"** — restates the contract for literal-minded execution, declaring the templates minimums rather than the required shape.
+- **`_bower/framework.md`** gains an ownership-semantics note: the two index files are *derived-state-with-preserved-structure* — agent-owned, but `/b-index` does not own their prose. Projects may hand-author narrative into them; regeneration refreshes the numbers without discarding it. Heading bumped to v0.19.
+
+**Why**
+
+`/b-index` was written as a full regenerator — "write it verbatim every time" — but it is executed by a model, not a script, and projects naturally grow a richer index than the skeletal seed template (a status dashboard, a documentation map, build-order rationale). Observed in practice: during a `/b-integration` the indexer hit a real conflict between "regenerate verbatim" and "don't destroy the hand-authored content," and improvised an in-place edit. That improvisation was the *correct* behaviour the framework had failed to specify. Worse, the unspecified path had two failure modes: a literal executor would clobber the curation, while a preserving executor was now hand-editing what is supposed to be mechanically recomputed — risking marker drift, the exact thing the integration-completion regen exists to prevent. Naming the contract — derived state authoritative and in-place, structure preserved — keeps the mechanical-recompute guarantee *and* the curation, and stops the templates from being read as a ceiling.
+
+### Migration
+
+None — no project-side changes required.
+
+This change only makes `/b-index` more conservative: it now preserves curated index structure it previously would have overwritten. Projects pick up the new skill by re-running the scaffold script (which copies `.claude/commands/`); existing `docs/index.md` and `docs/adr/index.md` files — whether skeletal or hand-enriched — are preserved automatically on the next `/b-index` run, with only their derived status markers and ADR tables refreshed. No file needs to be edited, moved, or restructured. Projects whose index files are still the bare seed template may now optionally enrich them (add a status dashboard, documentation map, or build-order rationale) and trust that future regenerations will keep that content; this is an option, not a required step.
+
 ## v0.18 — 2026-05-29
 
 ### `/b-review`: fresh-eyes module review with a transient reconciliation plan
