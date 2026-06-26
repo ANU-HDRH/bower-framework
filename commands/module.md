@@ -1,12 +1,12 @@
 # Bower Module Build
 
-You are running the Bower module-build workflow. This builds all features in a single module in one pass, with one gate up front covering the entire module plan and one acceptance check at the end. Use this when the module is small and well-specified; use `/b-feature` instead for exploratory work or modules that will likely need mid-flight design revision.
+You are running the Bower module-build workflow. This builds all features in a single module in one pass, with one gate up front covering the entire module plan and one acceptance check at the end. Use this when the module is small and well-specified; use `/bower:feature` instead for exploratory work or modules that will likely need mid-flight design revision.
 
 The user's target module: $ARGUMENTS
 
 ## Important Behavioural Rules
 
-- **One gate, one acceptance.** You gate the whole module up front. You do not re-gate each feature individually. If an in-flight feature reveals the plan was wrong, stop and consult the user again via AskUserQuestion before continuing — same rule as `/b-feature`.
+- **One gate, one acceptance.** You gate the whole module up front. You do not re-gate each feature individually. If an in-flight feature reveals the plan was wrong, stop and consult the user again via AskUserQuestion before continuing — same rule as `/bower:feature`.
 - **Respect the build order.** Features are implemented in the order listed in `module-status.md` under `## Build order`.
 - **Read first.** Architecture, scope, and the module's existing `module-status.md` are the foundation.
 - **Acceptance is explicit.** Per-feature acceptance criteria plus a module-level integration test — both agreed at the gate.
@@ -14,14 +14,14 @@ The user's target module: $ARGUMENTS
 
 ## Step 0: Fit Check
 
-Before anything else, confirm this module is actually a good fit for `/b-module`:
+Before anything else, confirm this module is actually a good fit for `/bower:module`:
 
 - Module has a clear build order in `module-status.md`
 - Features are well-specified from Stage 4 planning
 - Module size is reasonable (typically ≤3–4 features; more is a smell but not a hard limit)
 - No known architectural ambiguity that would force mid-flight redesign
 
-If any of these fail, stop and recommend the user run `/b-feature` instead, feature by feature. State the specific concern.
+If any of these fail, stop and recommend the user run `/bower:feature` instead, feature by feature. State the specific concern.
 
 ## Step 1: Understand Context
 
@@ -94,17 +94,17 @@ For each check:
 
 - **PASS** — flip the relevant feature from 🚧 to ✓ in `module-status.md`; remove the item from that feature's `status.md` `Pending verification:` line (delete the line if now empty).
 - **FAIL** — treat as a bug; if fixable in scope, fix and re-verify. If not, leave the feature 🟡 or 🔴 with the failure noted in its `status.md`.
-- **Deferred** — leave the feature 🚧 with `Pending verification:` intact. `/b-recap` will surface it later.
+- **Deferred** — leave the feature 🚧 with `Pending verification:` intact. `/bower:recap` will surface it later.
 
-**Decision reconciliation.** Review the **Decision impact** noted at the gate. For each touched ADR: confirmed → no action; contradicted/drifted → invoke `/b-adr` with the ADR-ID being superseded; narrowed → invoke `/b-adr` for a partial-supersession ADR; new cross-cutting decision → invoke `/b-adr` to record it.
+**Decision reconciliation.** Review the **Decision impact** noted at the gate. For each touched ADR: confirmed → no action; contradicted/drifted → invoke `/bower:adr` with the ADR-ID being superseded; narrowed → invoke `/bower:adr` for a partial-supersession ADR; new cross-cutting decision → invoke `/bower:adr` to record it.
 
-Skip only if no Decision impact was identified at the gate. If the user rejects the drafted ADR at `/b-adr`'s gate, redraft with their adjustments rather than skipping; if they want to abandon ADR creation entirely, re-classify the impact (likely "confirmed") — do not silently skip. Complete any ADR work before continuing to Step 5.
+Skip only if no Decision impact was identified at the gate. If the user rejects the drafted ADR at `/bower:adr`'s gate, redraft with their adjustments rather than skipping; if they want to abandon ADR creation entirely, re-classify the impact (likely "confirmed") — do not silently skip. Complete any ADR work before continuing to Step 5.
 
 ## Step 5: Finalise
 
 10. Update integration notes in `module-status.md` `## Module integration` `Notes:` if behaviour differs from Stage 4's assumptions. Confirm the `Test:` marker reflects the real outcome of Step 3.9.
 11. Update `scope.md` if any success criterion is now met. Only count criteria whose manual checks have passed.
-12. Run `/b-index` or update `docs/index.md` so module-level status reflects reality.
+12. Run `/bower:index` or update `docs/index.md` so module-level status reflects reality.
 
 ## Step 6: Handoff
 
@@ -115,15 +115,15 @@ Module <name>: <state summary>
 
 Next move:
   - <one of:>
-    Run /b-review <name>                       (optional — fresh-eyes review now the module is complete)
-    Run /b-module <name>                       (next module in inter-module build order)
-    Run /b-feature <name>                      (next ⏸ feature, if next module is exploratory)
-    Run /b-integration <module>         (re-run after fixing PENDING USER items)
-    Run /b-recap                               (orient before deciding)
+    Run /bower:review <name>                       (optional — fresh-eyes review now the module is complete)
+    Run /bower:module <name>                       (next module in inter-module build order)
+    Run /bower:feature <name>                      (next ⏸ feature, if next module is exploratory)
+    Run /bower:integration <module>         (re-run after fixing PENDING USER items)
+    Run /bower:recap                               (orient before deciding)
     (none — all modules ✓ and scope criteria met)
 ```
 
-Pick exactly one recommended next command. Mention at most one alternative on a second line. `/b-review` is optional — if the module completed cleanly and the project is small, the operator may reasonably skip it; name it so it's one keystroke away, but don't force it ahead of the next module's build.
+Pick exactly one recommended next command. Mention at most one alternative on a second line. `/bower:review` is optional — if the module completed cleanly and the project is small, the operator may reasonably skip it; name it so it's one keystroke away, but don't force it ahead of the next module's build.
 
 ## Partial Failure
 
@@ -132,9 +132,9 @@ If a feature mid-way through the module fails acceptance and cannot be resolved 
 1. Leave the failing feature's `status.md` honest about what went wrong and what the next move is.
 2. Leave `module-status.md` build-order markers reflecting reality (some ✓, one 🔴 or 🟡, remainder ⏸).
 3. Stop. Do not press on to subsequent features — they may depend on the broken one.
-4. Surface the situation to the user and suggest `/b-feature` for targeted recovery, or a return to design if the issue is architectural.
+4. Surface the situation to the user and suggest `/bower:feature` for targeted recovery, or a return to design if the issue is architectural.
 
-`/b-recap` will present this state cleanly when anyone returns to the project.
+`/bower:recap` will present this state cleanly when anyone returns to the project.
 
 <critical_constraints>
 ## What NOT To Do
@@ -144,7 +144,7 @@ If a feature mid-way through the module fails acceptance and cannot be resolved 
 - Do not skip the integration test
 - Do not expand scope beyond the module's build order
 - Do not proceed past a feature whose tests are failing
-- Do not propose architectural changes — if the module needs them, recommend the user run `/b-design` instead
+- Do not propose architectural changes — if the module needs them, recommend the user run `/bower:design` instead
 - Do not treat acceptance criteria as optional
 - Do not mark a feature ✓ if any agreed criterion is MISSING or PENDING USER
 - Do not skip the module-end manual-check prompt when manual criteria were agreed at the gate

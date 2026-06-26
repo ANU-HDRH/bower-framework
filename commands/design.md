@@ -2,7 +2,7 @@
 
 You are running the Bower design process. This is a six-stage workflow that produces (or revises) the design documentation and runnable scaffolding for a project. Stage 0 produces a **change brief** via the `bower-analyst` subagent; Stages 1–5 execute against that brief. The brief is the contract — stages do not re-derive what work needs doing.
 
-Use for greenfield projects and for revisions that cross architectural boundaries (new modules, new technology, cross-cutting decisions, scope shifts). For changes within existing architecture that don't touch cross-cutting commitments, use `/b-feature` instead — it has its own propose-and-confirm gate, and will redirect back here if a request turns out to need design treatment.
+Use for greenfield projects and for revisions that cross architectural boundaries (new modules, new technology, cross-cutting decisions, scope shifts). For changes within existing architecture that don't touch cross-cutting commitments, use `/bower:feature` instead — it has its own propose-and-confirm gate, and will redirect back here if a request turns out to need design treatment.
 
 The user's description of the change: $ARGUMENTS
 
@@ -15,8 +15,8 @@ The user's description of the change: $ARGUMENTS
 - **Per-stage writes.** Each stage with delta writes its files immediately after its gate is confirmed. There is no consolidated write step.
 - **Recommend, don't dictate.** When presenting options, mark one as (recommended) with a brief rationale, but make it clear the user chooses.
 - **Literal-command handoff.** The post-design handoff names exact slash commands the operator types next, never free prose.
-- **Write docs, not code.** This workflow produces documentation files and (in Stage 5) scaffolding only. Feature code belongs to `/b-feature` or `/b-module`.
-- **Don't re-spawn the analyst mid-flow.** The brief is locked at Stage 0. If the user wants a re-analysis, that's a new `/b-design` invocation, not an in-flow restart.
+- **Write docs, not code.** This workflow produces documentation files and (in Stage 5) scaffolding only. Feature code belongs to `/bower:feature` or `/bower:module`.
+- **Don't re-spawn the analyst mid-flow.** The brief is locked at Stage 0. If the user wants a re-analysis, that's a new `/bower:design` invocation, not an in-flow restart.
 
 ## Stage 0: Change Analysis
 
@@ -71,7 +71,7 @@ Stage-specific drafting and write rules follow.
 
 **Drafting:** For each operation in the brief's list:
 
-- **new** — Draft a new ADR per the schema in `/b-adr` (frontmatter + four sections: Context, Decision, Consequences, Alternatives considered). 200–600 words.
+- **new** — Draft a new ADR per the schema in `/bower:adr` (frontmatter + four sections: Context, Decision, Consequences, Alternatives considered). 200–600 words.
 - **supersedes ADR-NNNN** — Draft the new ADR with `supersedes: [ADR-NNNN]` in the frontmatter. Also draft the frontmatter update for the superseded ADR (`status: superseded`, `superseded-by: [<new-id>]`). The superseded ADR's body is **not** edited.
 - **partial-supersedes ADR-NNNN** — Draft the new ADR referencing the original in `## Context` and `## Consequences`. Both ADRs remain `accepted`; neither's frontmatter changes.
 - **confirms ADR-NNNN** — **No file is written.** Acknowledge in the stage output: "Confirmed ADR-NNNN, no new ADR written." This is a deliberate signal that the operator considered it.
@@ -94,7 +94,7 @@ Stage-specific drafting and write rules follow.
 **Drafting:**
 
 - **Greenfield:** Draft `docs/architecture.md` covering both views. The software-architecture section is sourced from the module breakdown that Stage 4 will produce — draft it consistent with Stage 4's planned modules so the two stay aligned.
-- **Revision:** Draft the specific edits the brief calls for. The brief distinguishes runtime-view deltas from software-architecture deltas; honour that distinction in the drafted edit. Show each edit in context (surrounding sentences) so the gate can confirm placement, not just text. **If `docs/ui.md` exists, read it first** — architectural revisions in projects with an interface often shift logic-UI interactions (routing, state, data flow into and out of screens), and the existing experience surface is the constraint those edits have to respect. The drafted architecture edit should name any `docs/ui.md` reconciliation it implies, so Stage 4 (or follow-up `/b-ui` / ad-hoc work) picks it up.
+- **Revision:** Draft the specific edits the brief calls for. The brief distinguishes runtime-view deltas from software-architecture deltas; honour that distinction in the drafted edit. Show each edit in context (surrounding sentences) so the gate can confirm placement, not just text. **If `docs/ui.md` exists, read it first** — architectural revisions in projects with an interface often shift logic-UI interactions (routing, state, data flow into and out of screens), and the existing experience surface is the constraint those edits have to respect. The drafted architecture edit should name any `docs/ui.md` reconciliation it implies, so Stage 4 (or follow-up `/bower:ui` / ad-hoc work) picks it up.
 
 **Cross-stage rule.** Every Stage 4 `new module` operation requires a corresponding software-architecture entry in this stage. If the brief lists a new module under Stage 4 without a Stage 3 delta covering its software-architecture entry, surface this at the Stage 3 gate as a brief inconsistency and ask the operator to amend before drafting.
 
@@ -112,7 +112,7 @@ This is the stage that most often does real work on revisions. It covers four ki
 
 - **Plan touches** (existing `plan.md` files): Draft each edit per the brief's one-line reason. Touches range from a sentence to a paragraph. Show the edit in context.
 - **Build-order updates** (existing `module-status.md` `## Build order` sections): Draft the reordering or append.
-- **Module integration notes** (existing `module-status.md` `## Module integration` `Notes:` line): Draft the refreshed line. Do not flip the integration marker — that's `/b-integration`'s job.
+- **Module integration notes** (existing `module-status.md` `## Module integration` `Notes:` line): Draft the refreshed line. Do not flip the integration marker — that's `/bower:integration`'s job.
 - **New modules** (greenfield, or a revision that adds a module): Draft the new module's `module-status.md` placeholder with a `## Module integration` section (`Test: not yet defined — ⏸` and `Notes:` from the brief) and a `## Build order` section listing the module's features in order, each marked `⏸`. Do not create feature `plan.md` or `status.md` files — those belong to implementation.
 
 **Gate:** Present all Stage 4 drafts together. Group by file path so the gate is scannable. Ask: "Confirm the plan and module-status edits, or adjust."
@@ -142,8 +142,8 @@ For each item, classify as *create* / *modify* / *archive* / *skip (already pres
 
 After Stage 5 completes (or is skipped), regenerate the index files so they reflect the new state:
 
-1. Run `/b-index` if available in this session — it regenerates both `docs/index.md` and `docs/adr/index.md`.
-2. If `/b-index` is not invokable, write `docs/adr/index.md` directly per the schema in `b-index.md`, and write/update `docs/index.md` to reflect any new modules and status markers.
+1. Run `/bower:index` if available in this session — it regenerates both `docs/index.md` and `docs/adr/index.md`.
+2. If `/bower:index` is not invokable, write `docs/adr/index.md` directly per the schema in `b-index.md`, and write/update `docs/index.md` to reflect any new modules and status markers.
 
 This is mechanical and does not gate.
 
@@ -157,9 +157,9 @@ The block must include:
 2. **Summary of changes** — One line per stage that had non-nil delta, naming what was written or edited. Stages marked `nothing to do` are listed in a single line at the end (e.g. "Stages 1, 5: nothing to do.").
 3. **Suggested commit point** — A proposed commit message. Advisory only: do **not** run `git commit` yourself.
 4. **Next move** — Drawn from the brief's `## Suggested next move (post-design)` section, refined if you have better information:
-   - **Greenfield:** recommend `/b-module <first-module>` if the first module has ≤3 features and an unambiguous plan; otherwise `/b-feature <first-feature>`. Mention the other option in one line.
-   - **Revision:** typically a list of `/b-feature <name>` invocations, one per touched plan, in the order the brief suggested.
-5. **Orientation hint** — "Run `/b-recap` any time to re-orient."
+   - **Greenfield:** recommend `/bower:module <first-module>` if the first module has ≤3 features and an unambiguous plan; otherwise `/bower:feature <first-feature>`. Mention the other option in one line.
+   - **Revision:** typically a list of `/bower:feature <name>` invocations, one per touched plan, in the order the brief suggested.
+5. **Orientation hint** — "Run `/bower:recap` any time to re-orient."
 
 Example shape (revision):
 
@@ -177,12 +177,12 @@ Suggested commit point — stage the design revision:
   docs: extend control-code taxonomy with framing codes (ADR-0034)
 
 Next move:
-  - /b-feature framing-element-ui              (response-display)
-  - /b-feature framing-turn-annotation         (eval-mode)
-  - /b-feature framing-probe-personas          (test-harness)
-  - /b-feature framing-prompt-principle        (prompt-module)
+  - /bower:feature framing-element-ui              (response-display)
+  - /bower:feature framing-turn-annotation         (eval-mode)
+  - /bower:feature framing-probe-personas          (test-harness)
+  - /bower:feature framing-prompt-principle        (prompt-module)
 
-Run /b-recap any time to re-orient.
+Run /bower:recap any time to re-orient.
 ```
 
 <critical_constraints>
@@ -191,7 +191,7 @@ Run /b-recap any time to re-orient.
 - Do not bypass the brief. Stages 1–5 execute against Stage 0's confirmed brief. If you find work mid-stage that isn't in the brief, surface it to the user — do not silently expand scope.
 - Do not run the analysis inline in the main agent. Stage 0 spawns the `bower-analyst` subagent; isolated context is the point.
 - Do not re-spawn the analyst within Stages 1–5. Amendments at the Stage 0 gate are incorporated in working memory, not by re-running the analyst.
-- Do not implement features — Stage 5 is scaffolding only. Feature code belongs to `/b-feature` or `/b-module`.
+- Do not implement features — Stage 5 is scaffolding only. Feature code belongs to `/bower:feature` or `/bower:module`.
 - Do not create feature `plan.md` or `status.md` files — those come during implementation.
 - Do not skip a stage's content gate when the brief has non-nil delta for that stage.
 - Do not gate on applicability inside Stages 1–5 — applicability is Stage 0's gate, not a per-stage question.
@@ -200,5 +200,5 @@ Run /b-recap any time to re-orient.
 - Do not run `git commit` — the commit point is advisory. Print the suggested message; let the user commit.
 - Do not overwrite a user-authored `README.md` or `package.json` — only stock/boilerplate artefacts are candidates for replacement, and only after the Stage 5 gate.
 - Do not emit free-prose next moves — the post-design handoff names literal slash commands.
-- Do not call `/b-design` recursively.
+- Do not call `/bower:design` recursively.
 </critical_constraints>

@@ -70,7 +70,7 @@ bash <clone>/scripts/scaffold.sh <project-root>
 
 This refreshes `_bower/` (except `VERSION` and `SOURCE`, which the scaffold preserves) and `.claude/agents`/`.claude/commands`. The project's `_bower/VERSION` is still at the *old* value at this point — that's intentional. You own VERSION writes from here on.
 
-**Note:** The scaffold just rewrote `.claude/commands/b-upgrade.md` (this skill). The new version takes effect on the next `/b-upgrade` invocation; this run continues with the instructions already in your context.
+**Note:** The scaffold just rewrote `.claude/commands/bower:upgrade.md` (this skill). The new version takes effect on the next `/bower:upgrade` invocation; this run continues with the instructions already in your context.
 
 ## Step 6: Walk migration steps
 

@@ -1,8 +1,8 @@
 # Bower UI Change
 
-You are running the Bower UI change workflow — the gated path for **structural and underspecified** changes to the experience surface. Most UI work does not need this skill: visual tweaks, copy edits, and tightly-specified structural changes are handled out-of-band (the framework guidance in `_bower/framework.md` covers the three-path model). Reach for `/b-ui` when the change touches navigation, screen composition, layout grammar, or interaction patterns **and** the request has branching choices the user should pick between.
+You are running the Bower UI change workflow — the gated path for **structural and underspecified** changes to the experience surface. Most UI work does not need this skill: visual tweaks, copy edits, and tightly-specified structural changes are handled out-of-band (the framework guidance in `_bower/framework.md` covers the three-path model). Reach for `/bower:ui` when the change touches navigation, screen composition, layout grammar, or interaction patterns **and** the request has branching choices the user should pick between.
 
-This skill mirrors `/b-feature`'s propose-confirm-implement-reconcile shape, tuned for the experience surface: lighter reading list, proposal with alternatives, mock-up-or-description rather than component/caller analysis, reconciles `docs/ui.md` rather than feature plans alone.
+This skill mirrors `/bower:feature`'s propose-confirm-implement-reconcile shape, tuned for the experience surface: lighter reading list, proposal with alternatives, mock-up-or-description rather than component/caller analysis, reconciles `docs/ui.md` rather than feature plans alone.
 
 The user's description of the UI change: $ARGUMENTS
 
@@ -21,7 +21,7 @@ The test for "branching choices": would you have to pick between ≥2 viable sha
 - **Consult before building.** Use AskUserQuestion to present your proposal — including at least two viable alternatives where the change has branching choices — and get confirmation before writing code.
 - **Read first.** Read `docs/ui.md` (or note its absence), the relevant feature plans, and the project's design-token / theme / style config. Skim the architecture's UI module entry.
 - **Scope tightly.** Only propose what this request needs. Don't redesign adjacent screens.
-- **Architecture is hard-redirected.** If the request introduces a new top-level navigation pattern, swaps the design system or UI framework, adopts new state-management for the UI layer, or otherwise crosses architectural boundaries, stop and recommend `/b-design`. Surface what's architectural and decline ad-hoc. The hard line is the same as elsewhere in the framework.
+- **Architecture is hard-redirected.** If the request introduces a new top-level navigation pattern, swaps the design system or UI framework, adopts new state-management for the UI layer, or otherwise crosses architectural boundaries, stop and recommend `/bower:design`. Surface what's architectural and decline ad-hoc. The hard line is the same as elsewhere in the framework.
 - **Capture invariants, not pixels.** `docs/ui.md` records navigation, layout grammar, interaction patterns, and visual-language pointers. Code remains the truth at the pixel level. If your proposed `ui.md` edit reads like a layout spec, you've gone too granular.
 - **Literal-command handoff.** Every "next move" you emit names the exact slash command to type next.
 
@@ -85,9 +85,9 @@ Without this framing the operator gets "does it look right?" with no anchor; wit
 **Decision reconciliation.** Review each ADR flagged in Step 2's Decision impact:
 
 - **Confirmed** — no action.
-- **Contradicted / drifted** — invoke `/b-adr` to write a superseding ADR.
-- **Narrowed** — invoke `/b-adr` for a partial-supersession ADR (both remain accepted).
-- **New cross-cutting decision** — invoke `/b-adr` to record it.
+- **Contradicted / drifted** — invoke `/bower:adr` to write a superseding ADR.
+- **Narrowed** — invoke `/bower:adr` for a partial-supersession ADR (both remain accepted).
+- **New cross-cutting decision** — invoke `/bower:adr` to record it.
 
 Skip only if Step 2 listed Decision impact as `none`.
 
@@ -104,9 +104,9 @@ Skip only if Step 2 listed Decision impact as `none`.
 
 `Next move:` is a literal slash command:
 
-- `Run /b-ui <description>` — if this change revealed follow-up UI work that warrants the gate.
-- `Run /b-feature <name>` — for the next non-UI feature in an affected module.
-- `Run /b-integration <module>` — if a testable interaction pattern was introduced and the module's integration test needs updating.
+- `Run /bower:ui <description>` — if this change revealed follow-up UI work that warrants the gate.
+- `Run /bower:feature <name>` — for the next non-UI feature in an affected module.
+- `Run /bower:integration <module>` — if a testable interaction pattern was introduced and the module's integration test needs updating.
 - `(none — UI change complete)` — when there's no follow-up.
 
 If during implementation you discover the approach needs to change significantly, stop and consult the user via AskUserQuestion before continuing.
@@ -115,7 +115,7 @@ If during implementation you discover the approach needs to change significantly
 ## What NOT To Do
 
 - Do not start coding before the gate
-- Do not propose architectural changes — recommend `/b-design` instead
+- Do not propose architectural changes — recommend `/bower:design` instead
 - Do not skip the `docs/ui.md` update
 - Do not invoke this skill for visual-only or tightly-specified changes — surface the lighter path
 - Do not present only one option when the change has genuine branching choices — at least two alternatives

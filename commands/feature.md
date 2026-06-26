@@ -13,10 +13,10 @@ The shape is the same across all three: read context → propose → gate → im
 <intent_redirects>
 Before proceeding, check whether this request is actually for this skill:
 
-- **Architectural revision** (new module, new technology, scope expansion) → recommend `/b-design`. **Hard** redirect — see the constraint at the bottom of this file.
-- **Pure experience-surface change** (navigation, screen composition, layout grammar, interaction patterns) → recommend `/b-ui` for branching choices, or the appropriate ad-hoc path in `_bower/framework.md` → *UI Changes — Paths and the Gate*. **Soft** redirect.
+- **Architectural revision** (new module, new technology, scope expansion) → recommend `/bower:design`. **Hard** redirect — see the constraint at the bottom of this file.
+- **Pure experience-surface change** (navigation, screen composition, layout grammar, interaction patterns) → recommend `/bower:ui` for branching choices, or the appropriate ad-hoc path in `_bower/framework.md` → *UI Changes — Paths and the Gate*. **Soft** redirect.
 
-Backend feature work and small under-the-hood code changes belong here. **Mixed work stays here** — a feature that includes backend (model, API, controller) plus UI scaffolding (a new screen, components) runs in `/b-feature` and reconciles `docs/ui.md` in Step 6 alongside the feature's `plan.md`. Pure-UI work routes out; mixed work stays.
+Backend feature work and small under-the-hood code changes belong here. **Mixed work stays here** — a feature that includes backend (model, API, controller) plus UI scaffolding (a new screen, components) runs in `/bower:feature` and reconciles `docs/ui.md` in Step 6 alongside the feature's `plan.md`. Pure-UI work routes out; mixed work stays.
 </intent_redirects>
 
 The user's description of what they want to change: $ARGUMENTS
@@ -28,7 +28,7 @@ The user's description of what they want to change: $ARGUMENTS
 - **Scope tightly.** Only propose changes needed for this specific request. Don't redesign what works.
 - **Acceptance is explicit.** Propose how the change will be verified (tests, manual checks, or both) and get agreement on that too.
 - **Plan is the recovery anchor.** Write `plan.md` immediately after the gate, before any code is touched (Step 3). The plan is intent on disk — if the session crashes mid-implementation, this file plus `git status` is what makes recovery possible. The completion stamp and any implementation footnotes are appended at Step 6, not written from scratch there.
-- **Literal-command handoff.** Every "next move" you emit (in `status.md`, in any handoff line) names the exact slash command to type next, never free prose. "Run `/b-integration foundation`" — yes. "Write the integration test next" — no.
+- **Literal-command handoff.** Every "next move" you emit (in `status.md`, in any handoff line) names the exact slash command to type next, never free prose. "Run `/bower:integration foundation`" — yes. "Write the integration test next" — no.
 
 ## Step 1: Understand Context
 
@@ -41,7 +41,7 @@ The user's description of what they want to change: $ARGUMENTS
 7. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) list the affected module(s) under `modules`, (b) have no `modules` field at all (cross-cutting), or (c) have a title topically relevant to the change — e.g. an ADR about caching strategy when the change touches a cache, even if it's filed under another module. Open and read each. These are the constraints the proposal must respect or explicitly contradict. Skip if no `docs/adr/` exists.
 8. Read relevant source code to understand current implementation
 
-**Intent re-check.** After reading, ask once: is this work primarily on the experience surface (navigation, screens, interaction patterns, layout, copy) with at most incidental backend? If yes, stop and recommend `/b-ui` for branching choices or the ad-hoc path described in `_bower/framework.md`. Mixed work (backend + UI scaffolding for a new feature) stays here; pure-UI work routes out. The intro redirect handles the obvious cases; this re-check catches the ones that become clear only after reading.
+**Intent re-check.** After reading, ask once: is this work primarily on the experience surface (navigation, screens, interaction patterns, layout, copy) with at most incidental backend? If yes, stop and recommend `/bower:ui` for branching choices or the ad-hoc path described in `_bower/framework.md`. Mixed work (backend + UI scaffolding for a new feature) stays here; pure-UI work routes out. The intro redirect handles the obvious cases; this re-check catches the ones that become clear only after reading.
 
 **ADR posture.** Treat accepted ADRs as constraints to confirm against current code, not as ground truth. If an ADR names a specific library, file, or flag and the code contradicts it, the ADR is the stale one — flag it in the proposal so the gate can decide whether to supersede. Do not silently rely on a stale ADR.
 
@@ -61,7 +61,7 @@ Prepare a proposal covering:
   - **Tests:** which existing tests need updating or removing; which new tests are needed
   - **Docs:** **list each `plan.md` that needs updating by path** (the one for this feature, plus any sibling features whose plans reference behaviour you're changing or removing). Don't bury this under "documentation" — name the files.
   - **UI:** if the change introduces, removes, or restructures any screen/view/component, name which sections of `docs/ui.md` will be created or updated (navigation, screens, layout grammar, interaction patterns, visual language). If `docs/ui.md` does not yet exist and the change introduces UI, this is the first UI in the project — Step 6 will create the file with the sections this change requires. Write `none` if the change is pure under-the-hood code.
-  - **Module integration:** does this shift what the module's integration test must assert? If yes, the test itself likely needs updating — flag it here so the Step 6 `Next move:` can point to `/b-integration <module>`.
+  - **Module integration:** does this shift what the module's integration test must assert? If yes, the test itself likely needs updating — flag it here so the Step 6 `Next move:` can point to `/bower:integration <module>`.
 - **Scope impact:** Does this change scope, non-goals, or close a success criterion in `scope.md`?
 - **Decision impact:** List any accepted ADR loaded in Step 1 that this change *touches* — i.e. the change either confirms it (no action needed), contradicts it (must supersede), narrows it (partial-supersession ADR), or surfaces it as drifted from the code (the ADR is stale and should be superseded). If no ADRs are touched, write `none`. Also note if this change introduces a new cross-cutting decision that does not yet have an ADR — flag it here so the reconcile step can write one.
 - **Acceptance criteria:** How we'll know this works. Be specific:
@@ -130,13 +130,13 @@ Handling:
 **Decision reconciliation.** After acceptance criteria are reconciled, review the **Decision impact** noted at the gate. For each touched ADR:
 
 - **Confirmed** (change implements the decision as recorded) — no action.
-- **Contradicted / drifted** (change violates an accepted ADR, or the ADR was already stale relative to the code) — invoke `/b-adr` to write a new ADR superseding the old one. Pass the rationale and the ADR-ID being superseded in the description.
-- **Narrowed** (change scopes an exception without invalidating the original) — invoke `/b-adr` to write a partial-supersession ADR (new ADR; old one stays accepted).
-- **New cross-cutting decision** (change introduces a commitment that didn't have an ADR) — invoke `/b-adr` to record it.
+- **Contradicted / drifted** (change violates an accepted ADR, or the ADR was already stale relative to the code) — invoke `/bower:adr` to write a new ADR superseding the old one. Pass the rationale and the ADR-ID being superseded in the description.
+- **Narrowed** (change scopes an exception without invalidating the original) — invoke `/bower:adr` to write a partial-supersession ADR (new ADR; old one stays accepted).
+- **New cross-cutting decision** (change introduces a commitment that didn't have an ADR) — invoke `/bower:adr` to record it.
 
 Skip only if no Decision impact was identified at the gate (Step 2 listed it as `none`). Otherwise this is not optional — silent decision drift is exactly what the ADR mechanism exists to prevent.
 
-If the user rejects the drafted ADR at `/b-adr`'s gate, treat that as a request to redraft with their adjustments, not as permission to skip. If they want to abandon ADR creation entirely, return to this reconciliation step and re-classify the impact (likely "confirmed" rather than "new decision"). Complete any ADR work before continuing to Step 6.
+If the user rejects the drafted ADR at `/bower:adr`'s gate, treat that as a request to redraft with their adjustments, not as permission to skip. If they want to abandon ADR creation entirely, return to this reconciliation step and re-classify the impact (likely "confirmed" rather than "new decision"). Complete any ADR work before continuing to Step 6.
 
 ## Step 6: Update Documentation
 
@@ -159,7 +159,7 @@ The exact set of documents to touch depends on the intent. Common to all intents
    - Refresh or add the `Confirmed YYYY-MM-DD` line.
    - If during Step 4 the approach diverged from the Step 3 plan, the plan should already reflect reality — verify and tidy any stale fragments.
 2. Update each sibling `plan.md` listed in the Step 2 Impact section — fix outbound references to the changed behaviour. If the proposal didn't list any but you now realise a sibling plan is stale, update it and note this in the resumption summary.
-3. Refresh `## Module integration` `Notes:` if the test's assertions need to shift. If yes, the `Next move:` below points to `/b-integration` so the test itself gets updated.
+3. Refresh `## Module integration` `Notes:` if the test's assertions need to shift. If yes, the `Next move:` below points to `/bower:integration` so the test itself gets updated.
 4. If the feature is multi-session, update `## Implementation trajectory` in `plan.md`: compress the just-completed phase into a one-paragraph précis (why-focused, not steps); leave future phases detailed.
 
 **For remove intent:**
@@ -168,7 +168,7 @@ The exact set of documents to touch depends on the intent. Common to all intents
 2. Remove the feature from `module-status.md` `## Build order`.
 3. Update each sibling `plan.md` listed in the Step 2 Impact section — strip references to the removed behaviour.
 4. Refresh `## Module integration` `Notes:` if the test's assertions need to shrink.
-5. Update `architecture.md` only if the removed thing was named there as a public surface. If you find yourself rewriting architecture, stop — this isn't a `/b-feature` change. Recommend `/b-design`.
+5. Update `architecture.md` only if the removed thing was named there as a public surface. If you find yourself rewriting architecture, stop — this isn't a `/bower:feature` change. Recommend `/bower:design`.
 
 **All intents:**
 
@@ -180,17 +180,17 @@ The exact set of documents to touch depends on the intent. Common to all intents
 
    The `Next move:` line is **a literal slash command, not prose**. Pick exactly one of:
 
-   - `Run /b-feature <name>` — for the next ⏸ feature in the module's build order, or for follow-up work on this feature if PENDING USER items will need a new gate.
-   - `Run /b-integration <module>` — if (a) this change shifted what the module's integration test must assert and the test now needs updating, **or** (b) this was the last non-✓ entry in the module's build order and the `## Module integration` marker is still ⏸ or 🚧.
-   - `Run /b-review <module>` *(optional)* — if this change just brought the module to completion (every feature ✓ **and** the `## Module integration` marker ✓), offer a fresh-eyes review of the whole module: test coverage, spec↔code drift, cross-feature consistency, ADR drift. This is the moment those module-level properties first become reviewable. Frame it as optional — on a small project the operator may reasonably skip it — but name the command so it's one keystroke away.
-   - `Run /b-module <name>` — if the next module is small and well-specified.
-   - `Run /b-design` — if the change revealed an architectural shift that needs design treatment (rare; usually surfaced earlier).
-   - `Run /b-recap` — if next steps depend on user judgement and you want them to orient.
+   - `Run /bower:feature <name>` — for the next ⏸ feature in the module's build order, or for follow-up work on this feature if PENDING USER items will need a new gate.
+   - `Run /bower:integration <module>` — if (a) this change shifted what the module's integration test must assert and the test now needs updating, **or** (b) this was the last non-✓ entry in the module's build order and the `## Module integration` marker is still ⏸ or 🚧.
+   - `Run /bower:review <module>` *(optional)* — if this change just brought the module to completion (every feature ✓ **and** the `## Module integration` marker ✓), offer a fresh-eyes review of the whole module: test coverage, spec↔code drift, cross-feature consistency, ADR drift. This is the moment those module-level properties first become reviewable. Frame it as optional — on a small project the operator may reasonably skip it — but name the command so it's one keystroke away.
+   - `Run /bower:module <name>` — if the next module is small and well-specified.
+   - `Run /bower:design` — if the change revealed an architectural shift that needs design treatment (rare; usually surfaced earlier).
+   - `Run /bower:recap` — if next steps depend on user judgement and you want them to orient.
    - `(none — change complete and no further action required)` — only when the project is genuinely done.
 
 8. Update `scope.md` if the change shifted scope, changed non-goals, or closed a success criterion.
-9. Update `module-status.md`: update the `## Build order` marker for this feature. Use ✓ only if all criteria are PASS; use 🚧 if manual checks remain PENDING USER; use 🟡 or 🔴 if something is broken. Do **not** flip the `## Module integration` marker here — that belongs to `/b-integration`.
-10. Run `/b-index` or update `docs/index.md` if module status markers changed.
+9. Update `module-status.md`: update the `## Build order` marker for this feature. Use ✓ only if all criteria are PASS; use 🚧 if manual checks remain PENDING USER; use 🟡 or 🔴 if something is broken. Do **not** flip the `## Module integration` marker here — that belongs to `/bower:integration`.
+10. Run `/bower:index` or update `docs/index.md` if module status markers changed.
 
 If during implementation you discover the approach needs to change significantly, stop and consult the user again via AskUserQuestion before continuing.
 
@@ -201,7 +201,7 @@ If during implementation you discover the approach needs to change significantly
 - Do not start coding before `plan.md` is written (Step 3) — the plan is the recovery anchor; writing it only at completion defeats the point
 - Do not expand scope beyond what was confirmed
 - Do not skip documentation updates
-- Do not propose architectural changes — if the change requires them, recommend the user runs `/b-design` instead
+- Do not propose architectural changes — if the change requires them, recommend the user runs `/bower:design` instead
 - Do not treat acceptance criteria as optional — they're the contract
 - Do not mark a feature ✓ if any agreed criterion is MISSING or PENDING USER
 - Do not skip the manual-check prompt when manual criteria were agreed at the gate

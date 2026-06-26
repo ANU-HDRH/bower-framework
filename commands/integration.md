@@ -1,6 +1,6 @@
 # Bower Module Integration Test
 
-You are running the Bower module-integration workflow. This builds the integration test that exercises a module's boundary, per the integration prose recorded in `module-status.md`. One gate before any code is written, mirroring `/b-feature`'s shape.
+You are running the Bower module-integration workflow. This builds the integration test that exercises a module's boundary, per the integration prose recorded in `module-status.md`. One gate before any code is written, mirroring `/bower:feature`'s shape.
 
 The user's target module: $ARGUMENTS
 
@@ -22,7 +22,7 @@ The user's target module: $ARGUMENTS
 6. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it and open accepted ADRs that (a) list this module under `modules`, (b) are cross-cutting (no `modules` field), or (c) have a title topically relevant to integration testing or the module's behaviour. The integration test should honour these decisions — e.g. an ADR mandating real-DB integration tests means no mock fixtures here.
 7. Read source code at the module boundary to confirm the test will hit real seams, not mocked ones (unless the constitution says otherwise).
 
-**Precondition check:** if any feature in the module's build order is not yet ✓ or 🚧 with passing automated criteria, surface this. The integration test can still be written, but it will fail until the underlying features are built. Recommend the user finish the missing features first via `/b-feature <name>` unless they confirm otherwise.
+**Precondition check:** if any feature in the module's build order is not yet ✓ or 🚧 with passing automated criteria, surface this. The integration test can still be written, but it will fail until the underlying features are built. Recommend the user finish the missing features first via `/bower:feature <name>` unless they confirm otherwise.
 
 ## Step 2: Propose the Test
 
@@ -54,7 +54,7 @@ After confirmation:
 2. Create the test file at the agreed path with the agreed harness and assertions.
 3. Run the test. Confirm it passes.
 
-If the test fails because of a real bug in the module (not a test-side issue), stop. Surface the failure to the user via AskUserQuestion: a feature is broken at the boundary, which means a `/b-feature <name>` recovery cycle is the right next step, not papering over it here.
+If the test fails because of a real bug in the module (not a test-side issue), stop. Surface the failure to the user via AskUserQuestion: a feature is broken at the boundary, which means a `/bower:feature <name>` recovery cycle is the right next step, not papering over it here.
 
 ## Step 4: Acceptance Reconciliation
 
@@ -71,7 +71,7 @@ Handling:
 - **MISSING** is a blocker. Either add the assertion or renegotiate via AskUserQuestion. Do not proceed.
 - **PENDING USER** — present all manual checks in one AskUserQuestion. PASS → mark ✓. Failure → treat as bug, fix, re-verify. Deferred → leave PENDING USER and mark the module-integration marker 🚧 (not ✓).
 
-**ADR drift.** If writing the test surfaced a contradiction between an accepted ADR and the code or constitution (e.g. the ADR mandates real-DB but the harness uses an in-memory fixture), flag it in the handoff and recommend `/b-adr` to supersede before flipping the marker to ✓. Do not silently let the drift stand — that's exactly the rot the ADR mechanism exists to prevent.
+**ADR drift.** If writing the test surfaced a contradiction between an accepted ADR and the code or constitution (e.g. the ADR mandates real-DB but the harness uses an in-memory fixture), flag it in the handoff and recommend `/bower:adr` to supersede before flipping the marker to ✓. Do not silently let the drift stand — that's exactly the rot the ADR mechanism exists to prevent.
 
 ## Step 5: Update Documentation
 
@@ -80,7 +80,7 @@ Handling:
    - `Notes:` line — refresh if the as-built test diverged from Stage 4's prose.
    - If `Pending verification:` items remain, add a line listing them under the `## Module integration` section.
 2. Update `scope.md` if this test passing closes a success criterion. Only count criteria whose manual checks have passed.
-3. Run `/b-index` so the module-level marker reflects the new module-integration state.
+3. Run `/bower:index` so the module-level marker reflects the new module-integration state.
 
 ## Step 6: Handoff
 
@@ -91,10 +91,10 @@ Module integration for <module>: <✓ | 🚧 pending verification | 🟡/🔴>
 
 Next move:
   - <one of:>
-    Run /b-recap                               (orient and pick the next module/feature)
-    Run /b-feature <name>                      (next ⏸ feature in the inter-module build order)
-    Run /b-module <name>                       (next module, if small and well-specified)
-    Run /b-integration <module>         (re-run after fixing PENDING USER items)
+    Run /bower:recap                               (orient and pick the next module/feature)
+    Run /bower:feature <name>                      (next ⏸ feature in the inter-module build order)
+    Run /bower:module <name>                       (next module, if small and well-specified)
+    Run /bower:integration <module>         (re-run after fixing PENDING USER items)
     (none — all modules ✓ and scope criteria met)
 ```
 
@@ -104,9 +104,9 @@ Pick exactly one recommended next command based on the project state you just ob
 ## What NOT To Do
 
 - Do not start coding before the gate
-- Do not modify feature code in this command — if a feature is broken at the boundary, surface it and recommend `/b-feature <name>`
+- Do not modify feature code in this command — if a feature is broken at the boundary, surface it and recommend `/bower:feature <name>`
 - Do not skip the manual-check prompt when manual criteria were agreed at the gate
 - Do not mark the module-integration marker ✓ if any agreed criterion is MISSING or PENDING USER
 - Do not emit free-prose next moves — always name the literal slash command
-- Do not propose architectural changes — recommend `/b-design` if the test reveals an architectural issue
+- Do not propose architectural changes — recommend `/bower:design` if the test reveals an architectural issue
 </critical_constraints>

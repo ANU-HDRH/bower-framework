@@ -8,10 +8,10 @@ The target module: $ARGUMENTS
 
 ## Important Behavioural Rules
 
-- **Diagnosis is read-only; the apply is bounded.** The `bower-reviewer` subagent surveys and reports — it never writes. This command *acts*, but only on the **owned** reconciliation classes (`inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`). Everything else is routed to `/b-feature` or `/b-design` as a literal-command next move. The command never makes a behavioural or architectural change itself.
-- **The plan is the recovery anchor.** Accepted findings are written to `docs/modules/<module>/review-plan.md` *before* any reconciliation is applied. If the session crashes mid-apply, that file plus `git status` is what makes resumption possible — same discipline as `/b-feature`'s post-gate `plan.md` write. The file is transient: it is deleted when every reconciliation is checked.
-- **One gate.** The triage gate is the contract — the operator picks which owned reconciliations to action. You do not re-gate each item, except that `adr-supersede` items run through `/b-adr`, whose own gate fires.
-- **Out-of-band volume is safe here by construction.** A review fix pass batches only changes that are *individually* ad-hoc-safe under existing framework rules: doc↔code reconciles (gate-free living-doc maintenance), test backfill for already-agreed behaviour, status-marker corrections, and ADR supersessions (gated by `/b-adr`). The one unsafe category — boundary erosion — is always routed to `/b-design` and never enters the plan. The hard-redirect rule still holds.
+- **Diagnosis is read-only; the apply is bounded.** The `bower-reviewer` subagent surveys and reports — it never writes. This command *acts*, but only on the **owned** reconciliation classes (`inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`). Everything else is routed to `/bower:feature` or `/bower:design` as a literal-command next move. The command never makes a behavioural or architectural change itself.
+- **The plan is the recovery anchor.** Accepted findings are written to `docs/modules/<module>/review-plan.md` *before* any reconciliation is applied. If the session crashes mid-apply, that file plus `git status` is what makes resumption possible — same discipline as `/bower:feature`'s post-gate `plan.md` write. The file is transient: it is deleted when every reconciliation is checked.
+- **One gate.** The triage gate is the contract — the operator picks which owned reconciliations to action. You do not re-gate each item, except that `adr-supersede` items run through `/bower:adr`, whose own gate fires.
+- **Out-of-band volume is safe here by construction.** A review fix pass batches only changes that are *individually* ad-hoc-safe under existing framework rules: doc↔code reconciles (gate-free living-doc maintenance), test backfill for already-agreed behaviour, status-marker corrections, and ADR supersessions (gated by `/bower:adr`). The one unsafe category — boundary erosion — is always routed to `/bower:design` and never enters the plan. The hard-redirect rule still holds.
 - **Literal-command handoff.** Every routed finding and every "next move" names the exact slash command to type next, never free prose.
 
 ## Step 0: State Check
@@ -21,7 +21,7 @@ Before anything else, determine which mode you're in:
 - **If `docs/modules/<module>/review-plan.md` already exists** → you are **resuming**. Skip diagnosis (Steps 1–2). Go straight to Step 5 (Apply) against the existing plan's unchecked reconciliations. Re-reviewing while a plan is open would discard in-progress work; the open plan means reconciliation is already owed.
 - **Otherwise** → you are **starting a fresh review**. Proceed to Step 1.
 
-Confirm the module exists (`docs/modules/<module>/module-status.md` is present). If it does not, stop and say so — recommend `/b-recap` to find the right module name. Review is most valuable when the module is complete (all features ✓, integration ✓), but it does not hard-require completion; if the module is mid-build, note that the review will find expected gaps and let the operator decide whether to proceed.
+Confirm the module exists (`docs/modules/<module>/module-status.md` is present). If it does not, stop and say so — recommend `/bower:recap` to find the right module name. Review is most valuable when the module is complete (all features ✓, integration ✓), but it does not hard-require completion; if the module is mid-build, note that the review will find expected gaps and let the operator decide whether to proceed.
 
 ## Step 1: Diagnose (spawn the subagent)
 
@@ -36,7 +36,7 @@ Print the report's findings to the operator as a readable, numbered block — gr
 Separate the findings visually into:
 
 - **Owned reconciliations** — `inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`. These are what this command can action.
-- **Routed** — `route:/b-feature`, `route:/b-design`. These need another command's gate; you'll surface them as next moves, not action them.
+- **Routed** — `route:/bower:feature`, `route:/bower:design`. These need another command's gate; you'll surface them as next moves, not action them.
 
 This printed block is transient triage material — the operator reads it here. It is not written to disk except as the plan (next step).
 
@@ -57,19 +57,19 @@ After confirmation, if there is at least one accepted owned reconciliation, writ
 ```markdown
 # Review plan: <module>
 
-Transient reconciliation plan from a review on YYYY-MM-DD. **Not living documentation** — delete this file when every reconciliation is checked. While it exists, the module has reconciliation owed; `/b-recap` surfaces it as outstanding work. Do not consult it except when running `/b-review <module>`.
+Transient reconciliation plan from a review on YYYY-MM-DD. **Not living documentation** — delete this file when every reconciliation is checked. While it exists, the module has reconciliation owed; `/bower:recap` surfaces it as outstanding work. Do not consult it except when running `/bower:review <module>`.
 
 ## Reconciliations (this command actions)
 
 - [ ] F3 — token-refresh/plan.md stale on TTL — inline-reconcile — docs/modules/<module>/token-refresh/plan.md:24
-- [ ] F1 — ADR-0007 names Redis; code uses in-process — adr-supersede — /b-adr supersede ADR-0007
+- [ ] F1 — ADR-0007 names Redis; code uses in-process — adr-supersede — /bower:adr supersede ADR-0007
 - [ ] F4 — backfill expired-token refresh test — test-backfill — src/auth/__tests__/refresh.test.ts
 - [ ] F5 — session-revoke ✓ with pending verification — status-fix — docs/modules/<module>/session-revoke/status.md
 
 ## Routed (run separately — not actioned here)
 
-- F2 — non-owner 404 vs 403 — Run /b-feature modify <module> non-owner-response-consistency
-- F6 — consolidate JWT helper tests — Run /b-feature modify <module> consolidate-jwt-helper-tests
+- F2 — non-owner 404 vs 403 — Run /bower:feature modify <module> non-owner-response-consistency
+- F6 — consolidate JWT helper tests — Run /bower:feature modify <module> consolidate-jwt-helper-tests
 
 ## Observations (not actionable)
 
@@ -88,20 +88,20 @@ Walk the `## Reconciliations` checklist. For each unchecked item, in any order:
 
 - **`inline-reconcile`** — edit the stale `plan.md` / `status.md` line to match the code. This is living-doc maintenance; no further gate. Tick the box.
 - **`status-fix`** — correct the dishonest marker. If the fix is "flip ✓ to 🚧 because a manual check is pending," do that. If it's "the manual check actually passes," confirm with the operator (it's a real verification) before flipping to ✓ and clearing the `Pending verification:` line. Tick the box.
-- **`test-backfill`** — write the test for the already-agreed behaviour and run it. If it passes, tick the box. **If writing the test reveals the code is actually wrong**, do not paper over it: re-classify the finding to `route:/b-feature`, move it to the `## Routed` section unticked, and note it — a behavioural defect needs the propose-confirm gate, not a silent fix here.
-- **`adr-supersede`** — invoke `/b-adr` to supersede the drifted ADR, passing the ADR-ID and the rationale. Its own gate fires. On success, tick the box. If the operator rejects the draft at `/b-adr`'s gate, treat it as a request to redraft, not to skip; if they abandon ADR work entirely, move the finding to `## Routed` (or `## Observations`) and leave the box unticked rather than deleting it silently.
+- **`test-backfill`** — write the test for the already-agreed behaviour and run it. If it passes, tick the box. **If writing the test reveals the code is actually wrong**, do not paper over it: re-classify the finding to `route:/bower:feature`, move it to the `## Routed` section unticked, and note it — a behavioural defect needs the propose-confirm gate, not a silent fix here.
+- **`adr-supersede`** — invoke `/bower:adr` to supersede the drifted ADR, passing the ADR-ID and the rationale. Its own gate fires. On success, tick the box. If the operator rejects the draft at `/bower:adr`'s gate, treat it as a request to redraft, not to skip; if they abandon ADR work entirely, move the finding to `## Routed` (or `## Observations`) and leave the box unticked rather than deleting it silently.
 
 If implementation reveals the report was wrong about a finding (the drift doesn't actually exist), don't force the reconcile — strike the item, note why, and move on.
 
 After every reconciliation box is ticked (or honestly moved to Routed/Observations):
 
-1. If any status marker changed, run `/b-index` (or update `docs/index.md` and the module-level marker) so module status reflects reality.
+1. If any status marker changed, run `/bower:index` (or update `docs/index.md` and the module-level marker) so module status reflects reality.
 2. If a reconcile changed a feature's resumption picture, refresh that feature's `status.md` accordingly (≤150 words, current-state).
 3. **Delete `docs/modules/<module>/review-plan.md`.** Its job is done; leaving it would make it a record that rots.
 
 ## Step 6: Handoff
 
-Emit a single handoff block. Re-surface the routed findings and observations as literal next moves — these survive the plan's deletion because the operator still has to act on them (or re-run `/b-review` later to re-derive them).
+Emit a single handoff block. Re-surface the routed findings and observations as literal next moves — these survive the plan's deletion because the operator still has to act on them (or re-run `/bower:review` later to re-derive them).
 
 ```
 Module <module> reviewed: <N reconciliations applied, M routed, K observations>
@@ -110,8 +110,8 @@ Reconciled this pass:
   - <one line per applied reconciliation, or "(none)">
 
 Routed — run separately:
-  - Run /b-feature modify <module> <slug>        (<finding gist>)
-  - Run /b-design                                 (<boundary-erosion gist>, if any)
+  - Run /bower:feature modify <module> <slug>        (<finding gist>)
+  - Run /bower:design                                 (<boundary-erosion gist>, if any)
   - (none)
 
 Observations:
@@ -119,11 +119,11 @@ Observations:
 
 Next move:
   - <the single most important routed command, or:>
-    Run /b-recap                                  (orient before deciding)
+    Run /bower:recap                                  (orient before deciding)
     (none — module reviewed clean and reconciled)
 ```
 
-Pick exactly one recommended next move. A `route:/b-design` finding (boundary erosion) outranks everything — if one exists, it is the next move, because architectural drift is the one thing the framework will not let accumulate.
+Pick exactly one recommended next move. A `route:/bower:design` finding (boundary erosion) outranks everything — if one exists, it is the next move, because architectural drift is the one thing the framework will not let accumulate.
 
 ## Resuming an open plan
 
@@ -135,8 +135,8 @@ When Step 0 found an existing `review-plan.md`, you skipped diagnosis. Read the 
 - Do not skip the subagent and review inline — the fresh-eyes isolation is the point
 - Do not apply anything before the triage gate
 - Do not write the plan after starting to apply — the plan is the recovery anchor, written first
-- Do not action a `route:/b-feature` or `route:/b-design` finding yourself — route it; boundary erosion is a hard-redirect to `/b-design`
-- Do not silently fix a behavioural defect a `test-backfill` uncovers — re-route it to `/b-feature`
+- Do not action a `route:/bower:feature` or `route:/bower:design` finding yourself — route it; boundary erosion is a hard-redirect to `/bower:design`
+- Do not silently fix a behavioural defect a `test-backfill` uncovers — re-route it to `/bower:feature`
 - Do not flag or "fix" ADRs for verbose or over-scoped prose — bodies are immutable; only drift from code is an ADR finding
 - Do not leave `review-plan.md` on disk once its reconciliations are all resolved — delete it
 - Do not let the plan accumulate (no dated variants, no second open plan) — one plan per module, finished and deleted before the next review

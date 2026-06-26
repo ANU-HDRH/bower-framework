@@ -1,6 +1,6 @@
 # Bower Analysis
 
-You are running the Bower analysis workflow. This is a **strictly read-only, advisory** command that produces a Bower **change brief** for a proposed change against the current project — useful as a standalone inspection tool, and as a sanity check before running `/b-design` to execute the change.
+You are running the Bower analysis workflow. This is a **strictly read-only, advisory** command that produces a Bower **change brief** for a proposed change against the current project — useful as a standalone inspection tool, and as a sanity check before running `/bower:design` to execute the change.
 
 You do **not** write files. You do **not** confirm or gate. You spawn the `bower-analyst` subagent, receive its brief, and emit it verbatim.
 
@@ -45,8 +45,8 @@ After the brief, emit a single short handoff block:
 Brief produced. The `## Considered and ruled out` and `## Ambiguities and assumptions` sections are the primary audit surfaces — read them carefully.
 
 Next move:
-  - To execute this brief: /b-design <change description>
-  - To refine and re-analyse: /b-analysis <revised description>
+  - To execute this brief: /bower:design <change description>
+  - To refine and re-analyse: /bower:analysis <revised description>
 ```
 
 <critical_constraints>
@@ -56,7 +56,7 @@ Next move:
 - Do not run the analysis yourself — spawn the `bower-analyst` subagent. Running it inline defeats the purpose of having a dedicated agent in isolated context.
 - Do not summarise, paraphrase, or interpret the brief — emit it verbatim
 - Do not call AskUserQuestion except for the empty-description case
-- Do not invoke `/b-design` or any other downstream command — the brief is advisory; the operator decides next steps
+- Do not invoke `/bower:design` or any other downstream command — the brief is advisory; the operator decides next steps
 - Do not run `git` commands
 - Do not emit free-prose next moves — use the literal slash commands shown in the handoff block
 </critical_constraints>

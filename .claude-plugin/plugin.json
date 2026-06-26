@@ -1,0 +1,7 @@
+{
+  "name": "bower",
+  "version": "0.19",
+  "description": "Bower framework — gated /bower:design, /bower:feature, /bower:module workflows and the bower-analyst/bower-reviewer agents for structured, documentation-first development.",
+  "author": { "name": "ANU HDRH" },
+  "repository": "https://github.com/ANU-HDRH/bower-framework"
+}

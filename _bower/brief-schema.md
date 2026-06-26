@@ -1,13 +1,13 @@
 # Bower Change Brief — Schema
 
-The change brief is the structured artifact produced by the **bower-analyst** subagent at the start of `/b-design`. It is the authoritative answer to *what does this proposed change imply across the existing project state?* — and `/b-design` executes against it stage-by-stage rather than re-deriving applicability at each stage.
+The change brief is the structured artifact produced by the **bower-analyst** subagent at the start of `/bower:design`. It is the authoritative answer to *what does this proposed change imply across the existing project state?* — and `/bower:design` executes against it stage-by-stage rather than re-deriving applicability at each stage.
 
-A brief is produced for every `/b-design` invocation. For greenfield projects, the brief is trivial: every stage is full-draft and there is no current state to delta against. For revisions, the brief identifies which stages have non-nil deltas and names the exact docs to touch.
+A brief is produced for every `/bower:design` invocation. For greenfield projects, the brief is trivial: every stage is full-draft and there is no current state to delta against. For revisions, the brief identifies which stages have non-nil deltas and names the exact docs to touch.
 
 ## Where briefs are used
 
-- `/b-analysis` — emits a brief and stops (diagnostic / inspection mode; standalone command).
-- `/b-design` Stage 0 — invokes `bower-analyst` internally, presents the brief at the up-front gate, then executes Stages 1–5 against the confirmed brief.
+- `/bower:analysis` — emits a brief and stops (diagnostic / inspection mode; standalone command).
+- `/bower:design` Stage 0 — invokes `bower-analyst` internally, presents the brief at the up-front gate, then executes Stages 1–5 against the confirmed brief.
 
 ## Schema
 
@@ -59,7 +59,7 @@ Problem-space.md edits should be rare on revisions — it is framing history. Sc
 
 Either `Status: nothing to do` or a numbered list of ADR operations. One operation per ADR — if two decisions need recording, that's two operations.
 
-**ID pre-allocation.** Before listing operations, the analyst computes the next-available ADR ID by scanning `docs/adr/` for the highest existing `NNNN-` prefix. New ADRs allocated by this brief use sequential IDs starting from `<highest> + 1`, in the order the operations appear in the list. Operations that produce no new file (`confirms`) consume no ID. Pre-allocation matters because other stages (Stage 1, Stage 3, Stage 4) may cross-reference these IDs by name when drafting edits to `scope.md`, `architecture.md`, or `plan.md` files — without pre-allocation, those stages would have to use literal `ADR-NNNN` placeholders that downstream `/b-design` would write to disk.
+**ID pre-allocation.** Before listing operations, the analyst computes the next-available ADR ID by scanning `docs/adr/` for the highest existing `NNNN-` prefix. New ADRs allocated by this brief use sequential IDs starting from `<highest> + 1`, in the order the operations appear in the list. Operations that produce no new file (`confirms`) consume no ID. Pre-allocation matters because other stages (Stage 1, Stage 3, Stage 4) may cross-reference these IDs by name when drafting edits to `scope.md`, `architecture.md`, or `plan.md` files — without pre-allocation, those stages would have to use literal `ADR-NNNN` placeholders that downstream `/bower:design` would write to disk.
 
 ```
 Status: <N> operation(s)
@@ -87,7 +87,7 @@ Operation semantics (per CLAUDE.md):
 
 ### `## Stage 3 — Architecture`
 
-`architecture.md` carries two views — a **runtime view** (topology, components, data flow, technology stack, constraints, extension points) and a **software architecture view** (`## Software architecture` section: per-module purpose, data-concern boundary, constituent features, inter-module dependencies). The analyst reports deltas against each view separately so `/b-design` Stage 3 can present them as distinct edits at the gate.
+`architecture.md` carries two views — a **runtime view** (topology, components, data flow, technology stack, constraints, extension points) and a **software architecture view** (`## Software architecture` section: per-module purpose, data-concern boundary, constituent features, inter-module dependencies). The analyst reports deltas against each view separately so `/bower:design` Stage 3 can present them as distinct edits at the gate.
 
 Either `Status: nothing to do` or:
 
@@ -140,7 +140,7 @@ Negative-space audit. The analyst lists adjacent docs, ADRs, or modules it evalu
 
 ### `## Suggested next move (post-design)`
 
-What the operator should run *after* `/b-design` finishes executing this brief. For revisions, typically a list of `/b-feature <name>` invocations covering implementation of the touched plans. For greenfield, the first module from the inter-module build order, per the existing `/b-design` handoff rubric.
+What the operator should run *after* `/bower:design` finishes executing this brief. For revisions, typically a list of `/bower:feature <name>` invocations covering implementation of the touched plans. For greenfield, the first module from the inter-module build order, per the existing `/bower:design` handoff rubric.
 
 This is advisory — operators may interleave or reorder.
 
@@ -150,7 +150,7 @@ This is advisory — operators may interleave or reorder.
 - **No prose between sections.** The brief is structured data; commentary belongs *inside* sections, not between them.
 - **Paths are repo-relative and exact.** `docs/modules/ui-module/response-display/plan.md`, not "the UI plan."
 - **ADRs are referenced by ID.** `ADR-0011`, not "the taxonomy ADR."
-- **Stage 2 IDs are pre-allocated and used throughout the brief.** When Stage 1, 3, or 4 sections reference a new ADR, they use the pre-allocated ID from Stage 2 (e.g. `ADR-0034`), not a placeholder like `ADR-NNNN`. This lets `/b-design` execute each stage's writes without depending on a later stage to backfill literals.
+- **Stage 2 IDs are pre-allocated and used throughout the brief.** When Stage 1, 3, or 4 sections reference a new ADR, they use the pre-allocated ID from Stage 2 (e.g. `ADR-0034`), not a placeholder like `ADR-NNNN`. This lets `/bower:design` execute each stage's writes without depending on a later stage to backfill literals.
 - **`Status: nothing to do` is a first-class outcome.** It is not a sign of laziness; it is a positive assertion that the analyst checked and found no delta.
 - **No speculative architecture.** The brief proposes deltas, not designs. If the analyst finds the change underspecified to the point that Stage 2 or Stage 3 can't be concretely planned, it should say so in `## Ambiguities and assumptions` and produce the brief it *can* — the operator decides whether to refine the change request and re-run, or proceed.
 
@@ -253,8 +253,8 @@ Reason: existing scaffolding (Node + TypeScript, vitest, ESLint) already covers 
 
 ## Suggested next move (post-design)
 
-After /b-design completes:
-  - /b-module seasonal-data                      (small, well-specified — module-build pass)
-  - /b-feature seasonal-recipe-ranking           (meal-planner)
-  - /b-feature seasonal-ingredient-filter        (ingredient-search)
+After /bower:design completes:
+  - /bower:module seasonal-data                      (small, well-specified — module-build pass)
+  - /bower:feature seasonal-recipe-ranking           (meal-planner)
+  - /bower:feature seasonal-ingredient-filter        (ingredient-search)
 ```

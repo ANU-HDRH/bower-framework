@@ -2,7 +2,7 @@
 
 You are scaffolding an Architectural Decision Record (ADR) — a single-file, append-only entry in the project's decision log at `docs/adr/`. ADRs capture cross-cutting commitments: choices that constrain more than one feature and would surprise a future reader if not written down.
 
-This command produces exactly one deliverable: a new ADR file (and, if superseding, a frontmatter update to the ADR being replaced). It does not modify code, plans, or status documents — those are the job of the command that called this one (typically `/b-feature` reconcile or `/b-design` Stage 2).
+This command produces exactly one deliverable: a new ADR file (and, if superseding, a frontmatter update to the ADR being replaced). It does not modify code, plans, or status documents — those are the job of the command that called this one (typically `/bower:feature` reconcile or `/bower:design` Stage 2).
 
 The user's description of the decision: $ARGUMENTS
 
@@ -108,14 +108,14 @@ After confirmation:
    - Set `status: superseded`
    - Add or extend `superseded-by: [<new-id>]`
    - Leave the body completely untouched.
-4. Run `/b-index` to regenerate `docs/adr/index.md` (and `docs/index.md` if it references the ADR section). If `/b-index` is not available in this session, write a minimal `docs/adr/index.md` yourself — see schema in `b-index.md`.
+4. Run `/bower:index` to regenerate `docs/adr/index.md` (and `docs/index.md` if it references the ADR section). If `/bower:index` is not available in this session, write a minimal `docs/adr/index.md` yourself — see schema in `b-index.md`.
 
 ## Step 5: Handoff
 
 Emit a single short handoff block. The next move depends on context:
 
-- If invoked from `/b-feature` reconcile: `Run /b-feature <name>` to return to the parent change. (In practice the parent command resumes automatically; the handoff is a safety net for restarts.)
-- If invoked from `/b-design` Stage 2: continue Stage 2 (the parent command handles it).
+- If invoked from `/bower:feature` reconcile: `Run /bower:feature <name>` to return to the parent change. (In practice the parent command resumes automatically; the handoff is a safety net for restarts.)
+- If invoked from `/bower:design` Stage 2: continue Stage 2 (the parent command handles it).
 - If invoked directly: `(none — ADR recorded; resume your next task)`.
 
 ```

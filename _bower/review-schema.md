@@ -1,16 +1,16 @@
 # Bower Review Report — Schema
 
-The review report is the structured artifact produced by the **bower-reviewer** subagent at the start of `/b-review`. It is the authoritative answer to *what did we actually build in this module, and where does it diverge from what the docs, the decisions, and the rest of the module say it should be?*
+The review report is the structured artifact produced by the **bower-reviewer** subagent at the start of `/bower:review`. It is the authoritative answer to *what did we actually build in this module, and where does it diverge from what the docs, the decisions, and the rest of the module say it should be?*
 
-`/b-review` executes against the report: it gates the findings with the operator, writes the accepted **owned** findings to a `review-plan.md` checklist, applies them, and routes the rest to the commands that own them.
+`/bower:review` executes against the report: it gates the findings with the operator, writes the accepted **owned** findings to a `review-plan.md` checklist, applies them, and routes the rest to the commands that own them.
 
-A review is **module-scoped**. The reviewer surveys one module's features, its plans and status files, the ADRs that touch it, and its code. It does not review the whole project — that breadth belongs to `/b-recap` (orientation) and `/b-analysis` (forward-looking change impact). Review looks *down* into one finished module and *backward* at what was built.
+A review is **module-scoped**. The reviewer surveys one module's features, its plans and status files, the ADRs that touch it, and its code. It does not review the whole project — that breadth belongs to `/bower:recap` (orientation) and `/bower:analysis` (forward-looking change impact). Review looks *down* into one finished module and *backward* at what was built.
 
 ## Where reports are used
 
-- `/b-review <module>` — invokes `bower-reviewer` internally, presents the findings at a triage gate, writes the accepted owned findings to `docs/modules/<module>/review-plan.md`, applies them, and routes the rest.
+- `/bower:review <module>` — invokes `bower-reviewer` internally, presents the findings at a triage gate, writes the accepted owned findings to `docs/modules/<module>/review-plan.md`, applies them, and routes the rest.
 
-There is no read-only "print the report and stop" entry point, the way `/b-analysis` is for the change brief. A review that surfaced findings and did nothing with them would be a report that rots — exactly the artifact Bower avoids. The findings are consumed immediately into a plan or a routed handoff; they are not preserved as a standalone document.
+There is no read-only "print the report and stop" entry point, the way `/bower:analysis` is for the change brief. A review that surfaced findings and did nothing with them would be a report that rots — exactly the artifact Bower avoids. The findings are consumed immediately into a plan or a routed handoff; they are not preserved as a standalone document.
 
 ## The six dimensions
 
@@ -23,22 +23,22 @@ Every finding belongs to exactly one of these dimensions:
 3. **Cross-feature consistency.** Sequentially-built features drift: feature 1 returns 404 for a non-owner, feature 3 returns 403; naming, error-handling shapes, and return conventions diverge. No single-feature pass can see this; a whole-module pass can.
 4. **Status honesty.** Are the markers truthful? Anything ✓ that still has a `Pending verification:` line? Is the floor-not-sum rule observed (a module is the worst of its feature markers and its integration marker)?
 5. **ADR drift.** Accepted ADRs that touch this module but now contradict the code. This is "code is truth, ADR is hypothesis" turned from a passive posture into an active check. **Drift only** — the reviewer does not flag ADRs for being verbose or over-scoped: bodies are immutable, and prose length is not a supersede-worthy reason. If a bundled ADR's commitments were hard to recover because the index shows only titles, that is a legitimate finding (it is the failure signal the deferred ADR-index improvement waits on), but it is reported as an observation, not as an actionable plan item.
-6. **Boundary integrity.** Does the module still integration-test cleanly in isolation, or have back-channels to other modules crept in? This is the DAG-in-positive-form test from `rationale.md`. Boundary erosion is **architectural** — it is always routed to `/b-design` and never enters the plan.
+6. **Boundary integrity.** Does the module still integration-test cleanly in isolation, or have back-channels to other modules crept in? This is the DAG-in-positive-form test from `rationale.md`. Boundary erosion is **architectural** — it is always routed to `/bower:design` and never enters the plan.
 
 ## Resolution class
 
-Every finding carries a **class** that determines what `/b-review` does with it. This is the load-bearing field — it is how the command separates what it owns from what it routes.
+Every finding carries a **class** that determines what `/bower:review` does with it. This is the load-bearing field — it is how the command separates what it owns from what it routes.
 
-| Class | Meaning | What `/b-review` does |
+| Class | Meaning | What `/bower:review` does |
 |---|---|---|
 | `inline-reconcile` | A `plan.md` / `status.md` line that flatly contradicts the code; the doc is stale, the code is fine. | Applies inline (living-doc maintenance, already gate-free). Owned plan item. |
-| `test-backfill` | A missing test for *already-built, already-agreed* behaviour — closing a coverage gap, not driving new behaviour. | Writes the test inline and runs it. Owned plan item. If writing it reveals the code is actually wrong, the finding is re-classed `route:/b-feature`. |
-| `status-fix` | A dishonest marker (✓ with pending verification, floor-not-sum violation). | Corrects the marker inline; `/b-index` is re-run at the end. Owned plan item. |
-| `adr-supersede` | An accepted ADR contradicted by the code. | Invokes `/b-adr` to supersede (its own gate fires). Owned plan item. |
-| `route:/b-feature` | A behavioural fix or consistency change beyond a doc reconcile — needs the propose-confirm-acceptance gate. | **Routed**, not owned. Reported as a next-move; never applied by `/b-review`. |
-| `route:/b-design` | Boundary erosion / architectural drift. | **Routed**, not owned. The hard-redirect rule applies — `/b-review` refuses to action it. |
+| `test-backfill` | A missing test for *already-built, already-agreed* behaviour — closing a coverage gap, not driving new behaviour. | Writes the test inline and runs it. Owned plan item. If writing it reveals the code is actually wrong, the finding is re-classed `route:/bower:feature`. |
+| `status-fix` | A dishonest marker (✓ with pending verification, floor-not-sum violation). | Corrects the marker inline; `/bower:index` is re-run at the end. Owned plan item. |
+| `adr-supersede` | An accepted ADR contradicted by the code. | Invokes `/bower:adr` to supersede (its own gate fires). Owned plan item. |
+| `route:/bower:feature` | A behavioural fix or consistency change beyond a doc reconcile — needs the propose-confirm-acceptance gate. | **Routed**, not owned. Reported as a next-move; never applied by `/bower:review`. |
+| `route:/bower:design` | Boundary erosion / architectural drift. | **Routed**, not owned. The hard-redirect rule applies — `/bower:review` refuses to action it. |
 
-**Owned** classes (`inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`) are the ones `/b-review` can resolve itself, because each is individually ad-hoc-safe under existing framework rules. **Routed** classes (`route:/b-feature`, `route:/b-design`) require another command's gate and are surfaced as literal-command next moves, not put in the checklist.
+**Owned** classes (`inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`) are the ones `/bower:review` can resolve itself, because each is individually ad-hoc-safe under existing framework rules. **Routed** classes (`route:/bower:feature`, `route:/bower:design`) require another command's gate and are surfaced as literal-command next moves, not put in the checklist.
 
 ## Schema
 
@@ -107,7 +107,7 @@ Findings worth surfacing that have no owned or routed resolution — most common
 - **No prose between sections.** The report is structured data; commentary belongs inside sections.
 - **The reviewer is read-only.** It surveys and reports; it never writes, edits, or commits. Acting on the report is the calling command's job, behind the triage gate.
 - **`clean` is a first-class outcome.** A dimension with no findings is a positive assertion that the reviewer checked and found no drift — not a sign it didn't look. The `## Considered and ruled out` section is where that diligence is evidenced.
-- **No new design.** The reviewer reports drift against what already exists; it does not propose new features, new modules, or new architecture. A finding whose resolution is "build something new" is out of scope — the reviewer notes it as an observation and lets the operator decide whether to run `/b-feature` or `/b-design`.
+- **No new design.** The reviewer reports drift against what already exists; it does not propose new features, new modules, or new architecture. A finding whose resolution is "build something new" is out of scope — the reviewer notes it as an observation and lets the operator decide whether to run `/bower:feature` or `/bower:design`.
 
 ## Worked example
 
@@ -153,7 +153,7 @@ Location: docs/adr/0007-session-store.md vs src/auth/session.ts:12
 Drift: ADR-0007 (accepted) records "sessions are stored in Redis with a 30-minute TTL"; src/auth/session.ts uses an in-process Map with no external store. The decision drifted; the ADR is the stale one.
 Resolution: Supersede ADR-0007 with a new ADR recording the in-process store decision and its rationale (single-instance deployment, Redis dependency dropped).
 Class: adr-supersede
-Command: /b-adr supersede ADR-0007 — in-process session store replaces Redis
+Command: /bower:adr supersede ADR-0007 — in-process session store replaces Redis
 
 ### F2 — Non-owner access returns 404 in login, 403 in refresh
 
@@ -162,8 +162,8 @@ Severity: medium
 Location: src/auth/login.ts:48 vs src/auth/refresh.ts:61
 Drift: login returns 404 for a session that isn't the caller's; refresh returns 403 for the equivalent case. Two features, two answers to one question.
 Resolution: Pick one (404 hides existence, 403 admits it); apply to both. This is a behavioural change with an acceptance criterion, not a doc reconcile.
-Class: route:/b-feature
-Command: /b-feature modify auth non-owner-response-consistency
+Class: route:/bower:feature
+Command: /bower:feature modify auth non-owner-response-consistency
 
 ### F3 — token-refresh/plan.md states a 15-minute TTL; code uses 60 minutes
 
@@ -202,8 +202,8 @@ Severity: low
 Location: src/auth/__tests__/login.test.ts:70, refresh.test.ts:55
 Drift: both suites have near-identical unit tests for the shared decodeJwt helper. Redundant; the helper deserves one home.
 Resolution: Consolidate the helper's tests into one suite. Low priority — note it; the operator may decline.
-Class: route:/b-feature
-Command: /b-feature modify auth consolidate-jwt-helper-tests
+Class: route:/bower:feature
+Command: /bower:feature modify auth consolidate-jwt-helper-tests
 
 ## Considered and ruled out
 
