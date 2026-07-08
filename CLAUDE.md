@@ -4,22 +4,22 @@
 
 ## What this means in practice
 
-- **Do not invoke `/b-*` skills on this repo.** `/b-design`, `/b-feature`, `/b-module`, `/b-integration`, `/b-adr`, `/b-recap`, `/b-analysis`, `/b-index`, `/b-spec` are all designed for *Bower projects*. This repo has no `docs/modules/`, no `docs/architecture.md`, no `docs/scope.md` — running them here is meaningless. Edit framework files directly instead.
+- **Do not invoke `/bower:*` skills on this repo.** `/bower:design`, `/bower:feature`, `/bower:module`, `/bower:integration`, `/bower:adr`, `/bower:recap`, `/bower:analysis`, `/bower:index`, `/bower:spec` are all designed for *Bower projects*. This repo has no `docs/modules/`, no `docs/architecture.md`, no `docs/scope.md` — running them here is meaningless. Edit framework files directly instead.
 - **Every framework change gets a `_bower/changes.md` entry.** Prepend a new versioned section (most recent first) describing what changed, why, and any migration notes for projects already on a previous version. Bump the version in **both** `_bower/VERSION` (the canonical source, read by tooling) **and** `_bower/framework.md`'s top heading (a human-visible label) at the same time.
 - **The project-facing CLAUDE.md is a template, not the live one.** This file (the root `CLAUDE.md`) is contributor-only. The template that projects receive lives at `_bower/project-CLAUDE.md`; it `@`-includes `_bower/framework.md`. When you change framework guidance, edit `_bower/framework.md` — projects pick up the change by re-running the scaffold script over their `_bower/` directory.
 
 ## Migration-notes authoring discipline
 
-Every framework change gets migration notes in its `_bower/changes.md` entry. These notes are read by the `/b-upgrade` skill running in a downstream project — a model audience walking through one version at a time. Authoring discipline matters because a vague or context-dependent note will produce inconsistent upgrades across projects, and the failure may not surface until much later.
+Every framework change gets migration notes in its `_bower/changes.md` entry. These notes are read by the `/bower:upgrade` skill running in a downstream project — a model audience walking through one version at a time. Authoring discipline matters because a vague or context-dependent note will produce inconsistent upgrades across projects, and the failure may not surface until much later.
 
 Write notes under a `### Migration` subheading inside the version's section. Rules:
 
-- **Self-contained.** Do not write "see also v0.10's note" or "as in the previous version." `/b-upgrade` reads one version's section at a time; a cross-reference is a dangling pointer.
+- **Self-contained.** Do not write "see also v0.10's note" or "as in the previous version." `/bower:upgrade` reads one version's section at a time; a cross-reference is a dangling pointer.
 - **Written for a model audience.** Be explicit about which files to read, what to look for, and what to write. "Update `architecture.md`" is too vague. "For each module under `docs/modules/`, read its `module-status.md` and any `plan.md` to understand its purpose; add a `## Software architecture` section to `docs/architecture.md` with one entry per module covering purpose, data-concern boundary, constituent features, and inter-module dependencies" is the shape.
 - **Name "no migration needed" explicitly.** If a version has no project-side migration work, write `### Migration` with a single line: `None — no project-side changes required.` Silence is ambiguous; "none" is decisive.
-- **Distinguish mechanical from judgement-required work.** If a step is a direct file edit, say so. If it requires the model to read project content and synthesise (e.g. backfilling a section with content inferred from existing files), say *that* — the operator's self-assessment in `/b-upgrade` depends on knowing where discretion was exercised.
+- **Distinguish mechanical from judgement-required work.** If a step is a direct file edit, say so. If it requires the model to read project content and synthesise (e.g. backfilling a section with content inferred from existing files), say *that* — the operator's self-assessment in `/bower:upgrade` depends on knowing where discretion was exercised.
 - **List file references inline.** Migration notes that say "read the schema in `_bower/brief-schema.md`" are fine — that file is now in the project after scaffold. Migration notes that reference files only in the framework repo (not scaffolded) need to inline the content.
-- **Discuss with the user when uncertain.** If a change has subtle migration implications you're not sure about, ask the user before settling on the notes. A bad migration note compounds across every project that runs `/b-upgrade` after this version.
+- **Discuss with the user when uncertain.** If a change has subtle migration implications you're not sure about, ask the user before settling on the notes. A bad migration note compounds across every project that runs `/bower:upgrade` after this version.
 
 The historical entries (v0.8 through v0.12) use `**Migration notes**` bold paragraphs rather than `### Migration` subheadings; the skill is forgiving about that. Going forward, use the subheading form.
 
@@ -28,15 +28,22 @@ The historical entries (v0.8 through v0.12) use `**Migration notes**` bold parag
 - `_bower/rationale.md` — **Why Bower works the way it does.** Design principles, comparisons to alternatives, and the reasoning behind structural choices. Consult before changing framework behaviour so the change stays coherent with the design.
 - `_bower/changes.md` — **Versioned log of framework changes.** Most recent first. Append a new entry for every framework change in the same commit.
 - `_bower/roadmap.md` — **Deferred improvements and their revisit triggers.** Check before proposing new framework work (it may already be deferred with a stated reason); update when deferring something new.
-- `_bower/brief-schema.md` — **Schema the `bower-analyst` subagent emits** and `/b-design` Stage 0 consumes. Touch alongside any change to the analyst, the brief format, or Stage 0.
+- `_bower/brief-schema.md` — **Schema the `bower-analyst` subagent emits** and `/bower:design` Stage 0 consumes. Touch alongside any change to the analyst, the brief format, or Stage 0.
 - `_bower/framework.md` — **The project-facing guidance** that gets `@`-included into a Bower project's CLAUDE.md. Edit this when changing how Bower projects are *used*, as opposed to how the framework itself is *built*.
-- `_bower/VERSION` — **The canonical framework version.** Single line, the version string only (no `v` prefix). Read by the scaffold script and by `/b-upgrade` in projects. Bump this in the same commit as a `_bower/changes.md` entry; the heading in `_bower/framework.md` is a derived label that should match but is not read by tooling.
+- `_bower/VERSION` — **The canonical framework version.** Single line, the version string only (no `v` prefix). Read by the scaffold script and by `/bower:upgrade` in projects. Bump this in the same commit as a `_bower/changes.md` entry; the heading in `_bower/framework.md` is a derived label that should match but is not read by tooling.
 
 ## Repository layout
+
+This repo is both the framework source and the installable Claude Code plugin. The plugin loads `commands/` and `agents/` from the repo **root** (manifest in `.claude-plugin/`); the scaffold path copies those same files into a target project's `.claude/`, renaming them to the legacy `/b-*` form.
 
 ```
 CLAUDE.md                  # This file — contributor-facing
 README.md                  # Public README
+.claude-plugin/
+└── plugin.json            # Plugin manifest (name: bower); version mirrors _bower/VERSION
+commands/                  # Plugin slash-command skills — invoked as /bower:design, /bower:feature, …
+│                          #   (files are prefix-less: design.md, feature.md, …; plus init.md)
+agents/                    # Subagents (bower-analyst, bower-reviewer)
 _bower/
 ├── framework.md           # Project-facing guidance (the `@`-include target)
 ├── project-CLAUDE.md      # Template seeded into new projects' CLAUDE.md
@@ -45,19 +52,20 @@ _bower/
 ├── changes.md             # Version log (above)
 ├── roadmap.md             # Deferred work (above)
 ├── brief-schema.md        # Change-brief schema (above)
+├── review-schema.md       # Review-report schema
 └── VERSION                # Canonical framework version (single line)
-.claude/
-├── agents/                # Subagents (e.g. bower-analyst)
-└── commands/              # Slash-command skills (/b-design, /b-feature, …)
 scripts/
-├── scaffold.sh            # Copies _bower/ + .claude/ into a target project (bash)
-└── scaffold.ps1           # PowerShell equivalent for Windows
+├── scaffold.sh            # Copies _bower/ + commands/agents into a target project (bash)
+├── scaffold.ps1           # PowerShell equivalent for Windows
+└── release.sh             # Cuts a GitHub release from the current _bower/VERSION section
 docs/                      # Material for the README / external readers (not a Bower project's docs/)
 ```
 
+**Canonical command form is `/bower:<name>`** (the plugin namespace). The scaffold path transforms these *down* to `/b-<name>` on copy so the pre-plugin project cohort keeps working unchanged. When editing skills or docs, write `/bower:<name>`; the scaffold handles the legacy rename.
+
 ## Scaffolding a project from this repo
 
-`scripts/scaffold.sh <target-dir>` (or `scripts\scaffold.ps1 <target-dir>` on Windows) copies `_bower/` and the `.claude/` agents and commands into the target. If the target has no `CLAUDE.md`, the script seeds one from `_bower/project-CLAUDE.md`. If it already has one, the script leaves it alone — the assumption is that the project's CLAUDE.md already `@`-includes `_bower/framework.md`, so re-copying `_bower/` is sufficient to upgrade the project to the current framework version. Similarly, if the target has no `.claude/settings.json`, the script seeds one from `_bower/project-settings.json` with safe read-only Bash permission defaults; if it already has one, the script leaves it alone.
+`scripts/scaffold.sh <target-dir>` (or `scripts\scaffold.ps1 <target-dir>` on Windows) copies `_bower/` and the root `commands/` and `agents/` into the target's `.claude/`, renaming the commands from `/bower:<name>` down to the legacy `/b-<name>` form. If the target has no `CLAUDE.md`, the script seeds one from `_bower/project-CLAUDE.md`. If it already has one, the script leaves it alone — the assumption is that the project's CLAUDE.md already `@`-includes `_bower/framework.md`, so re-copying `_bower/` is sufficient to upgrade the project to the current framework version. Similarly, if the target has no `.claude/settings.json`, the script seeds one from `_bower/project-settings.json` with safe read-only Bash permission defaults; if it already has one, the script leaves it alone.
 
 The script never touches the target's `docs/`, `.claude/settings.local.json`, or anything outside the framework footprint.
 

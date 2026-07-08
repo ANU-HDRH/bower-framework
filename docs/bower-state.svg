@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 470" role="img" aria-labelledby="title desc">
 <title id="title">Bower SDD state flow</title>
-<desc id="desc">Start leads to Designed via /b-design, then Building via /b-feature or /b-module, then Complete via /b-integration, then done when all modules pass. Building loops on each feature; Complete loops on optional /b-review. Complete returns to Building for the next module. Building can redirect back to Designed on an architectural change.</desc>
+<desc id="desc">Start leads to Designed via /bower:design, then Building via /bower:feature or /bower:module, then Complete via /bower:integration, then done when all modules pass. Building loops on each feature; Complete loops on optional /bower:review. Complete returns to Building for the next module. Building can redirect back to Designed on an architectural change.</desc>
 <style>
 text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .t{font-size:14px;font-weight:500}
@@ -26,25 +26,25 @@ text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Robot
 <text class="s n" x="338" y="44" text-anchor="start" dominant-baseline="central">start</text>
 
 <line x1="320" y1="54" x2="320" y2="77" class="arr" marker-end="url(#arrow)"/>
-<text class="s n" x="332" y="66" text-anchor="start" dominant-baseline="central">/b-design</text>
+<text class="s n" x="332" y="66" text-anchor="start" dominant-baseline="central">/bower:design</text>
 
 <rect class="box" x="210" y="80" width="220" height="56" rx="8"/>
 <text class="t bt" x="320" y="102" text-anchor="middle" dominant-baseline="central">Designed</text>
 <text class="s bs" x="320" y="121" text-anchor="middle" dominant-baseline="central">architecture &amp; plan set</text>
 
 <line x1="320" y1="138" x2="320" y2="177" class="arr" marker-end="url(#arrow)"/>
-<text class="s n" x="332" y="158" text-anchor="start" dominant-baseline="central">/b-feature · /b-module</text>
+<text class="s n" x="332" y="158" text-anchor="start" dominant-baseline="central">/bower:feature · /bower:module</text>
 
 <rect class="box" x="210" y="180" width="220" height="56" rx="8"/>
 <text class="t bt" x="320" y="202" text-anchor="middle" dominant-baseline="central">Building</text>
 <text class="s bs" x="320" y="221" text-anchor="middle" dominant-baseline="central">↻ next feature</text>
 
 <line x1="320" y1="238" x2="320" y2="277" class="arr" marker-end="url(#arrow)"/>
-<text class="s n" x="332" y="258" text-anchor="start" dominant-baseline="central">/b-integration</text>
+<text class="s n" x="332" y="258" text-anchor="start" dominant-baseline="central">/bower:integration</text>
 
 <rect class="box" x="210" y="280" width="220" height="56" rx="8"/>
 <text class="t bt" x="320" y="302" text-anchor="middle" dominant-baseline="central">Complete</text>
-<text class="s bs" x="320" y="321" text-anchor="middle" dominant-baseline="central">↻ /b-review (optional)</text>
+<text class="s bs" x="320" y="321" text-anchor="middle" dominant-baseline="central">↻ /bower:review (optional)</text>
 
 <line x1="320" y1="338" x2="320" y2="385" class="arr" marker-end="url(#arrow)"/>
 <text class="s n" x="332" y="362" text-anchor="start" dominant-baseline="central">all modules ✓</text>
@@ -61,5 +61,5 @@ text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Robot
 <text class="s n" x="86" y="166" text-anchor="middle" dominant-baseline="central">change</text>
 
 <line x1="210" y1="440" x2="242" y2="440" class="coral" stroke-dasharray="5 4"/>
-<text class="s n" x="250" y="440" text-anchor="start" dominant-baseline="central">hard redirect — back through /b-design</text>
+<text class="s n" x="250" y="440" text-anchor="start" dominant-baseline="central">hard redirect — back through /bower:design</text>
 </svg>

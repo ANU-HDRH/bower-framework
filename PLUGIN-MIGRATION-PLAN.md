@@ -4,6 +4,22 @@
 > folded into `_bower/roadmap.md`. Not framework guidance; no `changes.md` entry.
 > Branch: `plugin-marketplace`. Origin: `https://github.com/ANU-HDRH/bower-framework.git`.
 
+> **STATUS (as of 2026-07-08).** Phase 1 landed on `plugin-marketplace` (commit
+> `b2de60d`). The plugin is packaged (`.claude-plugin/plugin.json`), commands +
+> agents moved to the repo root, and the `claude-goodies` marketplace references
+> this branch. **README, contributor `CLAUDE.md`, and `docs/bower-state.svg` have
+> been updated to match.** Phases 2–4 (throwaway-project proof, merge to `main`,
+> per-project migration) are still open.
+>
+> **Naming correction:** the shipped commands **dropped** the `b-` prefix — they
+> are `/bower:design`, `/bower:feature`, … (NOT `/bower:b-design`). Ignore every
+> `/bower:b-*` spelling below; those predate the decision and are wrong. The
+> scaffold path still emits legacy `/b-*` for the pre-plugin cohort.
+>
+> **`init` correction:** the init entry shipped as the `/bower:init` *command*
+> (`commands/init.md`, runs `scaffold.sh --plugin`), not the `bin/bower-init`
+> binary sketched in Phase 1 below.
+
 ## Goal
 
 Distribute Bower's tooling (the `/b-*` skills + `bower-analyst`/`bower-reviewer`
@@ -55,7 +71,7 @@ under plugin namespacing. **TODO next session:** grep `.claude/commands` for
 
 ## Phased rollout (each step reversible via git; existing projects untouched until Phase 4)
 
-### Phase 1 — add plugin packaging, change nothing else (on `plugin-marketplace`)
+### Phase 1 — add plugin packaging, change nothing else (on `plugin-marketplace`) — ✅ DONE (`b2de60d`)
 - Add `.claude-plugin/plugin.json` (`name: "bower"`, `version` mirroring `_bower/VERSION`).
 - Add `.claude-plugin/marketplace.json` (this repo is both marketplace and plugin;
   single entry, `"source": "."`).
@@ -64,39 +80,42 @@ under plugin namespacing. **TODO next session:** grep `.claude/commands` for
 - `claude plugin validate .` until clean.
 - Non-destructive: pure additions on a branch.
 
-### Phase 2 — prove it in a throwaway project (test from the BRANCH, before `main`)
+### Phase 2 — prove it in a throwaway project (test from the BRANCH, before `main`) — ⏳ OPEN
 - Marketplace can point at the branch for testing — either:
   - local path: `/plugin marketplace add /home/lingomat/innovation/bower-framework`
     with the branch checked out, OR
   - github ref: marketplace entry `{ "source": "github", "repo": "ANU-HDRH/bower-framework", "ref": "plugin-marketplace" }`.
 - `/plugin install bower@bower`.
-- Scratch project: run `bower-init`, confirm it seeds `_bower/` + CLAUDE.md + VERSION + SOURCE.
-- Run one real `/bower:b-design` end-to-end; confirm `_bower/` refs resolve and `${CLAUDE_PLUGIN_ROOT}` substitutes.
-- Run `/bower:b-upgrade` across a version bump; confirm migration notes still apply.
-- **Gate:** do the sibling-command grep + fix here.
+- Scratch project: run `/bower:init`, confirm it seeds `_bower/` + CLAUDE.md + VERSION + SOURCE.
+- Run one real `/bower:design` end-to-end; confirm `_bower/` refs resolve and `${CLAUDE_PLUGIN_ROOT}` substitutes.
+- Run `/bower:upgrade` across a version bump; confirm migration notes still apply.
+- **Gate:** the sibling-command grep + fix — DONE in Phase 1 (`b2de60d` flipped all `/b-<cmd>` → `/bower:<cmd>` across `commands/`, `agents/`, `_bower/*.md`). Re-verify in the live scratch project.
 
-### Phase 3 — publish, migrate nothing
+### Phase 3 — publish, migrate nothing — ⏳ OPEN (merge to `main` pending)
 - Merge to `main`, cut the marketplace.
 - Team uses `/plugin install` for NEW projects.
 - Existing important projects stay exactly as they are (in-tree tooling, untouched).
 - Two cohorts run in parallel, both working.
 
-### Phase 4 — migrate existing projects one at a time, only when chosen
+### Phase 4 — migrate existing projects one at a time, only when chosen — ⏳ OPEN
 - Per project, on a branch: install plugin, delete redundant in-tree
   `.claude/commands/b-*.md` + `.claude/agents/bower-*.md`, KEEP `_bower/`.
 - Run the `/b-*` commands actually used; confirm parity.
 - Merge or `git reset --hard` — fully reversible.
 - Least-critical project first; important ones last, after the pattern is boring.
-- Coexistence is safe meanwhile: in-tree `/b-design` and plugin `/bower:b-design`
+- Coexistence is safe meanwhile: in-tree `/b-design` and plugin `/bower:design`
   don't conflict (different namespaces).
 
 ## Open decisions (defer)
 - Does a migrated project keep ANY in-tree tooling, or go pure-plugin? (Decide before Phase 4.)
 - Retire `scaffold.sh` for non-plugin/air-gapped/CI consumers, or keep both paths? (Keep both = safe default.)
-- Namespacing collateral: every doc/prose mention of bare `/b-foo` → `/bower:b-foo`.
+- Namespacing collateral: every doc/prose mention of bare `/b-foo` → `/bower:foo`.
+  (DONE for README, contributor `CLAUDE.md`, and `docs/bower-state.svg`.)
 
 ## Resume checklist for next session
 1. `git checkout plugin-marketplace` (this doc lives here).
-2. Start Phase 1: write the two manifests + `bin/` entry.
-3. Run the sibling-command grep (Phase 2 gate, currently unsized).
-4. `claude plugin validate .`.
+2. Phase 2: install the plugin from the branch into a scratch project
+   (`/plugin marketplace add ANU-HDRH/claude-goodies` → `/plugin install bower@claude-goodies`),
+   run `/bower:init`, then one real `/bower:design` and a `/bower:upgrade` end-to-end.
+3. Phase 3: merge `plugin-marketplace` → `main`; the marketplace ref then points at `main`.
+4. Phase 4: migrate existing projects one at a time (least-critical first).
