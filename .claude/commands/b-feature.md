@@ -33,20 +33,23 @@ The user's description of what they want to change: $ARGUMENTS
 
 ## Step 1: Understand Context
 
-1. Read `docs/index.md` to understand project structure
-2. Read `docs/architecture.md` for system context
-3. Read `docs/scope.md` to understand current scope, non-goals, and success-criteria state
-4. Read `docs/ui.md` if it exists — needed when the change touches a screen, adds UI scaffolding for a new feature, or has any chance of shifting navigation, layout grammar, or interaction patterns. Even backend-heavy work often introduces a screen as scaffolding; the experience surface needs to reconcile in Step 6.
-5. Read the plan.md and status.md of any components likely affected
-6. Read the `module-status.md` of the affected module (if it exists) — check the `## Build order` section and the `## Module integration` `Notes:`
-7. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) list the affected module(s) under `modules`, (b) have no `modules` field at all (cross-cutting), or (c) have a title topically relevant to the change — e.g. an ADR about caching strategy when the change touches a cache, even if it's filed under another module. Open and read each. These are the constraints the proposal must respect or explicitly contradict. Skip if no `docs/adr/` exists.
-8. Read relevant source code to understand current implementation
+Orientation is **selective**: read what this change needs, not the whole project. Batch all independent reads — issue them together, not one per turn.
+
+1. Read `docs/index.md` and the affected module's `module-status.md` (batched) — project structure, `## Build order`, and the `## Module integration` `Notes:`.
+2. Read the target feature's `plan.md` and `status.md`, plus those of any other components likely affected.
+3. Read `docs/architecture.md` **selectively**: the system overview, the affected module's `## Software architecture` subsection, and any named data flows or constraints the change touches. Read the whole file only when the change crosses sections or you cannot confidently locate it within them.
+4. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) list the affected module(s) under `modules`, (b) have no `modules` field at all (cross-cutting), or (c) have a title topically relevant to the change — e.g. an ADR about caching strategy when the change touches a cache, even if it's filed under another module. Open and read each. These are the constraints the proposal must respect or explicitly contradict. Skip if no `docs/adr/` exists.
+5. **For modify or remove intents:** search sibling `plan.md` files in the module for exact references to the feature, API, or component being changed (Grep, not full reads); open only the matches. Other features' plans often describe interactions with the thing you're changing — those references go stale if you don't catch them. List any that need updating in the Step 2 Impact section.
+6. Read `docs/scope.md` only when the intent is add or remove, the change touches a success criterion, or you suspect scope impact.
+7. Read the relevant sections of `docs/ui.md` (if it exists) once UI impact is established — the change touches a screen, adds UI scaffolding, or could shift navigation, layout grammar, or interaction patterns. Even backend-heavy work often introduces a screen as scaffolding; the experience surface needs to reconcile in Step 6.
+8. Do **not** read `docs/constitution.md`'s testing detail here — it goes to the implementer in the Step 4 packet. Read other conventions from it only if the proposal itself needs them.
+9. Read relevant source code to understand the current implementation — batch the files the plans name; don't rediscover what the component maps already locate.
+
+**Inputs-selected ledger.** Close orientation with a short ledger (a few lines) naming what you read and what you deliberately skipped and why — e.g. "skipped scope.md: modify intent, no criterion impact." This keeps omissions auditable at the gate.
 
 **Intent re-check.** After reading, ask once: is this work primarily on the experience surface (navigation, screens, interaction patterns, layout, copy) with at most incidental backend? If yes, stop and recommend `/b-ui` for branching choices or the ad-hoc path described in `_bower/framework.md`. Mixed work (backend + UI scaffolding for a new feature) stays here; pure-UI work routes out. The intro redirect handles the obvious cases; this re-check catches the ones that become clear only after reading.
 
 **ADR posture.** Treat accepted ADRs as constraints to confirm against current code, not as ground truth. If an ADR names a specific library, file, or flag and the code contradicts it, the ADR is the stale one — flag it in the proposal so the gate can decide whether to supersede. Do not silently rely on a stale ADR.
-
-**For modify or remove intents, also read sibling features in the same module.** Other features' `plan.md` files often describe interactions with the thing you're changing — those references go stale if you don't catch them. Skim each sibling `plan.md` for outbound references to the feature/component being modified or removed; list any that need updating in the Step 2 Impact section.
 
 **Build order check:** If the requested change is **adding a new feature** to a module, append it to the module's `## Build order` as part of Step 6 — the build order is a living document, not a Stage-4 contract. If the requested change is on a feature that is part of a module with a `## Build order` and earlier features in that order are not yet complete (not ✓), surface this to the user as part of the proposal in Step 2. Do not hard-block — warn and let the user proceed anyway. Working out of order is sometimes the right call; the warning exists so it's a conscious choice.
 
@@ -153,6 +156,8 @@ If the user rejects the drafted ADR at `/b-adr`'s gate, treat that as a request 
 ## Step 6: Update Documentation
 
 The exact set of documents to touch depends on the intent. Common to all intents: `status.md` is rewritten from scratch, `module-status.md` build-order markers reflect reality, and `scope.md` is updated if the change shifted scope.
+
+**Completed plans describe the system, not the build.** When finalising `plan.md` (add and modify intents), keep purpose, the current behavioural contract, the component map, integration points, and testing *categories*. Compress dated counts and implementation history aggressively — the resumption record and git hold those. A footnote earns its place only when a future reader would otherwise have to dig it out of git. If the plan reads like a changelog, trim it back to current state.
 
 **For add intent:**
 

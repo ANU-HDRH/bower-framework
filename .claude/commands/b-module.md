@@ -25,6 +25,8 @@ If any of these fail, stop and recommend the user run `/b-feature` instead, feat
 
 ## Step 1: Understand Context
 
+Batch all independent reads — issue them together, not one per turn.
+
 1. Read `docs/architecture.md` for system context
 2. Read `docs/scope.md` — current scope and any unmet success criteria this module should close
 3. Read the target module's `module-status.md` — integration notes and build order
