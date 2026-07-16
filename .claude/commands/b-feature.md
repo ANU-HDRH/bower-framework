@@ -28,6 +28,7 @@ The user's description of what they want to change: $ARGUMENTS
 - **Scope tightly.** Only propose changes needed for this specific request. Don't redesign what works.
 - **Acceptance is explicit.** Propose how the change will be verified (tests, manual checks, or both) and get agreement on that too.
 - **Plan is the recovery anchor.** Write `plan.md` immediately after the gate, before any code is touched (Step 3). The plan is intent on disk — if the session crashes mid-implementation, this file plus `git status` is what makes recovery possible. The completion stamp and any implementation footnotes are appended at Step 6, not written from scratch there.
+- **Implementation is delegated.** After the gate and the plan write, a fresh `bower-implementer` subagent implements and tests against the approved plan and returns an implementation report; you retain the gate, acceptance and decision reconciliation, and doc updates. Fall back to inline implementation only if the Agent tool is unavailable — and say so explicitly when you do.
 - **Literal-command handoff.** Every "next move" you emit (in `status.md`, in any handoff line) names the exact slash command to type next, never free prose. "Run `/b-integration foundation`" — yes. "Write the integration test next" — no.
 
 ## Step 1: Understand Context
@@ -102,19 +103,30 @@ After the user confirms at the gate, write `plan.md` *before* any code is touche
 
 The plan written here is what survives a crash. Implementation footnotes that emerge during Step 4 (a workaround for a specific bug, a hand-edited migration, a non-obvious cast) and the `Confirmed YYYY-MM-DD` stamp are appended at Step 6.
 
-## Step 4: Implement
+## Step 4: Implement (delegated)
 
-After plan.md is written:
+After plan.md is written, implementation runs in a **fresh `bower-implementer` subagent**, not in this context. The isolated context is the point: this conversation carries the orientation and proposal history, and none of it is needed to execute the approved plan — the plan is the contract. Do not implement inline when the Agent tool is available.
 
-1. Implement the changes as proposed
-2. Write/update tests per the agreed acceptance criteria
-3. Run tests; confirm they pass
-
-If implementation reveals the approach in the plan won't work, update `plan.md` to reflect the new direction as you change course — and if the divergence is significant, stop and consult the user via AskUserQuestion before continuing.
+1. **Assemble the spawn packet.** Pass paths for on-disk content, values only for conversation-only content:
+   - The approved `plan.md` path. (For **remove** intent, where Step 3 wrote nothing: the existing `plan.md` of the feature being removed, plus the confirmed list of files to delete.)
+   - The intent (add / modify / remove).
+   - The **acceptance criteria verbatim**, including any amendments made at the gate — these exist only in this conversation, so they go by value.
+   - The "What you won't change" list from the proposal.
+   - The feature's `status.md` path and the module's `module-status.md` path (orientation only).
+   - The paths of the Step 1 ADRs that constrain implementation, each with a one-line reason.
+   - The names of the relevant `docs/architecture.md` sections (not the whole file).
+   - A pointer to `docs/constitution.md`'s testing section (runner command, fixtures, verified-for-✓ rules).
+   - The project root.
+2. **Spawn `bower-implementer`** with the packet. It implements, writes and runs tests, and returns an implementation report with fixed sections: `## Outcome`, `## Changed files`, `## Acceptance mapping`, `## Test run`, `## Divergences`, `## Implementation footnotes`, `## Doc implications`.
+3. **Branch on the report's `## Outcome`:**
+   - **COMPLETE** — proceed to Step 5, carrying the report.
+   - **DIVERGED-STOPPED** — the implementer hit a significant divergence and stopped with a coherent tree. Present the divergence to the user via AskUserQuestion — this is the re-gate. On their decision, amend `plan.md` to the agreed direction yourself, then spawn a fresh `bower-implementer` with the amended plan plus the previous report's `## Changed files` as resume context. (Subagents are one-shot; the changed-files list plus the working tree is the continuation state — the same recovery discipline as a crashed session.)
+   - **BLOCKED** — an environment or tooling failure. Surface it to the user verbatim; do not silently retry.
+4. **Fallback — Agent tool unavailable.** State one deliberate line: "Subagent unavailable; implementing inline (expect higher context usage)." Then implement, test, and handle divergence yourself under the same rules the implementer follows (minor divergence: update `plan.md` and continue; significant: stop and consult the user via AskUserQuestion), and construct the same report sections before Step 5 — Steps 5 and 6 consume one shape regardless of path.
 
 ## Step 5: Acceptance Reconciliation
 
-Before marking the feature done, produce an explicit reconciliation of every acceptance criterion agreed at the gate. Each criterion maps to evidence:
+Before marking the feature done, produce an explicit reconciliation of every acceptance criterion agreed at the gate. Start from the report's `## Acceptance mapping` — verify it, don't re-derive it. If any PASS line looks thin (a vague test name, a count that doesn't match the criteria), re-run the named test command once to confirm. Each criterion maps to evidence:
 
 ```
 - <criterion> — test: <path::name> — PASS
@@ -127,7 +139,7 @@ Handling:
 - **MISSING** is a blocker. Either write the test, or return to the user via AskUserQuestion to renegotiate the criterion. Do not proceed with MISSING items.
 - **PENDING USER** — for each manual check, ask the user via AskUserQuestion to confirm it passes. Present all manual checks in a single question. If the user confirms, mark PASS. If the user reports failure, treat as a bug and fix before proceeding. If the user defers ("I'll check later"), leave as PENDING USER and mark the feature 🚧 rather than ✓ (see Step 6).
 
-**Decision reconciliation.** After acceptance criteria are reconciled, review the **Decision impact** noted at the gate. For each touched ADR:
+**Decision reconciliation.** After acceptance criteria are reconciled, review the **Decision impact** noted at the gate — and additionally check the report's `## Divergences` and `## Doc implications` for ADR touches that weren't visible at the gate. For each touched ADR:
 
 - **Confirmed** (change implements the decision as recorded) — no action.
 - **Contradicted / drifted** (change violates an accepted ADR, or the ADR was already stale relative to the code) — invoke `/b-adr` to write a new ADR superseding the old one. Pass the rationale and the ADR-ID being superseded in the description.
@@ -144,22 +156,22 @@ The exact set of documents to touch depends on the intent. Common to all intents
 
 **For add intent:**
 
-1. Finalise `plan.md`. The bulk of the file already exists from Step 3 — this step appends the retrospective tail:
-   - Update the **Testing** section with final test counts and any test names worth surfacing (e.g. "12 cases against per-test schema").
-   - Append any **implementation footnotes worth keeping** to the relevant section: workarounds for specific bugs, hand-edited migrations, non-obvious casts at boundaries — the kind of detail a future reader would otherwise have to dig out of git. Skip if nothing surprising came up.
+1. Finalise `plan.md`. The bulk of the file already exists from Step 3 — this step appends the retrospective tail, drawn from the implementation report:
+   - Update the **Testing** section with final test counts from the report's `## Test run` and any test names worth surfacing (e.g. "12 cases against per-test schema").
+   - Append any **implementation footnotes worth keeping** from the report's `## Implementation footnotes`: workarounds for specific bugs, hand-edited migrations, non-obvious casts at boundaries — the kind of detail a future reader would otherwise have to dig out of git. Skip if nothing surprising came up.
    - Add a closing line: `Confirmed YYYY-MM-DD` (today's date) once acceptance criteria reconcile. This line is the visible completion flag; a `plan.md` without it is not done.
 2. Append the new feature to `module-status.md` `## Build order`. Place it where its dependencies dictate; if it has none, append to the end. Mark ✓ if all criteria PASS, 🚧 if PENDING USER.
 3. Refresh `## Module integration` `Notes:` if the new feature widens what the integration test must assert. Do not flip the marker.
 
 **For modify intent:**
 
-1. Finalise `plan.md`. The intended-end-state edits already landed in Step 3. This step appends the retrospective tail:
-   - Update the **Testing** section with final test counts for any new/changed tests.
-   - Append implementation footnotes worth keeping (workarounds, hand-edits, non-obvious decisions).
+1. Finalise `plan.md`. The intended-end-state edits already landed in Step 3. This step appends the retrospective tail, drawn from the implementation report:
+   - Update the **Testing** section with final test counts (from `## Test run`) for any new/changed tests.
+   - Append implementation footnotes worth keeping (from `## Implementation footnotes`).
    - Refresh or add the `Confirmed YYYY-MM-DD` line.
-   - If during Step 4 the approach diverged from the Step 3 plan, the plan should already reflect reality — verify and tidy any stale fragments.
-2. Update each sibling `plan.md` listed in the Step 2 Impact section — fix outbound references to the changed behaviour. If the proposal didn't list any but you now realise a sibling plan is stale, update it and note this in the resumption summary.
-3. Refresh `## Module integration` `Notes:` if the test's assertions need to shift. If yes, the `Next move:` below points to `/b-integration` so the test itself gets updated.
+   - If during Step 4 the implementer diverged from the Step 3 plan, the plan should already reflect reality (minor divergences are edited in flight and listed under `## Divergences`) — verify and tidy any stale fragments.
+2. Update each sibling `plan.md` listed in the Step 2 Impact section — fix outbound references to the changed behaviour. Cross-reference the report's `## Changed files` and `## Doc implications` for sibling plans the proposal missed; update those too and note it in the resumption summary.
+3. Refresh `## Module integration` `Notes:` if the test's assertions need to shift (the report's `## Doc implications` flags this). If yes, the `Next move:` below points to `/b-integration` so the test itself gets updated.
 4. If the feature is multi-session, update `## Implementation trajectory` in `plan.md`: compress the just-completed phase into a one-paragraph précis (why-focused, not steps); leave future phases detailed.
 
 **For remove intent:**
@@ -192,13 +204,14 @@ The exact set of documents to touch depends on the intent. Common to all intents
 9. Update `module-status.md`: update the `## Build order` marker for this feature. Use ✓ only if all criteria are PASS; use 🚧 if manual checks remain PENDING USER; use 🟡 or 🔴 if something is broken. Do **not** flip the `## Module integration` marker here — that belongs to `/b-integration`.
 10. Run `/b-index` or update `docs/index.md` if module status markers changed.
 
-If during implementation you discover the approach needs to change significantly, stop and consult the user again via AskUserQuestion before continuing.
-
 <critical_constraints>
 ## What NOT To Do
 
 - Do not start coding before the gate
 - Do not start coding before `plan.md` is written (Step 3) — the plan is the recovery anchor; writing it only at completion defeats the point
+- Do not implement inline when the Agent tool is available — the implementer's fresh context is the point; when falling back, say so explicitly
+- Do not let the implementer's report substitute for the Step 5 PENDING USER prompt — manual checks are always confirmed with the user by this command
+- Do not treat a DIVERGED-STOPPED report as failure — it is the divergence gate working; re-gate, amend the plan, re-spawn
 - Do not expand scope beyond what was confirmed
 - Do not skip documentation updates
 - Do not propose architectural changes — if the change requires them, recommend the user runs `/b-design` instead
