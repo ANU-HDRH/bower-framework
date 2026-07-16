@@ -45,13 +45,15 @@ _bower/
 ├── changes.md             # Version log (above)
 ├── roadmap.md             # Deferred work (above)
 ├── brief-schema.md        # Change-brief schema (above)
+├── review-schema.md       # Review-report schema
 └── VERSION                # Canonical framework version (single line)
 .claude/
 ├── agents/                # Subagents (e.g. bower-analyst)
 └── commands/              # Slash-command skills (/b-design, /b-feature, …)
 scripts/
 ├── scaffold.sh            # Copies _bower/ + .claude/ into a target project (bash)
-└── scaffold.ps1           # PowerShell equivalent for Windows
+├── scaffold.ps1           # PowerShell equivalent for Windows
+└── release.sh             # Cuts a GitHub release from the current _bower/VERSION section
 docs/                      # Material for the README / external readers (not a Bower project's docs/)
 ```
 

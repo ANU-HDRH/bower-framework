@@ -1,4 +1,4 @@
-# Bower Framework v0.18
+# Bower Framework v0.19
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -59,7 +59,7 @@ Either way, you should now have at the top of your project:
 - `_bower/SOURCE` — the git URL of the framework repo, used by `/b-upgrade` to clone the latest framework. Edit if you need to point at a fork or mirror (see *Upgrading*).
 - `_bower/` — framework rationale, change-brief schema, roadmap, `changes.md`, and `framework.md` (you don't normally edit these).
 - `.claude/commands/` — the `/b-*` slash commands.
-- `.claude/agents/` — the `bower-analyst` subagent (used by `/b-design` and `/b-analysis`).
+- `.claude/agents/` — the `bower-analyst` and `bower-reviewer` subagents.
 
 ### 2. Tell Claude about your project's code standards
 
