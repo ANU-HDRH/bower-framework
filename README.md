@@ -1,4 +1,4 @@
-# Bower Framework v0.19
+# Bower Framework v0.20
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -59,7 +59,7 @@ Either way, you should now have at the top of your project:
 - `_bower/SOURCE` — the git URL of the framework repo, used by `/b-upgrade` to clone the latest framework. Edit if you need to point at a fork or mirror (see *Upgrading*).
 - `_bower/` — framework rationale, change-brief schema, roadmap, `changes.md`, and `framework.md` (you don't normally edit these).
 - `.claude/commands/` — the `/b-*` slash commands.
-- `.claude/agents/` — the `bower-analyst` and `bower-reviewer` subagents.
+- `.claude/agents/` — the `bower-analyst`, `bower-reviewer`, and `bower-implementer` subagents.
 
 ### 2. Tell Claude about your project's code standards
 
@@ -131,9 +131,11 @@ bower-framework/
 │   │   └── b-upgrade.md        # Upgrade a project to the current framework version
 │   └── agents/
 │       ├── bower-analyst.md    # Read-only subagent that produces change briefs
-│       └── bower-reviewer.md   # Read-only subagent that produces module review reports
+│       ├── bower-reviewer.md   # Read-only subagent that produces module review reports
+│       └── bower-implementer.md # Write-capable subagent that executes an approved feature plan
 ├── _bower/
-│   ├── framework.md                # Project-facing guidance (a project's CLAUDE.md @-includes this)
+│   ├── framework.md                # Always-loaded router (a project's CLAUDE.md @-includes this)
+│   ├── framework-reference.md      # Detailed specs, loaded on demand by commands and agents
 │   ├── project-CLAUDE.md           # Template CLAUDE.md seeded into a new project
 │   ├── rationale.md                # Why Bower works this way
 │   ├── brief-schema.md             # Schema for the change brief produced by bower-analyst
@@ -153,7 +155,7 @@ bower-framework/
 |---------|---------|
 | `/b-design` | Six-stage design process for new projects and architectural revisions. Stage 0 spawns the `bower-analyst` subagent to produce a **change brief**; Stages 1–5 execute against the confirmed brief (problem framing → decisions/ADRs → architecture → module/feature plans → scaffolding). Stages with no delta emit "nothing to do" cleanly. Emits one ADR per `new`/`supersedes`/`partial-supersedes` Stage 2 operation. |
 | `/b-analysis` | Read-only, advisory. Spawns the `bower-analyst` subagent against a proposed change and prints its **change brief** — what each `/b-design` stage would do if executed. Useful as inspection before committing to execute. |
-| `/b-feature` | The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture. One gate before code, with relevant ADRs loaded as constraints. Reconcile step prompts for ADR creation/supersession when a cross-cutting decision was introduced or invalidated. Redirects to `/b-design` for architectural changes, or `/b-ui` for experience-surface work. |
+| `/b-feature` | The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture. One gate before code, with relevant ADRs loaded as constraints. After the gate, implementation runs in a fresh `bower-implementer` subagent against the approved plan, keeping the planning context lean. Reconcile step prompts for ADR creation/supersession when a cross-cutting decision was introduced or invalidated. Redirects to `/b-design` for architectural changes, or `/b-ui` for experience-surface work. |
 | `/b-ui` | Gated path for **structural and underspecified** UI changes (e.g. "add tab-based content navigation" with multiple viable shapes). Propose-with-alternatives → confirm → implement → reconcile `docs/ui.md`. Most UI work skips the skill — visual tweaks and tightly-specified structural changes happen out-of-band; see *UI / UX Work* below. |
 | `/b-module` | Build all features in a module in one pass. One gate up front, one integration pass at the end. Use when the module is small and well-specified. |
 | `/b-integration` | Build the module-boundary integration test for a module. Use when a module was built feature-by-feature and the integration test is the residual. |
@@ -176,7 +178,7 @@ The diagram is the spine, not the whole picture. Several commands apply at any p
 
 `/b-design` is the design command. Six stages: Stage 0 produces a change brief via the read-only `bower-analyst` subagent; Stages 1–5 execute against the confirmed brief (problem framing, decisions/ADRs, architecture, module/feature plans, scaffolding) with a content gate per non-nil stage. Stages of no delta emit "nothing to do" cleanly, so heavy ceremony only fires where there's actual work. Required for greenfield and for changes that shift architecture, decisions, scope, or module structure.
 
-`/b-feature` is the implementation command for changes within existing architecture. Proposes changes and acceptance criteria, confirms with you, then implements. If the request turns out to need architectural change, it redirects to `/b-design`; if it's primarily about the experience surface, it redirects to `/b-ui` or one of the ad-hoc UI paths.
+`/b-feature` is the implementation command for changes within existing architecture. Proposes changes and acceptance criteria, confirms with you, writes the plan, then hands implementation to a fresh `bower-implementer` subagent that builds and tests against the approved plan and reports back for reconciliation. If the request turns out to need architectural change, it redirects to `/b-design`; if it's primarily about the experience surface, it redirects to `/b-ui` or one of the ad-hoc UI paths.
 
 `/b-module` and `/b-integration` are the other two arrows into `Complete` on the diagram. `/b-module` applies the same gate to a whole module at once — build all its features in one pass when the module is small and well-specified — and `/b-integration` writes the module-boundary test that actually flips a module to `Complete`. Feature-by-feature work reaches the same state by repeated `/b-feature` followed by a final `/b-integration`.
 

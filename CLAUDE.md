@@ -29,7 +29,8 @@ The historical entries (v0.8 through v0.12) use `**Migration notes**` bold parag
 - `_bower/changes.md` — **Versioned log of framework changes.** Most recent first. Append a new entry for every framework change in the same commit.
 - `_bower/roadmap.md` — **Deferred improvements and their revisit triggers.** Check before proposing new framework work (it may already be deferred with a stated reason); update when deferring something new.
 - `_bower/brief-schema.md` — **Schema the `bower-analyst` subagent emits** and `/b-design` Stage 0 consumes. Touch alongside any change to the analyst, the brief format, or Stage 0.
-- `_bower/framework.md` — **The project-facing guidance** that gets `@`-included into a Bower project's CLAUDE.md. Edit this when changing how Bower projects are *used*, as opposed to how the framework itself is *built*.
+- `_bower/framework.md` — **The project-facing router** that gets `@`-included into a Bower project's CLAUDE.md (always loaded, keep it lean). Edit this when changing how Bower projects are *used*, as opposed to how the framework itself is *built*.
+- `_bower/framework-reference.md` — **Detailed project-facing specs** (document schemas, full ADR spec, UI path examples, module review) loaded on demand by commands and agents. Detail belongs here or in the command that consumes it, not in the router.
 - `_bower/VERSION` — **The canonical framework version.** Single line, the version string only (no `v` prefix). Read by the scaffold script and by `/b-upgrade` in projects. Bump this in the same commit as a `_bower/changes.md` entry; the heading in `_bower/framework.md` is a derived label that should match but is not read by tooling.
 
 ## Repository layout
@@ -38,7 +39,8 @@ The historical entries (v0.8 through v0.12) use `**Migration notes**` bold parag
 CLAUDE.md                  # This file — contributor-facing
 README.md                  # Public README
 _bower/
-├── framework.md           # Project-facing guidance (the `@`-include target)
+├── framework.md           # Project-facing router (the `@`-include target)
+├── framework-reference.md # Detailed specs, loaded on demand by commands/agents
 ├── project-CLAUDE.md      # Template seeded into new projects' CLAUDE.md
 ├── project-settings.json  # Template seeded into new projects' .claude/settings.json
 ├── rationale.md           # Design principles (above)
