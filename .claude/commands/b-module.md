@@ -32,7 +32,7 @@ Batch all independent reads — issue them together, not one per turn.
 3. Read the target module's `module-status.md` — integration notes and build order
 4. Read `docs/constitution.md` for testing conventions
 5. Read any `plan.md` / `status.md` that already exist in this module (e.g. from partial prior work)
-6. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) list this module under `modules`, (b) have no `modules` field (cross-cutting), or (c) have a title topically relevant to features in this module — even if filed under another module. Open and read each. Treat them as constraints the module plan must respect; flag any that look stale relative to the current code.
+6. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) have `scope: universal`, (b) list this module under `modules`, (c) have a `topics` entry matching features in this module, or (d) have a title topically relevant to them — even if filed under another module. An ADR with no `scope` and no `modules` is *unclassified* (pre-v0.20) — load it on topical or title match only, never wholesale. Open and read each selected ADR. Treat them as constraints the module plan must respect; flag any that look stale relative to the current code.
 7. Read source code for adjacent modules this one depends on
 
 ## Step 2: Draft Module Plan

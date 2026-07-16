@@ -71,7 +71,7 @@ Stage-specific drafting and write rules follow.
 
 **Drafting:** For each operation in the brief's list:
 
-- **new** — Draft a new ADR per the schema in `/b-adr` (frontmatter + four sections: Context, Decision, Consequences, Alternatives considered). 200–600 words.
+- **new** — Draft a new ADR per the schema in `/b-adr`: frontmatter (including `scope`, and `modules`/`topics` where applicable) + two required sections (Context, Decision) and two optional (Consequences, Alternatives considered). ~150 words, ceiling 300.
 - **supersedes ADR-NNNN** — Draft the new ADR with `supersedes: [ADR-NNNN]` in the frontmatter. Also draft the frontmatter update for the superseded ADR (`status: superseded`, `superseded-by: [<new-id>]`). The superseded ADR's body is **not** edited.
 - **partial-supersedes ADR-NNNN** — Draft the new ADR referencing the original in `## Context` and `## Consequences`. Both ADRs remain `accepted`; neither's frontmatter changes.
 - **confirms ADR-NNNN** — **No file is written.** Acknowledge in the stage output: "Confirmed ADR-NNNN, no new ADR written." This is a deliberate signal that the operator considered it.

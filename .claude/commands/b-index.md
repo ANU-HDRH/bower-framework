@@ -10,7 +10,7 @@ Regenerate `docs/index.md` and (if `docs/adr/` exists) `docs/adr/index.md` by sc
 - **Curated structure is preserved.** If a file already exists, update its derived values *in place* and leave everything else untouched: section ordering, hand-written narrative (status dashboards, documentation maps, parallelism/rationale prose), a richer schema reference, legend tables. **Do not flatten an existing file to the templates below** — projects routinely grow a richer index than the seed template, and that curation is not yours to discard.
 - **The templates below are first-generation seeds, not a ceiling.** Use them verbatim only when the file does **not yet exist**. When the file exists, the template tells you which derived values to refresh and where they live structurally; the project's own layout wins.
 
-Deciding derived vs. curated: a section is *derived* only if its content is mechanically reproducible from status markers or ADR frontmatter — the module table's status column, the three ADR tables, the accepted/superseded counts. Everything else is curated; preserve it verbatim. If you cannot tell, preserve it.
+Deciding derived vs. curated: a section is *derived* only if its content is mechanically reproducible from status markers or ADR frontmatter — the module table's status column, the ADR tables, the accepted/superseded counts. Everything else is curated; preserve it verbatim. If you cannot tell, preserve it.
 
 ## Process
 
@@ -52,7 +52,7 @@ The UI line is included only if `docs/ui.md` exists. The Decision Log line is in
 
 ## Output: `docs/adr/index.md`
 
-If `docs/adr/` does not exist, skip. If `docs/adr/index.md` already exists, follow the **Regeneration contract** above: refresh the three derived tables and the accepted/superseded counts in place, and preserve the project's schema reference, section ordering, and any prose. The structure below is the seed used only on first generation:
+If `docs/adr/` does not exist, skip. If `docs/adr/index.md` already exists, follow the **Regeneration contract** above: refresh the derived tables and the accepted/superseded counts in place, and preserve the project's schema reference, section ordering, and any prose — including the project's existing table *layout* (a pre-v0.20 index may still split active decisions into module-scoped and cross-cutting tables; refresh those in place rather than restructuring, but add a Scope column if absent so classification is visible). The structure below is the seed used only on first generation:
 
 ```markdown
 # Architectural Decision Records
@@ -71,29 +71,23 @@ Frontmatter fields:
 | `title` | yes | Sentence case, matches the kebab portion of the filename |
 | `status` | yes | `accepted` \| `superseded` \| `deprecated` |
 | `date` | yes | `YYYY-MM-DD` |
-| `modules` | no | List of Bower module names; **omit entirely** for cross-cutting decisions |
+| `scope` | new ADRs | `universal` \| `module` \| `integration` \| `operational` — decides which changes load the ADR; absent on pre-v0.20 ADRs (*unclassified*) |
+| `modules` | when `scope: module` | List of Bower module names; omit when no specific module is implicated |
+| `topics` | no | Kebab-case subject keywords for topical matching (e.g. `streaming`) |
 | `supersedes` | no | List of ADR IDs this entry replaces |
 | `superseded-by` | no | List of ADR IDs that replaced this entry |
 
 Body sections (in order): `## Context`, `## Decision`, `## Consequences`, `## Alternatives considered`.
 
-Filter by `status: accepted` for "what's true now." Older statuses are historical.
+Filter by `status: accepted` for "what's true now." Older statuses are historical. Only `scope: universal` ADRs apply to every change; commands select the rest by module, topic, or title relevance.
 
-## Active decisions — module-scoped
+## Active decisions
 
-| ID | Title | Modules | Date |
-|---|---|---|---|
-| [ADR-NNNN](NNNN-kebab-title.md) | <title> | <modules> | <date> |
+| ID | Title | Scope | Modules | Topics | Date |
+|---|---|---|---|---|---|
+| [ADR-NNNN](NNNN-kebab-title.md) | <title> | <scope or *unclassified*> | <modules or —> | <topics or —> | <date> |
 
-(Listed by ascending ID. Includes only `status: accepted` ADRs that have a `modules` field.)
-
-## Active decisions — cross-cutting
-
-| ID | Title | Date |
-|---|---|---|
-| [ADR-NNNN](NNNN-kebab-title.md) | <title> | <date> |
-
-(Listed by ascending ID. Includes only `status: accepted` ADRs with no `modules` field.)
+(Listed by ascending ID. Includes all `status: accepted` ADRs. An ADR with no `scope` field is shown as *unclassified* — a pre-v0.20 entry awaiting classification; commands treat it as loadable on module or topical match only, never as universal.)
 
 ## Superseded and deprecated
 
@@ -114,6 +108,7 @@ The schema section is **boilerplate** — on first generation, write it verbatim
 - Only include sections that exist (skip Design Context if no `design/` and no `adr/` directory)
 - Include brief descriptions for each module from its module-status.md
 - If no modules exist yet, write the Core System and Design Context sections only
-- For ADR tables: if a row's `modules` field is empty/missing, the ADR belongs in the cross-cutting table; otherwise module-scoped. Order ADRs by ID ascending. Do **not** invent rows — read frontmatter literally.
+- For ADR tables: render `scope` literally; an accepted ADR with no `scope` field is *unclassified* (pre-v0.20) — never promote it to universal. Order ADRs by ID ascending. Do **not** invent rows — read frontmatter literally.
+- If any accepted ADRs are unclassified, add one line under the active-decisions table: `N unclassified pre-v0.20 ADRs — classify by adding scope/topics frontmatter (see the v0.20 migration notes in _bower/changes.md).`
 - If an ADR is malformed (missing required field, unknown status), include it in a final `## Malformed` section with the file path and the issue, so it can be fixed manually. This is the only way schema violations surface.
 - Ignore any `docs/modules/*/review-plan.md` — it is a transient `/b-review` work list, not project state, and never appears in the index.

@@ -11,7 +11,8 @@ The user's description of the decision: $ARGUMENTS
 - **One coherent scope per ADR.** An ADR may bundle several closely-related decisions under an umbrella title (e.g. "sidecar accommodation for patterns" covering artefact layout, build-time merging, and provenance rendering). The split test is whether the title honestly covers the scope — if you find yourself drafting "and also we switched the build tool," that's a second ADR. Naming more than one commitment in the body is fine when the umbrella holds.
 - **Bodies are immutable once accepted.** This command writes a new ADR or amends frontmatter only. It never edits an existing ADR's body.
 - **Consult before writing.** Use AskUserQuestion to confirm the draft before committing it to disk.
-- **Use exact Bower module names.** The `modules` field references directories under `docs/modules/`. Omit the field entirely for cross-cutting decisions; do not invent sentinels like `[*]` or `[all]`.
+- **Classify applicability.** Every new ADR carries a `scope` field — it decides which future changes load the ADR, so an over-broad scope taxes every `/b-feature` run. `universal` is rare and means "constrains every feature in the project"; most decisions are `module`, `integration`, or `operational`. Add `topics` when the decision is findable by subject-matter keywords (e.g. `[caching, invalidation]`).
+- **Use exact Bower module names.** The `modules` field references directories under `docs/modules/`. Omit the field when no specific module is implicated; do not invent sentinels like `[*]` or `[all]`.
 - **Status is `accepted`.** Bower has no `proposed` workflow — decisions are confirmed at gates before being written to disk.
 
 ## Step 1: Understand Context
@@ -39,7 +40,9 @@ id: ADR-NNNN
 title: <Title in sentence case, matching the filename minus the ID prefix>
 status: accepted
 date: YYYY-MM-DD
+scope: universal | module | integration | operational
 modules: [<module-name>, ...]
+topics: [<kebab-keyword>, ...]
 supersedes: [ADR-NNNN]
 ---
 
@@ -73,10 +76,18 @@ the code. Include it whenever real alternatives were weighed.>
 
 Frontmatter rules:
 
-- `modules:` — omit the field entirely for cross-cutting decisions (do not write `modules: []`).
+- `scope:` — required for new ADRs. Pick the narrowest true value:
+  - `universal` — constrains every feature in the project (e.g. an error-handling convention, a language/runtime commitment). Rare; loaded by every `/b-feature` run, so it must earn that cost.
+  - `module` — constrains the module(s) named in `modules:`. The default for most decisions.
+  - `integration` — constrains how modules interact at their boundaries; loaded for integration-shaped work, not everyday feature changes.
+  - `operational` — deployment, tooling, versioning, maintenance; loaded for ops-shaped work only.
+- `modules:` — required when `scope: module` (exact directory names under `docs/modules/`); otherwise include only if a specific module is implicated. Do not write `modules: []`.
+- `topics:` — optional list of kebab-case subject keywords (e.g. `[streaming, control-codes]`). Include when the decision should surface for topically-related changes regardless of module.
 - `supersedes:` and `superseded-by:` — omit when empty.
 - `date:` — today's date in `YYYY-MM-DD`.
 - `status:` — `accepted`.
+
+Legacy ADRs (pre-v0.20) lack `scope`. Frontmatter is mutable — when you touch a legacy ADR for supersession, or the operator asks for classification, adding `scope`/`topics` to an existing accepted ADR's frontmatter is allowed and encouraged; the body stays immutable.
 
 Filename: `docs/adr/NNNN-kebab-case-title.md`. Lowercase, hyphens, no punctuation, no trailing period. The kebab title should match the frontmatter title.
 
@@ -90,7 +101,7 @@ Present the drafted ADR to the user via AskUserQuestion. Show:
 - The full frontmatter
 - The full body
 
-Before presenting, self-audit: does the Decision section's load-bearing sentence fit under the title? If not, flag a possible second ADR. Does `## Consequences`, if included, name a non-obvious cost — or is it restating the Decision? If the latter, propose omitting it. Is `## Context` paraphrasing a doc already referenced? If so, tighten to one or two sentences pointing at the doc.
+Before presenting, self-audit: does the Decision section's load-bearing sentence fit under the title? If not, flag a possible second ADR. Does `## Consequences`, if included, name a non-obvious cost — or is it restating the Decision? If the latter, propose omitting it. Is `## Context` paraphrasing a doc already referenced? If so, tighten to one or two sentences pointing at the doc. Is `scope` the narrowest true value — would `universal` really constrain *every* feature, or is this a module, integration, or operational decision wearing a broad label?
 
 If this is a supersession, also show the frontmatter change to the older ADR (status, superseded-by, date).
 
@@ -133,7 +144,8 @@ Next move:
 - Do not modify the body of an existing ADR — bodies are immutable
 - Do not write the ADR before the gate
 - Do not skip the supersession frontmatter update on the older ADR
-- Do not invent sentinels for cross-cutting decisions — omit the `modules:` field
+- Do not invent sentinels in `modules:` — omit the field when no specific module is implicated
+- Do not default `scope` to `universal` — it is the rare, every-feature-pays-for-it classification; pick the narrowest true value
 - Do not bundle decisions the title can't honestly cover — that's two ADRs (but bundling related commitments under a coherent umbrella title is fine)
 - Do not pad sections to hit a length — ~150 words is the target, not a floor
 - Do not restate framing docs in `## Context` — point to them in one or two sentences

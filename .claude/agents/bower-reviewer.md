@@ -61,7 +61,7 @@ Run these phases in order. Phases are guidance for *what to read*; the report it
 ### Phase 3 — Survey decisions
 
 1. Read `<root>/docs/adr/index.md` — the canonical ADR list. Read this first; do not glob the directory.
-2. From the index, identify accepted ADRs that touch this module: those listing it under `modules`, those with no `modules` field (cross-cutting), and those whose title is topically relevant even if filed elsewhere.
+2. From the index, identify accepted ADRs that touch this module: those with `scope: universal`, those listing it under `modules`, those whose `topics` or title is topically relevant even if filed elsewhere, and *unclassified* ADRs (no `scope`, no `modules` — pre-v0.20) on topical or title match.
 3. Load only those in full. If an ADR's commitments were hard to recover because the index row shows only a title (common with bundled ADRs), note it for the `## Observations (not actionable)` section — it is the signal the deferred ADR-index improvement waits on.
 
 ### Phase 4 — Read the code
