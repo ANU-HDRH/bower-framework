@@ -1,6 +1,6 @@
 # Bower UI Change
 
-You are running the Bower UI change workflow — the gated path for **structural and underspecified** changes to the experience surface. Most UI work does not need this skill: visual tweaks, copy edits, and tightly-specified structural changes are handled out-of-band (the framework guidance in `_bower/framework.md` covers the three-path model). Reach for `/b-ui` when the change touches navigation, screen composition, layout grammar, or interaction patterns **and** the request has branching choices the user should pick between.
+You are running the Bower UI change workflow — the gated path for **structural and underspecified** changes to the experience surface. Most UI work does not need this skill: visual tweaks, copy edits, and tightly-specified structural changes are handled out-of-band (the decision table lives in `_bower/framework.md` → *UI Changes — Paths and the Gate*; worked examples in `_bower/framework-reference.md`). Reach for `/b-ui` when the change touches navigation, screen composition, layout grammar, or interaction patterns **and** the request has branching choices the user should pick between.
 
 This skill mirrors `/b-feature`'s propose-confirm-implement-reconcile shape, tuned for the experience surface: lighter reading list, proposal with alternatives, mock-up-or-description rather than component/caller analysis, reconciles `docs/ui.md` rather than feature plans alone.
 
