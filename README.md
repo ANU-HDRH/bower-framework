@@ -23,7 +23,7 @@ Bower is a set of files you drop into a project that uses [Claude Code](https://
 
 Either start a new project directory, or open an existing one.
 
-**Quick way (recommended).** Clone this repo somewhere scratch and run the scaffold script — it copies the framework files into your project and seeds a `CLAUDE.md` if you don't already have one. The same script also works as an upgrade: re-running it against an existing Bower project refreshes the framework files without touching your `CLAUDE.md`, `_bower/VERSION`, or `_bower/SOURCE`.
+**Quick way (recommended).** Clone this repo somewhere scratch and run the scaffold script — it copies the framework files into your project and seeds a `CLAUDE.md` if you don't already have one. To upgrade an existing Bower project, don't re-run the script by hand — run `/b-upgrade` in the project instead (see *Upgrading*): it runs the scaffold for you *and* walks the per-version migration notes, which a bare file copy would skip.
 
 ```bash
 git clone https://github.com/anu-hdrh/bower-framework /tmp/bower
@@ -54,7 +54,7 @@ rm -rf /tmp/bower
 Either way, you should now have at the top of your project:
 
 - `CLAUDE.md` — instructions Claude Code reads on every session. The Bower-supplied content is one line: `@_bower/framework.md`, which `@`-includes the framework guidance. Everything else in this file is yours.
-- `_bower/framework.md` — the framework guidance (what `@_bower/framework.md` resolves to). Treat as read-only; refresh by re-running the scaffold script.
+- `_bower/framework.md` — the framework guidance (what `@_bower/framework.md` resolves to). Treat as read-only; refreshed by `/b-upgrade`.
 - `_bower/VERSION` — the framework version this project is migrated to. Owned by `/b-upgrade`.
 - `_bower/SOURCE` — the git URL of the framework repo, used by `/b-upgrade` to clone the latest framework. Edit if you need to point at a fork or mirror (see *Upgrading*).
 - `_bower/` — framework rationale, change-brief schema, roadmap, `changes.md`, and `framework.md` (you don't normally edit these).
