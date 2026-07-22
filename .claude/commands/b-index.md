@@ -104,6 +104,7 @@ The schema section is **boilerplate** — on first generation, write it verbatim
 - **Preserve, don't flatten.** When an index file already exists, update derived values in place per the Regeneration contract; never replace a richer existing file with the seed template. The templates in this skill are minimums, not the required shape.
 - Order modules in `docs/index.md` by dependency sequence (build order), not alphabetically
 - Derive status markers from status.md files: ✓ 🚧 ⏸ 🟡 🔴 🔧
+- If a feature listed in a module's `## Build order` has **no** `status.md` (an adopted feature awaiting its first Bower touch — see the adoption banner), take its marker from the build-order line as-is. Do **not** treat a missing `status.md` as an error and do **not** synthesize `✓` from the feature merely existing in code — adoption marks as-built features `🚧`, and only verified work promotes them to `✓`.
 - Module-level status is the "worst" status across both its feature markers *and* its `## Module integration` `Test:` marker (🔴 > 🟡 > 🚧 > ⏸ > 🔧 > ✓). A module with all features ✓ but module integration ⏸ surfaces as 🚧 — the constitution's verified-for-✓ rule made observable.
 - Only include sections that exist (skip Design Context if no `design/` and no `adr/` directory)
 - Include brief descriptions for each module from its module-status.md
@@ -112,3 +113,4 @@ The schema section is **boilerplate** — on first generation, write it verbatim
 - If any accepted ADRs are unclassified, add one line under the active-decisions table: `N unclassified pre-v0.20 ADRs — classify by adding scope/topics frontmatter (see the v0.20 migration notes in _bower/changes.md).`
 - If an ADR is malformed (missing required field, unknown status), include it in a final `## Malformed` section with the file path and the issue, so it can be fixed manually. This is the only way schema violations surface.
 - Ignore any `docs/modules/*/review-plan.md` — it is a transient `/b-review` work list, not project state, and never appears in the index.
+- Preserve a `🌱 Adoption in progress` banner at the top of `docs/index.md` verbatim if present — it is the adoption-phase flag (curated structure), not derived state. It is removed only by hand when `docs/adoption-ledger.md` is emptied, never by regeneration.

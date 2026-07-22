@@ -6,6 +6,32 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.21 — 2026-07-22
+
+### `/b-adopt` — brownfield cold-start (v1, pending real-project validation)
+
+Bower previously had no story for adopting an existing codebase. Adopting an SDD framework is non-trivial because it requires rebuilding the design rationale from the existing code. This release adds `/b-adopt` to fill that gap.
+
+**What changed**
+
+- **New command `.claude/commands/b-adopt.md`.** Reconstructs an orienting `docs/` skeleton — `scope.md`, `design/problem-space.md`, `architecture.md` (both views), an initial `constitution.md` from observed conventions, and `module-status.md` placeholders for inferred module boundaries — *from the code as it is*. The heavy read-only repo survey is delegated to a subagent (`general-purpose`/`Explore`) to keep it out of the command's context, with an inline fallback. Content is gated in groups like `/b-design`. Writes are confined to `docs/` and `docs/index.md`: adoption never touches source, tests, or build files.
+- **User-facing adoption guide + prep nudge.** `README.md` gains an "Adopting an existing project" section covering the one high-leverage prep step — staging existing design docs, briefs, and decision rationale in `docs/reference/` before running, so they become *cited* framing rather than hedged inference — plus what the agent surveys, what it asks, and how the adoption phase drains. `/b-adopt` reinforces it in-flow: when the survey finds no reference material, it nudges (non-blocking) at the framing gate that staging some and re-running would improve attribution.
+- **As-built markers, never `✓`.** The same honesty rule extends to status markers: adoption has no recorded acceptance criteria and runs no verification, so it marks observed features `🚧` (as-built, unverified) — never `✓`, which would be a false completeness claim. No per-feature `status.md` is written; `/b-index` reads the build-order marker for adopted features and never promotes code-presence to `✓`. Reuses the existing `🚧` rather than minting an adoption-only marker, so the framework's status vocabulary is untouched.
+- **The adoption ledger and phase.** The governing design decision: code tells you *what*, never *why*, so `/b-adopt` never guesses intent. Cross-cutting choices it cannot attribute to a decision go into `docs/adoption-ledger.md` as one-line open questions (`<location> · <question>`, no stored context) rather than being written up as confident ADRs or architecture claims. The ledger is a worklist that **shrinks monotonically**: each item is drained by one of three exits, all of which delete the line — *resolve* (the choice stays; capture intent as an ADR via `/b-adr`), *remediate* (the choice was accidental/wrong; fix it via `/b-feature` or `/b-design`), or *dismiss* (deliberate/accepted, no record). The remediate exit is where adoption's *renewal* happens — through the normal gated flow, not inside adoption. When empty, the phase ends.
+- **The flag is a banner in `docs/index.md`.** Its presence *is* the adoption-phase flag — `docs/index.md` is already read every session, so this carries **zero standing cost for greenfield projects** (they simply never have the banner) and the ledger is fetched only when the banner points to it. `.claude/commands/b-index.md` gains a rule to preserve the `🌱 Adoption in progress` banner across regeneration (curated structure, removed only by hand when the ledger empties).
+- **`/b-recap` is adoption-aware.** `.claude/commands/b-recap.md` now detects the banner and reads a `🚧` feature with no `status.md` as *adopted-but-unverified* (as-built from existing code) rather than *in progress* — a fresh adoption would otherwise report every feature as underway with no state to summarise, and recommend building on code that already exists. In the adoption phase it reports the phase and open-ledger count, lists as-built features under a distinct *Adopted (unverified)* section, and recommends draining the ledger as the next move rather than `/b-feature`.
+- **On-demand mechanics documented.** `_bower/framework-reference.md` gains an **Adoption phase** section (flag, ledger, drain paths, exit condition) — loaded on demand, not in the always-loaded router. `_bower/framework.md` gains one router line registering the command under Maintenance. `_bower/roadmap.md`'s brownfield item moves from "Ready to schedule" back to deferred with a validation trigger.
+
+**Why**
+
+Adoption inverts Bower's normal direction (docs drive code); the risk is manufacturing confident fiction — inferred docs that every later `/b-*` invocation then trusts. The design concentrates all adoption-specific honesty into one banner + one monotonically-shrinking ledger, both of which evaporate when the phase ends, so greenfield performance is untouched and the "provisional" caveat is unmissable while it matters. Renewal (undoing choices that were mistakes) is deliberately *not* bundled into adoption — you cannot critique against a baseline that does not yet exist — and instead emerges through the normal flow as ledger items drain. This is a v1 shipped to be tried on a real project and reported back on; the report is expected to reshape it.
+
+### Migration
+
+None — no project-side changes required. `/b-adopt` is a new command for cold-starting a brownfield codebase; projects already designed with Bower never invoke it, and the new `framework-reference.md` "Adoption phase" section plus the `b-index.md` banner-preservation rule are additive (they take effect only in a project that runs `/b-adopt`). Existing `docs/` shapes, ADRs, and index files are unchanged. The scaffold refresh (`/b-upgrade`) delivers the new command and reference text; nothing else moves.
+
+---
+
 ## v0.20 — 2026-07-17
 
 ### Context economy: delegated implementation, selective orientation, ADR applicability, a slim framework import
@@ -293,7 +319,7 @@ After step 1, the project's `_bower/VERSION` will be at `0.14`. Verify by readin
 - **`_bower/SOURCE`** is a new per-project file holding the git URL of the framework repo to clone from when `/b-upgrade` runs. Seeded by the scaffold script from the framework repo's `origin` remote on first install; preserved on subsequent scaffolds so forks/mirrors stay pointed at the right upstream.
 - **`scripts/scaffold.sh` and `scaffold.ps1` updated.** Both now preserve `_bower/VERSION` and `_bower/SOURCE` if they already exist in the target (`VERSION` because the project owns it after first install; `SOURCE` because the project may legitimately point at a fork). Scaffold reads `_bower/VERSION` as the canonical version source, prints the framework's current version, and, when the project was on an older version, prints a hint to run `/b-upgrade` next.
 - **New skill `/b-upgrade`.** Runs in a Bower project. Requires a clean git working tree. Clones the framework repo (URL from `_bower/SOURCE`) into a temp directory, runs the scaffold against the project to refresh `_bower/` and `.claude/`, then walks each intermediate version's migration notes from `_bower/changes.md` in order — one version at a time, gating each step, bumping `_bower/VERSION` after each, optionally committing between steps. Ends with a candid self-assessment paragraph so the operator can decide whether to `git reset --hard` if a step looks wrong. Lives at `.claude/commands/b-upgrade.md`.
-- **Contributor `CLAUDE.md` gains a "Migration-notes authoring discipline" section.** Codifies the convention that each `_bower/changes.md` entry should carry a `### Migration` subheading (or, for legacy entries, the existing `**Migration notes**` paragraph) written for a model audience: self-contained, explicit about files and actions, "none" when there's no work, with judgement-required steps flagged. The discipline is load-bearing because `/b-upgrade` reads one version's notes at a time, often against project state that has drifted from the version the notes were written for.
+- **Contributor `CLAUDE.md` gains a "Migration-notes authoring discipline" section.** Codifies the convention that each `_bower/changes.md` entry should carry a `### Migration` subheading (or, for legacy entries, the existing `**Migration notes**` paragraph) written for a model audience: self-contained, explicit about files and actions, "none" when there's no work, with judgement-required steps flagged. The discipline is critical because `/b-upgrade` reads one version's notes at a time, often against project state that has drifted from the version the notes were written for.
 - **`_bower/framework.md` gains entries for the new files** (`VERSION`, `SOURCE`) and a Maintenance subsection in the commands list documenting `/b-upgrade`.
 
 **Why**
@@ -439,7 +465,7 @@ The deeper concern was decision rot's effect on agent reasoning. A model that re
 2. **Status as filter** gives the agent a cheap way to ignore history during normal reads. `accepted` only.
 3. **Index-as-schema** means access patterns don't break when the schema evolves. Old files don't become invalid; they just contribute to fewer facets.
 
-The `/b-feature` reconcile prompt is the load-bearing piece. Without a command that asks "did this introduce or invalidate a decision?" at the right moment, ADRs would rot the same way `design-decisions.md` did. With it, ADRs become living docs because the existing flow has reason to touch them.
+The `/b-feature` reconcile prompt is the critical piece. Without a command that asks "did this introduce or invalidate a decision?" at the right moment, ADRs would rot the same way `design-decisions.md` did. With it, ADRs become living docs because the existing flow has reason to touch them.
 
 The `modules` frontmatter field is the access mechanism that makes per-file decisions tractable. Instead of every command reading every ADR, `/b-feature` loads only the ADRs whose `modules` matches the change (plus cross-cutting ones with no `modules` field). This is what justifies the per-file shape — it would be unworkable without filtered retrieval.
 

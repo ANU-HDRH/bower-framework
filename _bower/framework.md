@@ -1,4 +1,4 @@
-# Bower Framework v0.20
+# Bower Framework v0.21
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
@@ -100,6 +100,7 @@ Orientation and export:
 Maintenance:
 
 - `/b-upgrade` — upgrade the project to the current framework version by walking `_bower/changes.md` migration notes.
+- `/b-adopt` — brownfield cold-start: reconstruct an orienting `docs/` skeleton from an existing codebase and open an adoption phase (see `docs/adoption-ledger.md` when `docs/index.md` shows the 🌱 adoption banner).
 
 **Post-MVP bias:** reach for `/b-feature` first — its gate redirects to `/b-design` if the change turns out architectural. Don't run design pre-emptively.
 

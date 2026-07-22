@@ -27,7 +27,7 @@ Every finding belongs to exactly one of these dimensions:
 
 ## Resolution class
 
-Every finding carries a **class** that determines what `/b-review` does with it. This is the load-bearing field — it is how the command separates what it owns from what it routes.
+Every finding carries a **class** that determines what `/b-review` does with it. This is the critical field — it is how the command separates what it owns from what it routes.
 
 | Class | Meaning | What `/b-review` does |
 |---|---|---|

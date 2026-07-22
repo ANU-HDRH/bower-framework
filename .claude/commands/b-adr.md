@@ -55,7 +55,7 @@ Do not restate what those docs already say.>
 ## Decision
 
 <What did we decide. Active voice, present tense. "We will use X." One paragraph.
-Lead with the load-bearing sentence — if someone reads only the first line, they
+Lead with the central sentence — if someone reads only the first line, they
 should know what's true. An ADR may name more than one commitment here when they
 share the umbrella scope of the title.>
 
@@ -101,7 +101,7 @@ Present the drafted ADR to the user via AskUserQuestion. Show:
 - The full frontmatter
 - The full body
 
-Before presenting, self-audit: does the Decision section's load-bearing sentence fit under the title? If not, flag a possible second ADR. Does `## Consequences`, if included, name a non-obvious cost — or is it restating the Decision? If the latter, propose omitting it. Is `## Context` paraphrasing a doc already referenced? If so, tighten to one or two sentences pointing at the doc. Is `scope` the narrowest true value — would `universal` really constrain *every* feature, or is this a module, integration, or operational decision wearing a broad label?
+Before presenting, self-audit: does the Decision section's central sentence fit under the title? If not, flag a possible second ADR. Does `## Consequences`, if included, name a non-obvious cost — or is it restating the Decision? If the latter, propose omitting it. Is `## Context` paraphrasing a doc already referenced? If so, tighten to one or two sentences pointing at the doc. Is `scope` the narrowest true value — would `universal` really constrain *every* feature, or is this a module, integration, or operational decision wearing a broad label?
 
 If this is a supersession, also show the frontmatter change to the older ADR (status, superseded-by, date).
 

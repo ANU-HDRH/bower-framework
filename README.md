@@ -1,4 +1,4 @@
-# Bower Framework v0.20
+# Bower Framework v0.21
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -18,6 +18,8 @@ The pattern borrows planning discipline from [SpecKit](https://github.com/github
 ## Getting Started
 
 Bower is a set of files you drop into a project that uses [Claude Code](https://claude.com/claude-code). It doesn't install anything, run a server, or require an account beyond your existing Claude Code setup. If you've never used Claude Code before, install it first and make sure `claude` runs in a terminal — Bower is built on top of it.
+
+> **Claude Code is the supported runtime today.** Bower's core contracts — gated changes, document shapes, status semantics, ADRs, and explicit handoffs — are not inherently Claude-specific, but this repository currently packages them through Claude Code's `CLAUDE.md`, `@`-includes, `.claude/` commands, subagents, and settings. Other coding agents, including OpenAI Codex, are not yet supported by the scaffold. The roadmap tracks runtime adapters and end-to-end conformance testing; copying the command files alone is not enough, because the interaction gates, instruction loading, and fresh-context boundaries must survive the port too.
 
 ### 1. Put Bower into your project
 
@@ -82,11 +84,27 @@ Then, at the Claude prompt, type:
 
 `/b-design` is the entry point for new projects and for changes that shift architecture, decisions, scope, or module structure. For changes within existing architecture — features, fixes, modifications, removals — use `/b-feature` directly instead; if you pick wrong, `/b-feature` will point you back to `/b-design`.
 
+**Adopting an existing codebase?** If the project already has substantial code that was never designed with Bower, start with `/b-adopt` instead of `/b-design`. It reconstructs an orienting `docs/` skeleton *from the code as it is*, and records the cross-cutting choices it can't attribute to a decision in an **adoption ledger** you drain over time. `/b-design` frames a project forward from intent; `/b-adopt` is the backward, brownfield cold-start. (This is different again from `/b-upgrade`, which moves an *already-adopted* project to a newer framework version.)
+
 ### What happens next
 
 `/b-design` runs a six-stage flow. Stage 0 spawns the read-only `bower-analyst` subagent, which reads your project state and produces a **change brief** — a structured plan of what each subsequent stage needs to do, with "nothing to do" as a first-class outcome. After you confirm the brief, Stages 1–5 execute against it: problem framing, decisions (emitted as ADRs), architecture, module and feature plans, scaffolding. On a greenfield project most stages will have full drafts; on a revision typically only a few have real work and the others emit a one-line "nothing to do" and proceed.
 
 After the first design pass, day-to-day work usually means running `/b-feature` (one feature) or `/b-module` (a whole module's worth). If you come back to the project later and don't remember where you were, run `/b-recap` — it reads the docs and tells you the current state without changing anything. To preview what `/b-design` would do for a proposed change without committing to execute, run `/b-analysis` — it produces the same brief, read-only.
+
+## Adopting an existing project
+
+If you already have a codebase that was never designed with Bower, don't start with `/b-design` (which frames a project *forward* from intent). Start with `/b-adopt`, which works *backward*: it reconstructs the orienting docs from the code as it is, then gives you a short worklist for any cross-cutting choices it couldn't explain.
+
+**Prepare first — this is the one step that most improves the result.** Before running `/b-adopt`, place copies of any existing design material in `docs/reference/` (or `references/`): product briefs, architecture notes, RFCs, decision rationale, and anything else that records *why* the system is the way it is. The command treats these as strong evidence, cites them where useful, and asks you to confirm the reconstructed framing; stale reference material is evidence, not automatic truth. Good source material reduces hedged inference and usually shortens the ledger. If none is found, `/b-adopt` offers one chance to pause and stage it before the orienting docs are written. Once adoption has created the Bower anchors, it will not start over and overwrite them.
+
+**What the agent does:** surveys your repo — code layout, package manifests, existing docs, and staged reference material — and *proposes* module boundaries from the data concerns it sees. If your git history looks decision-rich (agent-assisted commits, structured messages), it offers to mine commit *messages* (never diffs) for rationale, with a cost estimate, so you can decline. It writes only under `docs/`; your code is never touched. Start from a clean commit if practical, so all adoption writes are easy to review or undo. Existing files at Bower-owned paths are never silently replaced: compatible anchors can be preserved, narrative docs default to preservation, and incompatible required anchors must be merged with your approval or adoption stops.
+
+**What it asks you:** to confirm or correct the problem statement and scope; to confirm, merge, split, or rename the proposed modules; to accept or reject each rationale it recovered from git (a stale commit isn't forced on you); and, at the end, nothing more than to work through the leftover questions in your own time.
+
+**What you get:** a normal Bower `docs/` skeleton (scope, architecture, module boundaries, and an initial constitution), plus — if anything was left unexplained — an **adoption phase**: a banner in `docs/index.md` and a `docs/adoption-ledger.md` listing cross-cutting choices with no recovered rationale. Observed features begin at `🚧`: the code exists, but Bower has not yet verified it against agreed acceptance criteria. As each feature is next changed, `/b-feature` creates its normal plan/status records and can promote it to `✓` after verification.
+
+Drain ledger items in the course of normal work: capture the intent for a choice you are keeping (`/b-adr`), remediate a mistaken choice (`/b-feature`, or `/b-design` when architectural), or dismiss a choice that needs no durable record. Delete the line after that work lands. When the ledger is empty, delete the banner; adoption is over. If nothing was left unexplained, `/b-adopt` creates neither ledger nor banner, although the as-built `🚧` features still earn `✓` individually as they are touched.
 
 ## Upgrading
 
@@ -128,7 +146,8 @@ bower-framework/
 │   │   ├── b-recap.md          # Read-only "where am I, what's next?" orientation
 │   │   ├── b-index.md          # Regenerate docs/index.md and docs/adr/index.md
 │   │   ├── b-spec.md           # Export a single specification document
-│   │   └── b-upgrade.md        # Upgrade a project to the current framework version
+│   │   ├── b-upgrade.md        # Upgrade a project to the current framework version
+│   │   └── b-adopt.md          # Brownfield cold-start: reconstruct docs from existing code
 │   └── agents/
 │       ├── bower-analyst.md    # Read-only subagent that produces change briefs
 │       ├── bower-reviewer.md   # Read-only subagent that produces module review reports
@@ -154,6 +173,7 @@ bower-framework/
 | Command | Purpose |
 |---------|---------|
 | `/b-design` | Six-stage design process for new projects and architectural revisions. Stage 0 spawns the `bower-analyst` subagent to produce a **change brief**; Stages 1–5 execute against the confirmed brief (problem framing → decisions/ADRs → architecture → module/feature plans → scaffolding). Stages with no delta emit "nothing to do" cleanly. Emits one ADR per `new`/`supersedes`/`partial-supersedes` Stage 2 operation. |
+| `/b-adopt` | Brownfield cold-start — the entry point for an existing codebase never designed with Bower (where `/b-design` frames a project forward from intent, `/b-adopt` reconstructs one backward from code). Surveys the repo and drafts an orienting `docs/` skeleton (scope, architecture, constitution, module boundaries) with every content group gated. If cross-cutting choices remain unexplained, records them in `docs/adoption-ledger.md` and opens an **adoption phase** (a banner in `docs/index.md`), drained over time by *resolving* (→ ADR), *remediating* (→ `/b-feature`/`/b-design`), or *dismissing* each item. Writes only under `docs/` — never touches code. |
 | `/b-analysis` | Read-only, advisory. Spawns the `bower-analyst` subagent against a proposed change and prints its **change brief** — what each `/b-design` stage would do if executed. Useful as inspection before committing to execute. |
 | `/b-feature` | The everyday change command. Covers **add**, **modify**, and **remove** intents within existing architecture. One gate before code, with relevant ADRs loaded as constraints. After the gate, implementation runs in a fresh `bower-implementer` subagent against the approved plan, keeping the planning context lean. Reconcile step prompts for ADR creation/supersession when a cross-cutting decision was introduced or invalidated. Redirects to `/b-design` for architectural changes, or `/b-ui` for experience-surface work. |
 | `/b-ui` | Gated path for **structural and underspecified** UI changes (e.g. "add tab-based content navigation" with multiple viable shapes). Propose-with-alternatives → confirm → implement → reconcile `docs/ui.md`. Most UI work skips the skill — visual tweaks and tightly-specified structural changes happen out-of-band; see *UI / UX Work* below. |
@@ -174,7 +194,7 @@ At a glance — states are where the project (or a module) sits; the labels on e
 
 `Complete` means a module is built and its boundary integration test passes; `/b-review` is an optional polish pass at that point, which is why it loops back to the same state. The one arrow that runs *backwards* — `Building → Designed` on an architectural change — is the framework's hard redirect: structural change can't be made on the fly, it goes back through `/b-design`.
 
-The diagram is the spine, not the whole picture. Several commands apply at any point and aren't shown: `/b-recap` (orient in a fresh session), `/b-analysis` (preview what a `/b-design` would do), `/b-adr` (record a cross-cutting decision), `/b-ui` (experience-surface changes), `/b-index` (regenerate the indexes), `/b-spec` (export a spec), and `/b-upgrade` (move to a newer framework version).
+The diagram is the spine, not the whole picture. Several commands apply at any point and aren't shown: `/b-recap` (orient in a fresh session), `/b-analysis` (preview what a `/b-design` would do), `/b-adr` (record a cross-cutting decision), `/b-ui` (experience-surface changes), `/b-index` (regenerate the indexes), `/b-spec` (export a spec), and `/b-upgrade` (move to a newer framework version). One more sits *before* the spine: `/b-adopt` is the brownfield on-ramp — it reconstructs the design docs from an existing codebase, landing the project at the diagram's starting state (with an adoption ledger to drain) so the normal flow can take over from there.
 
 `/b-design` is the design command. Six stages: Stage 0 produces a change brief via the read-only `bower-analyst` subagent; Stages 1–5 execute against the confirmed brief (problem framing, decisions/ADRs, architecture, module/feature plans, scaffolding) with a content gate per non-nil stage. Stages of no delta emit "nothing to do" cleanly, so heavy ceremony only fires where there's actual work. Required for greenfield and for changes that shift architecture, decisions, scope, or module structure.
 

@@ -8,11 +8,12 @@ You do **not** write files. You do **not** commit. You do **not** call `AskUserQ
 
 Read these and only these, and only if they exist:
 
-1. `docs/index.md` — project-level structure and module status markers
+1. `docs/index.md` — project-level structure and module status markers. Also note a leading `🌱 Adoption in progress` banner if present: the project is in the **adoption phase**, which changes how `🚧` features and the next action are read (see below).
 2. `docs/scope.md` — current scope and success-criteria state (met/unmet)
 3. `docs/modules/**/module-status.md` — `## Build order` and `## Module integration` state for each module
-4. `docs/modules/**/<feature>/status.md` — only for features currently at 🚧, 🟡, 🔴, or 🔧 (skip ✓ and ⏸)
+4. `docs/modules/**/<feature>/status.md` — only for features currently at 🚧, 🟡, 🔴, or 🔧 (skip ✓ and ⏸). **A `🚧` feature with no `status.md` is an adopted-but-unverified feature, not an in-progress one** (adoption marks features as-built `🚧` and deliberately writes no `status.md`). Do not treat the missing file as an error or an omission — there is simply no session state to summarise; report it under *Adopted (unverified)*, not *Currently in progress*.
 5. `docs/modules/**/review-plan.md` — only check for existence; if present, a `/b-review` left reconciliation owed. Read its `## Reconciliations` checklist to count done/total. Do not read it for any other purpose — it is a transient work list, not project state.
+6. `docs/adoption-ledger.md` — only if the adoption banner is present. Count its open items (one bullet each) and note a couple of examples; do not otherwise read it line-by-line.
 
 If `docs/index.md` does not exist, the project has not been designed yet. Say so in one line and recommend `/b-design`. Stop.
 
@@ -21,11 +22,14 @@ If `docs/index.md` does not exist, the project has not been designed yet. Say so
 From those inputs, compose:
 
 - **Project name and one-line scope summary** — from `scope.md`
-- **Progress overview** — per module, one line each, with status marker and brief state (e.g. "Module B: 🚧 2 of 4 features built")
-- **Currently in progress** — any feature at 🚧 with a one-line state drawn from its `status.md`
+- **Adoption phase** — if the `🌱` banner is present, state it and the open-ledger count (e.g. "🌱 adoption phase — 6 open questions in adoption-ledger.md"). Omit this line entirely when there is no banner.
+- **Progress overview** — per module, one line each, with status marker and brief state (e.g. "Module B: 🚧 2 of 4 features built"). During the adoption phase, a module's `🚧` reflects as-built-but-unverified features, so phrase it that way (e.g. "Module B: 🚧 4 features as-built, unverified") rather than implying active work.
+- **Currently in progress** — any feature at 🚧 **that has a `status.md`**, with a one-line state from it. In the adoption phase, features at `🚧` with no `status.md` are *not* in progress — they belong under *Adopted (unverified)*.
+- **Adopted (unverified)** — adoption-phase only: features at `🚧` with no `status.md` (as-built from existing code, not yet verified to the `✓` bar). List per module, or a one-line count if many. Omit this section when not in the adoption phase.
 - **Degraded or blocked** — any feature at 🟡, 🔴, or 🔧 with the reason
 - **Recommended next action** — derived from build order *and* module-integration state. Always emitted as a literal slash command (or the explicit `(none — ...)` form), never as prose:
-  - If a module has features in 🚧, continue via `/b-feature <name>`.
+  - **Adoption phase takes precedence:** if the `🌱` banner is present, the next move is to drain the ledger, not to build — adopted features already exist in code. Emit the ledger as the next action: `Drain docs/adoption-ledger.md (N open) — per item: /b-adr (resolve), /b-feature or /b-design (remediate), or delete the line (dismiss); remove the banner when empty.` Do not recommend `/b-feature <name>` merely because features sit at `🚧` — that `🚧` is as-built, not in-progress.
+  - If a module has features in 🚧 **with a `status.md`** (genuine in-progress work), continue via `/b-feature <name>`.
   - Else, if a module has all features ✓ but its `## Module integration` `Test:` marker is ⏸ or 🚧, recommend `/b-integration <module>` — this is the residual case the rule was designed for.
   - Else, the first ⏸ feature in the first not-yet-complete module's build order. Recommend `/b-module <module>` if remaining features are few and unambiguous, else `/b-feature <feature>`.
   - If everything is ✓ (features and module integration) and success criteria in `scope.md` are met, emit `(none — project complete)`.
@@ -41,6 +45,7 @@ Produce a single block resembling:
 ```
 Project: <name>
 Scope: <1-line summary>
+Adoption: 🌱 adoption phase — <N> open questions in adoption-ledger.md   (omit line if no banner)
 
 Progress:
   - Module A: ✓ complete
@@ -49,6 +54,9 @@ Progress:
 
 Currently in progress:
   - <module>/<feature> — <one-line state>
+
+Adopted (unverified):                          (adoption phase only; omit otherwise)
+  - <module>/<feature> — as-built, not yet verified
 
 Degraded / blocked:
   - (none) | <module>/<feature> — <reason>
