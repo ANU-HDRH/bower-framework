@@ -80,7 +80,7 @@ After confirmation, for each feature in build order:
 
    MISSING is a blocker — write the test or renegotiate via AskUserQuestion before continuing. Any manual criteria for this feature are deferred to Step 4 and surfaced in a single batch at the end of the module; create `status.md` with a `Pending verification:` line and mark the feature 🚧 (not ✓) for now.
 7. Create `docs/modules/<module>/<feature>/status.md` as a resumption snapshot (≤150 words). If any manual criteria remain, include `Pending verification:`.
-8. If no manual criteria remain for this feature, mark it ✓ in `module-status.md` `## Build order`. Otherwise leave it 🚧 pending Step 4.
+8. If no manual criteria remain for this feature, mark it ✓ in `module-status.md` `## Build order`. Otherwise leave it 🚧 pending Step 4. **If building this feature landed part of a later entry's scope** — a dependency pulled the work forward — append one clause to that later entry: who absorbed what, then `Remaining:` and what is left. You will reach that entry yourself later in this same pass, so the note costs little here; it earns its keep afterwards, when a reader (or a `/b-feature` follow-up) wonders why that feature's plan claims more than it built. If nothing remains, write `Remaining: none` and leave the marker ⏸ until you reach it in the build order and verify it against its own criteria. Schema: `_bower/framework-reference.md`, "Pull-forward annotation."
 
 After all features are complete:
 

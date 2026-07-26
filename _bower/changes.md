@@ -6,6 +6,53 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.22 — 2026-07-27
+
+### Build-order pull-forward annotation
+
+Observed on a real project: within a module, dependencies routinely cause an earlier feature to absorb part of a later feature's scope. By the time the last component came around, most of it was already built. This is benign — it mirrors how the work falls out under human coding too — and the framework already surfaces it at orient time, so arriving at a hollow component is a cheap surprise.
+
+The expensive case is the inverse, and it was unhandled. When an earlier feature absorbs a later one's scope **incompletely**, the later feature's `plan.md` — written at module-design time, before the absorption — still claims the full scope. That plan is then handed to `bower-implementer` in a fresh context *as the contract*, with an explicit instruction not to re-litigate the design. The result is work done twice, or done a second way.
+
+A survey of the observed project found the asymmetry precisely: *deferrals* get recorded (an earlier feature's `plan.md` non-goals name what it is leaving for feature 7), and *absorptions* get recorded retrospectively by the arriving feature's `status.md` — but nothing is written at the moment of pull-forward saying "I have taken part of feature 7." Structurally, there was nowhere to write it: feature 7's `plan.md` does not exist yet when feature 3 runs. The only document spanning the whole build order is `module-status.md`, whose `## Build order` was markers-only.
+
+**What changed**
+
+- **`_bower/framework-reference.md`** — the `## Build order` schema gains an optional scope-reduced clause on an entry, plus a **Pull-forward annotation** paragraph: when a feature absorbs scope from a later entry, that entry is annotated with one clause naming who absorbed what and a `Remaining:` clause naming what is left. Bounded to one line, because `module-status.md`'s ~250-word budget is shared with the integration notes. If the absorption leaves nothing to build, the entry stays ⏸ with `Remaining: none — verify and close via /b-feature <name>`; it is **not** promoted to ✓ on another feature's passing criteria, since ✓ means *this* feature's agreed criteria were verified.
+- **`.claude/agents/bower-implementer.md`** — `## Doc implications` in the report template now includes downstream build-order scope absorbed, and a new failure mode names silent absorption. The implementer already receives `module-status.md` as orientation, so it can see the later entry; it is correctly barred from writing it, so the report is the channel. It is the only party that knows.
+- **`.claude/commands/b-feature.md`** — Step 9 gains the authority to annotate a downstream entry when the report's `## Doc implications` names one (previously reconcile could only touch its own entry's marker). Step 1 gains the read side: a scope-reduced annotation on the target feature's entry **wins over its `plan.md`**, and the shrunk scope is surfaced in the Step 2 proposal so the operator sees the change.
+- **`.claude/commands/b-module.md`** — the same annotation duty at per-feature completion, so both commands that write build order honour the schema.
+
+**Why this shape**
+
+The annotation lands on the build-order line rather than in the downstream `plan.md` because that plan usually does not exist yet, and because the build-order line is already in the next pass's orientation set — the note is read where it is needed without anyone having to look for it. A dedicated reconciliation pass was considered and rejected: it would re-litigate module design at every feature, which is `/b-review`'s job, once, at the end. Cross-*module* composition drift (a feature that ended up in a different module than designed) is a distinct problem and is not addressed here.
+
+### Migration
+
+Two steps. The first is mechanical; the second requires reading project content and exercising judgement — note in the `/b-upgrade` self-assessment which modules you inspected and what you concluded.
+
+**1. No schema rewrite needed.** The annotation is additive and optional. Existing `module-status.md` `## Build order` sections are already valid — an entry with no annotation means no scope has moved. Do not add annotations to entries where nothing moved.
+
+**2. Backfill mid-build modules only.** For each module under `docs/modules/`, read `module-status.md` `## Build order`. Skip the module unless it has **both** at least one ✓ or 🚧 entry **and** at least one ⏸ entry — a fully-built module gains nothing from the annotation (the plans are already reconciled and no future pass will read it), and an untouched module cannot have drifted yet. For each qualifying module:
+
+   - For each ⏸ entry, read that feature's `plan.md` if one exists (many will not — plans are created at plan time, so an unbuilt feature usually has none). Where there is no `plan.md`, use the module's `## Module integration` `Notes:` and the completed features' plans to understand what that entry was meant to cover.
+   - Determine whether part of that scope **already exists in the code**, landed by an earlier feature. The completed features' `plan.md` files and `status.md` files are the best evidence — a `status.md` noting that a mechanism "already existed" from an earlier feature is a direct signal. Grep the source for the capability rather than trusting the docs alone.
+   - If part of it exists, append one clause to that ⏸ entry in this exact form:
+
+     ```
+     7. framing-probe-personas — ⏸ (scope reduced by feature 3: persona receives
+        framing per ADR-0014; and feature 5: framing-target annotations.
+        Remaining: the curated catalogue definitions.)
+     ```
+
+     Name the absorbing feature(s) and what landed, then `Remaining:` and what is genuinely left. Keep it to one line's worth of prose; the file's budget is ~250 words total including the integration notes.
+   - If nothing of it exists, leave the entry exactly as it is.
+   - Do **not** edit the ⏸ feature's `plan.md`, and do **not** change any marker. If a backfill reveals that an ⏸ entry has *nothing* left to build, write `Remaining: none — verify and close via /b-feature <name>` and leave the marker ⏸. Promoting it to ✓ would claim criteria that were never verified.
+
+If a backfill turns up something that looks like a module-boundary problem rather than intra-module pull-forward (scope that landed in a *different module* than designed), do not annotate it — record it and surface `Run /b-review <module>` in the upgrade handoff.
+
+---
+
 ## v0.21 — 2026-07-22
 
 ### `/b-adopt` — brownfield cold-start (v1, pending real-project validation)

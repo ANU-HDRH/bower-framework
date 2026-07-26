@@ -36,9 +36,14 @@ Only `/b-integration` (or `/b-module`'s in-pass integration step) flips this mar
 
 1. <feature-name> — ✓ | 🚧 | ⏸ | 🟡 | 🔴 | 🔧
 2. <feature-name> — ⏸
+3. <feature-name> — ⏸ (scope reduced by <feature>: <what already landed>. Remaining: <what is left to build>.)
 ```
 
 Order reflects intra-module dependencies identified at design time; reorderings should be rare and driven by a genuine plan change. `/b-feature` and `/b-module` update build-order markers as features complete. Appending a new feature during a `/b-feature` add is normal — the build order is a living document, not a Stage-4 contract.
+
+**Pull-forward annotation.** Build order is a prediction made at design time, and dependencies routinely cause an earlier feature to absorb part of a later one's scope. That is benign in itself — it mirrors how the work actually falls out. What is not benign is the artifact it leaves behind: the later feature's `plan.md` was written before the absorption and now overstates its own scope, and that plan is exactly what the later feature's implementation pass is handed as its contract. So when a feature absorbs scope from a later entry, `/b-feature`'s reconcile annotates *that entry* with one clause naming who absorbed what, then a `Remaining:` clause naming what is still to build. The `Remaining:` half is the part that does the work — it is what stops the next pass from re-implementing what already exists. Add the annotation only when scope genuinely moved, and keep it to one line: the ~250-word budget is shared with the integration notes.
+
+If the absorption leaves nothing to build, the entry stays ⏸ with `Remaining: none — verify and close via /b-feature <name>`. Do **not** mark it ✓ on the strength of another feature's criteria having passed: ✓ means *this* feature's agreed criteria were verified, and the code that landed early has not been checked against them. The entry earns ✓ through a normal (and now very short) `/b-feature` pass, or the operator removes it as no longer a distinct feature.
 
 **Module-level status is a floor, not a sum.** `/b-index` derives a module's status as the worst across both feature markers and the module-integration marker. A module with all features ✓ but `## Module integration` still ⏸ surfaces as 🚧 — making the constitution's verified-for-✓ rule observable rather than aspirational.
 

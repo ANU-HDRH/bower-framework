@@ -36,7 +36,7 @@ The user's description of what they want to change: $ARGUMENTS
 Orientation is **selective**: read what this change needs, not the whole project. Batch all independent reads — issue them together, not one per turn.
 
 1. Read `docs/index.md` and the affected module's `module-status.md` (batched) — project structure, `## Build order`, and the `## Module integration` `Notes:`.
-2. Read the target feature's `plan.md` and `status.md`, plus those of any other components likely affected.
+2. Read the target feature's `plan.md` and `status.md`, plus those of any other components likely affected. **If this feature's build-order entry carries a scope-reduced annotation, that annotation wins over the plan.** It was written by the feature that absorbed the scope; the plan was written before the absorption and now overstates what is left. Treat the annotation's `Remaining:` clause as the real scope, verify against the code rather than assuming either document is current, and say so in Step 2's proposal — the operator agreed to the original plan and needs to see that the change shrank.
 3. Read `docs/architecture.md` **selectively**: the system overview, the affected module's `## Software architecture` subsection, and any named data flows or constraints the change touches. Read the whole file only when the change crosses sections or you cannot confidently locate it within them.
 4. **Load relevant ADRs.** If `docs/adr/index.md` exists, read it. From the index, identify ADRs with `status: accepted` that (a) have `scope: universal`, (b) list the affected module(s) under `modules`, (c) have a `topics` entry matching the change, or (d) have a title topically relevant to the change — e.g. an ADR about caching strategy when the change touches a cache, even if it's filed under another module. An ADR with no `scope` and no `modules` is *unclassified* (pre-v0.20) — load it on topical or title match only, never wholesale. Open and read each selected ADR. These are the constraints the proposal must respect or explicitly contradict. Skip if no `docs/adr/` exists.
 5. **For modify or remove intents:** search sibling `plan.md` files in the module for exact references to the feature, API, or component being changed (Grep, not full reads); open only the matches. Other features' plans often describe interactions with the thing you're changing — those references go stale if you don't catch them. List any that need updating in the Step 2 Impact section.
@@ -207,6 +207,16 @@ The exact set of documents to touch depends on the intent. Common to all intents
 
 8. Update `scope.md` if the change shifted scope, changed non-goals, or closed a success criterion.
 9. Update `module-status.md`: update the `## Build order` marker for this feature. Use ✓ only if all criteria are PASS; use 🚧 if manual checks remain PENDING USER; use 🟡 or 🔴 if something is broken. Do **not** flip the `## Module integration` marker here — that belongs to `/b-integration`.
+
+   **Then annotate any downstream entry whose scope this change absorbed.** If the implementation report's `## Doc implications` names a later build-order feature whose scope now partly exists — or you can see for yourself that it does — append a single clause to *that* entry: who absorbed what, then `Remaining:` and what is left to build. This is the one case where reconcile writes an entry other than its own.
+
+   ```
+   7. framing-probe-personas — ⏸ (scope reduced by feature 3: persona receives
+      framing per ADR-0014; and feature 5: framing-target annotations.
+      Remaining: the curated catalogue definitions.)
+   ```
+
+   Do this only when scope genuinely moved — not for every dependency touched — and keep it to one line, since `module-status.md`'s ~250-word budget is shared with the integration notes. Do not edit the downstream feature's `plan.md`: it does not exist yet for an unbuilt feature, and where it does, rewriting a plan outside its own gate is not this step's business. The build-order line is the durable place, because it is in the next pass's orientation set. If the absorption leaves nothing to build, write `Remaining: none — verify and close via /b-feature <name>` and leave the marker ⏸; do not promote it to ✓ on another feature's passing criteria.
 10. Run `/b-index` or update `docs/index.md` if module status markers changed.
 
 <critical_constraints>
