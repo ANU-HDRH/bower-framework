@@ -38,6 +38,8 @@ Separate the findings visually into:
 - **Owned reconciliations** — `inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`. These are what this command can action.
 - **Routed** — `route:/b-feature`, `route:/b-design`. These need another command's gate; you'll surface them as next moves, not action them.
 
+Print the report's `## Constitution contradictions` section too, **separately from both groups and unabridged** — verbatim quote, `docs/constitution.md:NN`, the contradicting evidence, and which findings leaned on the claim. It is neither owned nor routed: `constitution.md` is human-owned, so it gets its own consent gate below and never enters the plan.
+
 This printed block is transient triage material — the operator reads it here. It is not written to disk except as the plan (next step).
 
 ## Gate: Triage
@@ -49,6 +51,16 @@ Present one AskUserQuestion asking the operator to confirm disposition. Frame as
 Offer the disposition choices (e.g. *Action all owned reconciliations* / *Let me deselect some* / *Cancel — just show me the report*). If the operator chooses to deselect, ask them to name the finding numbers to drop; the rest become the plan. The routed findings are informational at this gate — they are carried to the handoff regardless, since this command never actions them.
 
 **Do not write the plan or apply anything until the operator confirms.** If they cancel, emit the routed findings and observations as a read-only handoff and stop.
+
+## Gate: Constitution consent (only if contradictions were reported)
+
+If the report's `## Constitution contradictions` section has entries, ask about them in a **second, separate** AskUserQuestion — never merged into the triage question above, because the triage question authorises *this command* to act, and this one authorises an edit to a file the command does not own.
+
+Per contradiction, restate the verbatim quote and its `docs/constitution.md:NN` before asking, so the operator can open the file and read the line in context rather than trusting a summary. Offer: correct the claim to match reality · move it under `## Not yet in force` (it was an aspiration) · leave it alone. Edit `docs/constitution.md` only on an explicit instruction to do so — that makes the edit prompted, which ownership permits. Anything else means leave the file untouched.
+
+This gate runs even when the operator cancelled the triage gate, and even when every dimension came back clean: a false constitution is worth surfacing on its own, and it is the one thing here nothing else in the framework is looking for.
+
+**A corrected constitution can invalidate findings that were measured against it.** If an accepted reconciliation's `Bearing:` names a claim the operator just corrected, say so and re-confirm that item before it goes in the plan — the bar it was judged against has moved.
 
 ## Step 3: Write the Plan
 
@@ -114,6 +126,10 @@ Routed — run separately:
   - Run /b-design                                 (<boundary-erosion gist>, if any)
   - (none)
 
+Constitution:
+  - <docs/constitution.md:NN — corrected | moved to "Not yet in force" |
+     left as-is at the operator's request>, or "(none reported)"
+
 Observations:
   - <non-actionable note, or "(none)">
 
@@ -137,6 +153,7 @@ When Step 0 found an existing `review-plan.md`, you skipped diagnosis. Read the 
 - Do not write the plan after starting to apply — the plan is the recovery anchor, written first
 - Do not action a `route:/b-feature` or `route:/b-design` finding yourself — route it; boundary erosion is a hard-redirect to `/b-design`
 - Do not silently fix a behavioural defect a `test-backfill` uncovers — re-route it to `/b-feature`
+- Do not put a constitution contradiction in `review-plan.md` or apply it as a reconciliation — `docs/constitution.md` is human-owned; it gets its own consent gate, quoted verbatim with its line number, and is edited only on an explicit instruction
 - Do not flag or "fix" ADRs for verbose or over-scoped prose — bodies are immutable; only drift from code is an ADR finding
 - Do not leave `review-plan.md` on disk once its reconciliations are all resolved — delete it
 - Do not let the plan accumulate (no dated variants, no second open plan) — one plan per module, finished and deleted before the next review

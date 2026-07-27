@@ -28,7 +28,8 @@ Provided by the caller (`/b-feature` Step 4) in the message you receive:
 
 - **The plan is the contract.** Implement what it says; scope is fixed at the gate. No opportunistic refactors, no adjacent cleanups, no scope expansion — anything on the "won't change" list stays untouched even if it looks improvable.
 - **No interaction.** You cannot call AskUserQuestion. Any decision that needs the user is a significant divergence — stop and report (see the divergence protocol).
-- **Bounded write surface.** You may write or edit: source code, test code, and `plan.md` (minor-divergence corrections only). You must **not** touch `status.md`, `module-status.md`, `scope.md`, `docs/ui.md`, `docs/index.md`, sibling feature plans, ADRs, or `docs/architecture.md` — doc reconciliation belongs to the caller. Do not run `git commit`.
+- **Bounded write surface.** You may write or edit: source code, test code, and `plan.md` (minor-divergence corrections only). You must **not** touch `status.md`, `module-status.md`, `scope.md`, `docs/ui.md`, `docs/index.md`, `docs/constitution.md`, sibling feature plans, ADRs, or `docs/architecture.md` — doc reconciliation belongs to the caller. Do not run `git commit`.
+- **The constitution is normative, and you are the one who finds out when it isn't.** You read its testing section and then actually run the thing, which puts you in the best position in the framework to discover that a stated convention is false — a runner that isn't installed, a fixture path that doesn't exist, a CI step the repo doesn't have, a `✓` rule that can't be satisfied as written. When that happens: **work around it to deliver the plan, do not edit the constitution, and report it** under `## Constitution contradictions`. It is human-owned; only the caller, with the user's consent, may change it. Anything under the constitution's `## Not yet in force` heading is to be treated as non-existent — never rely on it and never report it as a contradiction, since it already admits it isn't true.
 - **No architecture.** If the plan turns out to require a new module, a new technology, or a reshaped data flow, that is a significant divergence. Stop and report; never improvise architecture.
 - **MISSING is a blocker for you too.** Every agreed criterion maps to a passing test or a manual check. Do not return COMPLETE with an automated criterion untested; if a criterion proves untestable as written, that is a divergence to report.
 - **Manual criteria are marked, never verified.** You cannot ask the user. Mark them `PENDING USER` in the acceptance mapping and leave them to the caller.
@@ -93,9 +94,21 @@ the details a future reader would otherwise dig out of git> | None.
 <sibling plans noticed stale, docs/ui.md impact observed, module-integration
 Notes: impact, any ADR touched beyond the caller's list, downstream
 build-order scope absorbed> | None.
+
+## Constitution contradictions
+<one entry per claim in docs/constitution.md that your work contradicted:
+  Claim: "<verbatim quote>" — docs/constitution.md:NN
+  Found: <what is actually the case — exact path/line, or the command run
+          and its result>
+  Effect: <what you did instead, and whether it blocked anything>
+> | None.
 ```
 
 Outcome semantics: **COMPLETE** — every automated criterion PASS, manual criteria marked PENDING USER. **DIVERGED-STOPPED** — a significant divergence stopped the work; tree coherent; divergence section filled. **BLOCKED** — an environment or tooling failure (missing runner, broken toolchain) prevented progress; state what failed verbatim.
+
+`## Constitution contradictions` is deliberately separate from `## Doc implications` rather than a bullet inside it, because the caller handles the two differently: doc implications feed a reconcile the caller performs, while a constitution contradiction feeds a consent gate the *user* answers. Keep the verbatim quote exact and the line number right — the caller shows both to the user so they can open the file, and a paraphrase defeats that.
+
+A contradiction is not a divergence and never changes your outcome: report it and still return COMPLETE if the criteria passed. Escalate to `DIVERGED-STOPPED` only if the false convention actually blocked the plan (e.g. the mandated runner does not exist and no criterion can be verified without it).
 
 The `## Acceptance mapping` lines use exactly the format above — the caller consumes them verbatim in its Step 5 reconciliation.
 
@@ -106,5 +119,6 @@ The `## Acceptance mapping` lines use exactly the format above — the caller co
 - **Silently absorbing a significant divergence.** Deciding the criterion "probably didn't matter" or the ADR "was stale anyway" is the caller's call, behind a gate — not yours.
 - **Editing docs you don't own.** Updating `status.md` or a sibling plan "to be helpful" collides with the caller's reconcile step. Note it under `## Doc implications` instead.
 - **Absorbing a later feature's scope silently.** Implementing this feature sometimes means building part of what a *later* entry in the module's `## Build order` was going to build — a dependency pulled the work forward. That is legitimate and not a divergence: you are not expanding scope, you are landing something that had to exist. But you are the only party who knows it happened, and the later feature's `plan.md` will still claim that scope when a fresh context is handed it as its contract. Name it under `## Doc implications` — which downstream feature, what of its scope now exists, and what you believe is left. One line. The caller owns the write; the omission is what costs, because it ends in the work being done twice or done differently.
+- **Quietly routing around a false convention.** Discovering the constitution's stated runner, fixture, or `✓` rule doesn't match the repo, adapting to what's actually there, and saying nothing. You are frequently the only party who will ever execute that claim; if you absorb it silently, the doc stays wrong and the next fresh context is misled the same way. Adapt *and* report it. The inverse failure is as bad: editing `docs/constitution.md` to match reality. It is human-owned — that is the caller's gate, not your fix.
 - **Unbatched execution.** One read per turn, one-line edits, re-reading whole files after each change — the micro-cycle pattern this boundary exists to eliminate.
 - **Stopping on divergence with an incoherent tree.** A half-applied slice makes recovery harder than either finishing or reverting it. Leave the tree in a state `git status` plus your report fully explains.

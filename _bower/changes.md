@@ -6,6 +6,77 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.23 — 2026-07-27
+
+### Constitution truthfulness — normative shape, flag-don't-fix, consent gate
+
+Observed on a real project: `docs/constitution.md` claimed something existed when it was in fact an aspiration, and agents downstream became confused about what was real. The framework's only protection for that file is **ownership** — human-owned, never rewrite unprompted — which guards against unauthorised edits and says nothing about accuracy. The two are close to opposites here: the stronger the "don't touch" norm, the longer a false claim survives, because every agent that notices it has been told to leave it alone. Ownership protects the file from agents; nothing protected it from decay.
+
+Two distinct defects were tangled in "human-owned", and they get different fixes.
+
+**1. The doc shape (prevention).** A constitution is *normative* — rules the project has committed to. A rule can be unmet, but it cannot be false; an unmet rule surfaces as work. The failure was a *descriptive* claim smuggled into a normative doc, written in the same register as a rule, so it read as fact. `_bower/framework-reference.md` gains a **`## constitution.md — Normative Shape`** section: every statement about what exists must be verifiable from the repo or it does not go in the normative body, and aspirations live under a **`## Not yet in force`** heading whose contents agents must treat as non-existent. This is a shape rule, not a full template — headings otherwise stay the project's business.
+
+**2. Ownership vs. truth (detection).** The framework already has exactly the right pattern one paragraph away, for ADRs: *code is truth, ADR is hypothesis — flag and supersede, don't silently trust.* ADR bodies are immutable and it works, because flagging is decoupled from editing. There was no equivalent for human-owned docs, so "never rewrite unprompted" collapsed into "never mention." `_bower/framework.md` and `framework-reference.md` now state the missing half: **ownership governs edits, not truth.** Never silently obey a false claim, never silently fix it — quote it verbatim with `file:line`, show the contradicting evidence, and ask.
+
+**No freshness gate.** A periodic constitution sweep was considered and rejected: it has no natural trigger and degrades into nagging. Instead the check sits where the constitution is *already read for a purpose*, so it is free and contextual.
+
+**What changed**
+
+- **`_bower/framework.md`** — an *ownership governs edits, not truth* paragraph under Document Authority, with the verbatim-quote-and-ask protocol and a pointer to the normative shape.
+- **`_bower/framework-reference.md`** — the ownership-semantics section gains the flag-don't-fix duty, the required surfacing shape, and an explicit **coverage is opportunistic, not an audit** caveat; plus the new `## constitution.md — Normative Shape` section.
+- **`.claude/agents/bower-implementer.md`** — the strongest detection point in the framework: it reads the constitution's testing section and then *actually runs the thing*, so it discovers empirically when a stated runner, fixture, CI step, or `✓` rule is false. New behavioural rule (work around it, don't edit it, report it), `docs/constitution.md` added to the barred write surface, a new `## Constitution contradictions` report section, and a failure mode for silently routing around a false convention. A contradiction is not a divergence and does not change the outcome.
+- **`.claude/agents/bower-reviewer.md` + `_bower/review-schema.md`** — the reviewer judges coverage and status honesty *against* the constitution, which is precisely where a false yardstick does most damage: every finding measured against it inherits the error. New `## Constitution contradictions` report section, deliberately **outside the six dimensions and outside the resolution-class machinery**, carrying a `Bearing:` line naming which findings leaned on the claim. Bounded to what the module survey actually contradicted — not an audit.
+- **`.claude/commands/b-feature.md`** — a **Constitution reconciliation** block in Step 5, before Step 6 and never inside it (Step 6 is gate-free agent-owned doc maintenance; a human-owned doc must not ride that path). Prints the verbatim quote and line number, then asks: correct · move to `## Not yet in force` · leave alone.
+- **`.claude/commands/b-review.md`** — a **Gate: Constitution consent**, separate from the triage gate, that runs even when triage was cancelled or every dimension came back clean. Contradictions never enter `review-plan.md`. If a correction moves the bar a reconciliation was judged against, that item is re-confirmed.
+- **`.claude/commands/b-adopt.md`** — the initial constitution is drafted only from conventions confirmed in the repo, with inferred-but-unconfirmed practice placed under `## Not yet in force`. Explicitly distinguished from the adoption ledger, which has different exits.
+- **`_bower/roadmap.md`** — the *Constitution template and archive rules* item records its trigger as fired for the constitution half; the full heading schema and the `_bower/archive/` rules stay deferred.
+
+**Why this shape**
+
+Prevention matters more than detection here, and the framework should not overclaim otherwise. Nothing audits the constitution as a whole: a claim no agent executes — a deployment convention, a review process, "all endpoints are rate-limited" — is caught by nobody. The detection hooks are an opportunistic backstop at two points that already read the file; the normative/aspirational split is what stops the false claim being written in the form that fooled everyone. Describing the backstop as a truthfulness guarantee would reproduce the exact bug it guards against.
+
+The consent gate requires a **verbatim quote with a line number**, not a summary, because the objective is to get the human to open the file. A paraphrase invites a rubber-stamp; the human owns the doc and must see what is being proposed against it. Only an explicit instruction to change it makes the edit *prompted*, which ownership already permits.
+
+This is the same disease Bower treated once before at the marker level: v0.15's floor-not-sum rule exists to make the verified-for-`✓` bar "observable rather than aspirational", and `/b-adopt` already refuses to mark found code `✓` because that would be a false completeness claim. Same failure, a different document.
+
+### Migration
+
+Two steps. The first is mechanical; the second requires judgement and should be done with the user in the room.
+
+**1. Re-scaffold.** Run the scaffold script over the project to pick up the updated `_bower/framework.md`, `_bower/framework-reference.md`, `_bower/review-schema.md`, `.claude/agents/bower-implementer.md`, `.claude/agents/bower-reviewer.md`, `.claude/commands/b-feature.md`, `.claude/commands/b-review.md`, and `.claude/commands/b-adopt.md`. No project content is touched by this step.
+
+**2. Audit `docs/constitution.md` against the repo — judgement required, and the user decides every edit.** This file is human-owned. Do not rewrite it unprompted, including as part of this migration: propose, then ask.
+
+If the project has no `docs/constitution.md`, there is nothing to do — skip to the end.
+
+Read `docs/constitution.md` in full. For each statement, classify it:
+
+- **Normative** — a rule the project has committed to ("tests live in `tests/`", "run `pytest -q`", "`✓` requires the module integration test to pass"). Leave it alone. Rules can be unmet; that is not a defect in the doc.
+- **Descriptive** — a claim about what *exists* or what is *currently true* ("CI runs the integration suite on every PR", "every module has contract tests", "all endpoints are rate-limited", "the staging environment mirrors production"). These are the risk. For each one, try to verify it against the repo: does the named workflow file, config, test directory, script, or dependency actually exist, and does it actually do what the claim says? Cite the path and line you checked.
+
+Then bring the user a single list with three columns of your own conclusion — *verified* (evidence cited), *false* (evidence cited showing otherwise), *cannot verify from the repo* (say why: it concerns infrastructure, an external service, or team process that leaves no trace in the code). Quote each claim verbatim with its `docs/constitution.md:NN` so they can read it in place.
+
+For the *false* and *cannot verify* items, propose one of three dispositions per item and let the user choose each:
+
+- **Rewrite normatively** — turn the description into the rule it was trying to be. "CI runs the integration suite on every PR" becomes "the integration suite must pass before merge". A rule that is not yet honoured is visible as work; a false description is a phantom guarantee.
+- **Move to `## Not yet in force`** — it was an aspiration. Create the section at the end of the file if it does not exist, with this preamble:
+
+  ```markdown
+  ## Not yet in force
+
+  Intended, but not true of the repo today. Agents: treat these as non-existent —
+  do not rely on them, do not cite them as conventions, and do not mark work ✓ on
+  the strength of them. Moving an item out of this section puts it in force.
+  ```
+
+- **Delete** — it was never true and is not wanted.
+
+Apply only the dispositions the user confirms. A user who wants to leave a claim exactly as it stands is exercising ownership; record nothing and move on.
+
+Expect this audit to be most productive on the testing section, since that is the part with the most repo-visible surface — and the part `bower-implementer` will otherwise trip over on the next `/b-feature`.
+
+---
+
 ## v0.22 — 2026-07-27
 
 ### Build-order pull-forward annotation

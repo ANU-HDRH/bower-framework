@@ -153,6 +153,29 @@ Skip only if no Decision impact was identified at the gate (Step 2 listed it as 
 
 If the user rejects the drafted ADR at `/b-adr`'s gate, treat that as a request to redraft with their adjustments, not as permission to skip. If they want to abandon ADR creation entirely, return to this reconciliation step and re-classify the impact (likely "confirmed" rather than "new decision"). Complete any ADR work before continuing to Step 6.
 
+**Constitution reconciliation.** If the implementation report carries a `## Constitution contradictions` section with entries, handle each one here — before Step 6, and never inside it. `docs/constitution.md` is human-owned, so this is not a reconcile you perform; it is a consent request the user answers.
+
+For each entry, print the evidence in full and unparaphrased:
+
+```
+docs/constitution.md:41 says, verbatim:
+  "Every module boundary is covered by a contract test, run in CI on every PR."
+
+The implementer found: no contract tests exist; .github/workflows/ci.yml:18 runs
+only `pytest tests/unit`. This feature's tests were written against the unit
+runner instead.
+```
+
+Then ask via AskUserQuestion whether to edit the file, offering: correct the claim to match reality · move it under `## Not yet in force` (it was an aspiration) · leave it alone. Only on an explicit instruction to change it do you edit `constitution.md` — that instruction is what makes the edit *prompted*, which ownership permits. Silence, a deferral, or "noted" all mean leave it.
+
+Three rules that are the point of the step:
+
+- **Verbatim and located, always.** Quote the line and give `docs/constitution.md:NN` so the user can open the file and read it in context. A summary of the contradiction invites a rubber-stamp; the objective is to get the human into the doc.
+- **Never fold this into Step 6.** Step 6 is agent-owned doc maintenance that runs without a gate. A human-owned doc must not be edited on that path, even when the correction looks obvious.
+- **Never bury it.** Do not reduce a contradiction to a line in the handoff summary because the feature otherwise passed. A false convention that survives this pass will mislead the next fresh context exactly as it misled this one, and nothing else in the framework is looking for it.
+
+If the user declines the edit, that is a legitimate outcome — record nothing, change nothing, and move on. Their file, their call.
+
 ## Step 6: Update Documentation
 
 The exact set of documents to touch depends on the intent. Common to all intents: `status.md` is rewritten from scratch, `module-status.md` build-order markers reflect reality, and `scope.md` is updated if the change shifted scope.
@@ -227,6 +250,7 @@ The exact set of documents to touch depends on the intent. Common to all intents
 - Do not implement inline when the Agent tool is available — the implementer's fresh context is the point; when falling back, say so explicitly
 - Do not let the implementer's report substitute for the Step 5 PENDING USER prompt — manual checks are always confirmed with the user by this command
 - Do not treat a DIVERGED-STOPPED report as failure — it is the divergence gate working; re-gate, amend the plan, re-spawn
+- Do not edit `docs/constitution.md` as part of Step 6 reconciliation — it is human-owned; a reported contradiction goes through the Step 5 consent gate, quoted verbatim with its line number, or not at all
 - Do not expand scope beyond what was confirmed
 - Do not skip documentation updates
 - Do not propose architectural changes — if the change requires them, recommend the user runs `/b-design` instead

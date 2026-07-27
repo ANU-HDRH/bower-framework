@@ -1,4 +1,4 @@
-# Bower Framework v0.22
+# Bower Framework v0.23
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -248,6 +248,8 @@ Bower is deliberately unopinionated about testing specifics. The framework assum
 **Where it lives.** Record your project's testing conventions in `docs/constitution.md`: where tests live, how to run them, what "verified" means for a feature to be marked ✓, and any fixture or data conventions. Bower agents read `constitution.md` as part of their normal workflow and will follow what you've written there.
 
 **What Bower contributes.** The built-in guidance is minimal and applies across project types: end-to-end tests for pipelines and workflows, integration tests at module boundaries, unit tests for complex logic. Plan.md's testing section and each lightweight-change proposal's acceptance criteria reference *your* conventions; Bower provides the hooks, you provide the specifics.
+
+**Write rules, not descriptions.** `constitution.md` is human-owned — agents never rewrite it unprompted — which makes it the one doc where a false statement can sit uncorrected indefinitely. The protection is to keep it *normative*: "tests live in `tests/`", "run `pytest -q`", "✓ requires the module integration test to pass". A rule can be unmet, and that shows up as work. A *description* of what exists — "CI runs the integration suite on every PR" — can simply be false, and agents will act on it. Anything aspirational goes under a `## Not yet in force` heading, which agents treat as non-existent until you move it up. Agents that trip over a claim contradicted by the code will quote it back to you with its line number and ask; they won't edit the file themselves.
 
 A fuller how-to for setting up `constitution.md` may come later. For now, the shape is: write down what you'd tell a new collaborator about testing this project, and the agents will pick it up.
 

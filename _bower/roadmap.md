@@ -28,7 +28,9 @@ Each item has a one-line description and a *revisit trigger*: the signal that tu
   *Revisit trigger:* a schema change that has to be applied in three places and one is missed.
 
 - **Constitution template and archive rules** — A schema for `constitution.md` and explicit rules for what belongs in `_bower/archive/`.
-  *Revisit trigger:* a project's `constitution.md` drifts into an ad-hoc shape that a template would have prevented, or `_bower/archive/` contents become ambiguous about what belongs there — the pain of no schema felt in a real project, rather than a project-count milestone.
+  *Trigger fired (constitution half), v0.23:* a real project's `constitution.md` asserted that something existed when it was an aspiration, and agents downstream treated it as fact. v0.23 adds the **normative shape rule** — the constitution states rules, not descriptions; claims about what exists must be verifiable or live under `## Not yet in force` — plus flag-don't-fix reporting from `bower-implementer` and `bower-reviewer` and a consent gate in `/b-feature` and `/b-review`. This is deliberately a *shape* rule, not the full template the item envisaged: headings beyond the aspiration split stay the project's own business, since no failure has yet argued for prescribing them.
+  *Still deferred:* the full heading schema, and the `_bower/archive/` rules (untouched by v0.23).
+  *Revisit trigger:* a project's `constitution.md` drifts into an ad-hoc shape that the normative/aspirational split alone did not prevent, or `_bower/archive/` contents become ambiguous about what belongs there.
 
 - **Durable-ephemeral proposals on disk** — `docs/proposals/<slug>.md` written at the gate, deleted on completion, to survive session boundaries.
   *Revisit trigger:* if session-boundary pain shows up after first real use.

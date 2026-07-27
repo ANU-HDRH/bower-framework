@@ -8,6 +8,38 @@ Bower splits documentation into three layers by *audience* and *style*, not by d
 
 **Ownership semantics:** *human-owned* docs (`problem-space.md`, `constitution.md`) may be drafted by the agent during full design, but must not be rewritten unprompted afterwards. *Co-authored* docs (`architecture.md`, `ui.md`, `scope.md`, `plan.md`) are agent-updated in place as changes land, human-reviewed and edited freely. *Agent-owned* docs (`status.md`, `module-status.md`, the two index files) are routinely maintained by the agent. *External/vendored* material is read-only — consult it, don't edit it; refresh by re-vendoring. *ADR bodies* are immutable once accepted — only frontmatter (status, supersession links, applicability classification) is updated; new decisions go in new ADRs.
 
+**Ownership governs edits, not truth.** Ownership answers *who may write this file*; it says nothing about whether the file is accurate, and for human-owned docs the two pull in opposite directions — the stronger the "don't touch" norm, the longer a false claim survives, because every agent that notices it has been told to leave it alone. Ownership protects the file from agents; nothing protects it from decay. So agents carry a **flag-don't-fix** duty on `constitution.md` and `problem-space.md`, exactly as they already do for immutable ADR bodies: when a claim in one of these contradicts the code, surface it — never silently obey the false claim, and never silently correct it.
+
+Surfacing has a required shape, because a paraphrase invites a rubber-stamp and the point is to get the human into the file:
+
+- Quote the claim **verbatim**, with its `docs/constitution.md:NN` location.
+- State the contradicting evidence with its own exact path and line, or the command that was run and what it did.
+- Ask whether to edit. If the human authorises it, that is *prompted* and the edit is permitted; absent that, the file is untouched.
+
+**Coverage is opportunistic, not an audit.** Nothing in Bower verifies the constitution as a whole. Contradictions are caught only where an agent already reads the file *for a purpose* and happens to exercise the claim — `bower-implementer` runs the testing section's runner and fixtures, so it finds out empirically; `bower-reviewer` uses the constitution as the yardstick for coverage and status honesty, so it can see when the yardstick itself is false. A claim nothing executes (a deployment convention, a review process, "all endpoints are rate-limited") will not be caught by anyone. This is a backstop, and describing it as more than that would reproduce the very failure it guards against.
+
+## constitution.md — Normative Shape
+
+`constitution.md` is **normative**: it states rules the project has committed to — where tests live, the runner command, what "verified" means for a `✓`, contribution and review conventions. A rule can be *unmet*, but it cannot be *false*; an unmet rule shows up as work. That property is what makes the doc safe to treat as authority.
+
+The failure mode is a **descriptive** claim smuggled into a normative doc — a statement about what *exists* ("CI runs the integration suite on every PR", "all modules have contract tests") written in the same register as a rule. Agents read it as fact and act on it, and the ownership norm keeps it from ever being corrected. Aspiration is welcome in a constitution; aspiration wearing the clothes of fact is not.
+
+Two rules follow:
+
+- **Every statement about what exists must be verifiable from the repo** — the file, the config, the command is really there — **or it does not go in the normative body.**
+- **Aspirations live under a `## Not yet in force` heading**, and agents must treat everything under it as **non-existent**: do not rely on it, do not cite it as a convention, do not mark work `✓` on the strength of it. Moving an item out of that section is the human's act of putting it in force.
+
+```markdown
+## Not yet in force
+
+Intended, but not true of the repo today. Agents: treat these as non-existent.
+
+- Contract tests at every module boundary — only `auth` has one.
+- CI gating on the integration suite — the workflow exists but is `continue-on-error`.
+```
+
+This is a shape rule, not a full template: the constitution's headings are otherwise the project's own business. The split is *prevention* — it stops the false claim being written in the form that fools everyone — and it matters more than the detection backstop above, which only ever catches the subset a running agent trips over.
+
 **The two index files are derived-state-with-preserved-structure.** `docs/index.md` and `docs/adr/index.md` are agent-owned, but `/b-index` does not own their *prose*. On regeneration it recomputes only the derived state — status markers, ADR table rows, counts — and updates those in place, preserving any curated structure the project has grown around them (status dashboards, documentation maps, rationale narrative, an elaborated ADR schema reference). You may hand-author such narrative into these files; `/b-index` will refresh the numbers without flattening it.
 
 **Documentation style:** design layer is narrative and explains *why*; operational layer is terse bullets and tables. Write for future-you in 6 months. Update docs as part of implementation, not after.

@@ -1,4 +1,4 @@
-# Bower Framework v0.22
+# Bower Framework v0.23
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
@@ -33,7 +33,9 @@ This project uses the Bower AI-assisted development pattern. Bower optimises for
 | `modules/**/module-status.md` | agent-owned | ~250 words |
 | `docs/index.md`, `adr/index.md` | agent-owned, derived state recomputed by `/b-index`, curated structure preserved | tables |
 
-Full ownership semantics, document schemas (`status.md`, `module-status.md`, ADR frontmatter and body rules), and the status-marker flow: `_bower/framework-reference.md`.
+**Ownership governs edits, not truth.** A human-owned doc can still be wrong — and the "never rewrite unprompted" norm means a false claim there is the *least* likely thing to get corrected, because every agent that notices it is told to leave it alone. So the two duties are separate: if `constitution.md` or `problem-space.md` asserts something the code contradicts, never silently obey it and never silently fix it — quote the claim verbatim with its `file:line`, show the contradicting evidence, and ask. The human opens the file and decides; if they say fix it, that is prompted and you may edit. This is the same posture as *code is truth, ADR is hypothesis*, applied to docs you may not rewrite. Note that `constitution.md` is **normative** — rules, not descriptions — so a claim about what *exists* either belongs under its `## Not yet in force` heading or should not be there at all (`_bower/framework-reference.md`).
+
+Full ownership semantics, the `constitution.md` normative shape, document schemas (`status.md`, `module-status.md`, ADR frontmatter and body rules), and the status-marker flow: `_bower/framework-reference.md`.
 
 ## Status Markers
 

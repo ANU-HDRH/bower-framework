@@ -97,6 +97,27 @@ Rules for findings:
 
 Negative-space audit, parallel to the change brief's section of the same name. The reviewer lists dimensions, features, or ADRs it examined and found clean — each with a one-line reason. **An empty list is suspicious**: it suggests the reviewer skimmed rather than surveyed. "Checked feature-3 against feature-1's error-handling — consistent" is the shape. This section is the operator's primary check that the review was thorough, not that it found nothing.
 
+### `## Constitution contradictions`
+
+Claims in `docs/constitution.md` that the module survey contradicted. **This section sits outside the six dimensions and outside the resolution-class machinery** — deliberately, because its resolution is categorically different: `constitution.md` is human-owned, so the fix is never an owned reconcile, never a routed command, and never enters `review-plan.md`. It is a consent request the *user* answers.
+
+The reviewer already reads the constitution as the **yardstick** for the test-coverage and status-honesty dimensions. That is exactly where a false yardstick does most damage — every finding measured against it inherits the error — so "the yardstick itself is wrong" has to be reportable. Each entry:
+
+```
+- Claim: "<verbatim quote>" — docs/constitution.md:NN
+  Found: <the contradicting evidence, with exact path:line or command + result>
+  Bearing: <which dimension or finding relied on this claim, or "none — noticed in passing">
+```
+
+Rules:
+
+- **Verbatim and located, both sides.** The calling command shows this to the user so they can open the file and read the line themselves; a paraphrase invites a rubber-stamp and defeats the point.
+- **Only what this module's survey actually contradicted.** This is not a general audit of the constitution — do not go looking. If the survey didn't touch a claim, it isn't reportable here.
+- **`## Not yet in force` is not a contradiction.** Anything under that heading already declares itself untrue; treat it as non-existent and never report it.
+- **Never propose the edit as a finding.** No dimension, no class, no `Command:` line. If a *finding* depended on the false claim, keep the finding and cross-reference it in `Bearing:` — the operator may want to re-judge it once the constitution is corrected.
+
+If there are none, the section reads `None.`
+
 ### `## Observations (not actionable)`
 
 Findings worth surfacing that have no owned or routed resolution — most commonly an ADR whose commitments were hard to recover from a title-only index row (the deferred ADR-index-summary signal), or a smell that doesn't yet rise to a boundary-erosion finding. These are printed in the handoff but never enter the plan. If there are none, the section reads `None.`
@@ -211,7 +232,15 @@ Command: /b-feature modify auth consolidate-jwt-helper-tests
 - Reviewed ADR-0003 (password hashing) against src/auth — code matches the ADR; no drift.
 - Checked the module-integration test (docs/modules/auth/module-status.md) — it exercises login→refresh→revoke end-to-end and asserts the cross-feature session lifecycle; the boundary concern is genuinely covered, not smoke-tested.
 
+## Constitution contradictions
+
+- Claim: "Every module boundary is covered by a contract test, run in CI on every PR." — docs/constitution.md:41
+  Found: no contract tests exist for any module; .github/workflows/ci.yml:18 runs only `pytest tests/unit`. The auth module-integration test at tests/integration/test_auth.py is the module's sole boundary test and is not invoked by CI.
+  Bearing: F4 and F6 were judged against this claim — the coverage bar it sets is not the bar this project actually holds.
+
 ## Observations (not actionable)
 
 None.
 ```
+
+In that example the constitution asserted a *state of the world* ("every module boundary is covered", "run in CI on every PR") rather than a rule, and it was false. Written normatively — "module boundaries should be covered by a contract test; `✓` requires one" — it could only ever have been *unmet*, which surfaces as work rather than as a phantom guarantee two findings were then measured against. The `## Not yet in force` heading in `_bower/framework-reference.md` is where the aspirational half belongs.
