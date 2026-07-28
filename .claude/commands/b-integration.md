@@ -15,7 +15,7 @@ The user's target module: $ARGUMENTS
 ## Step 1: Understand Context
 
 1. Read `docs/architecture.md` for system context.
-2. Read `docs/scope.md` for current scope and any unmet success criteria this test would help close.
+2. Read `docs/scope.md` for current scope and any success criteria whose `Delivered by:` clause names this module — they say what the module-boundary behaviour is ultimately for.
 3. Read `docs/modules/<module>/module-status.md` — the `## Module integration` section is the rubric you're implementing; the `## Build order` confirms which features participate.
 4. Read each participating feature's `plan.md` to understand the data each contributes and the seams the test will exercise.
 5. Read `docs/constitution.md` for test location, runner, fixture conventions, and any verification-required-for-✓ rules.
@@ -79,7 +79,7 @@ Handling:
    - `Test:` line — set the path you wrote, and the marker (✓ if all PASS, 🚧 if PENDING USER, 🟡/🔴 if known issues).
    - `Notes:` line — refresh if the as-built test diverged from Stage 4's prose.
    - If `Pending verification:` items remain, add a line listing them under the `## Module integration` section.
-2. Update `scope.md` if this test passing closes a success criterion. Only count criteria whose manual checks have passed.
+2. Do **not** update `scope.md` to record that a criterion is now met — criteria carry no status, and `/b-recap` derives achievement from module completion (this test's ✓ is part of that derivation). Touch `scope.md` only in the rare case that building the test revealed the scope boundary or a criterion's wording to be wrong.
 3. Run `/b-index` so the module-level marker reflects the new module-integration state.
 
 ## Step 6: Handoff
@@ -95,7 +95,7 @@ Next move:
     Run /b-feature <name>                      (next ⏸ feature in the inter-module build order)
     Run /b-module <name>                       (next module, if small and well-specified)
     Run /b-integration <module>         (re-run after fixing PENDING USER items)
-    (none — all modules ✓ and scope criteria met)
+    (none — all modules ✓; project completion is /b-recap's call, which derives success-criteria satisfaction)
 ```
 
 Pick exactly one recommended next command based on the project state you just observed. Mention at most one alternative on a second line.

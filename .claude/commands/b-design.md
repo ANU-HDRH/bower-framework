@@ -58,7 +58,7 @@ Stage-specific drafting and write rules follow.
 
 **Drafting:**
 
-- **Greenfield (full draft):** Draft `docs/design/problem-space.md` covering the problem and who has it, current alternatives and why they're insufficient, success criteria, scope boundaries, and constraints. Draft `docs/scope.md` covering current scope, current non-goals, and success criteria with initial met/unmet state (all unmet at project start).
+- **Greenfield (full draft):** Draft `docs/design/problem-space.md` covering the problem and who has it, current alternatives and why they're insufficient, success criteria, scope boundaries, and constraints. Draft `docs/scope.md` covering current scope, current non-goals, and success criteria. **Criteria carry no status field** — each is a statement of what must be true followed by a `*Delivered by: <module>[, <module>]*` clause naming the responsible module(s), and nothing else. No status column, no marker, no met/unmet field: achievement is derived from module completion by `/b-recap`, never stored here. At Stage 1 the module names may not exist yet; if the brief has not settled the module decomposition, write the criteria now and add the `Delivered by:` clauses in Stage 3 once modules are named. Full shape: `_bower/framework-reference.md` § `scope.md — Boundary, Not Tracker`.
 - **Revision (partial draft):** Draft only the specific edits the brief calls for — often a paragraph added to `docs/scope.md`, more rarely a `problem-space.md` amendment (which is framing history and should be edited with care).
 
 **Gate:** Present the drafted text. Ask: "Confirm the framing/scope draft, or tell me what to adjust."
@@ -96,11 +96,13 @@ Stage-specific drafting and write rules follow.
 - **Greenfield:** Draft `docs/architecture.md` covering both views. The software-architecture section is sourced from the module breakdown that Stage 4 will produce — draft it consistent with Stage 4's planned modules so the two stay aligned.
 - **Revision:** Draft the specific edits the brief calls for. The brief distinguishes runtime-view deltas from software-architecture deltas; honour that distinction in the drafted edit. Show each edit in context (surrounding sentences) so the gate can confirm placement, not just text. **If `docs/ui.md` exists, read it first** — architectural revisions in projects with an interface often shift logic-UI interactions (routing, state, data flow into and out of screens), and the existing experience surface is the constraint those edits have to respect. The drafted architecture edit should name any `docs/ui.md` reconciliation it implies, so Stage 4 (or follow-up `/b-ui` / ad-hoc work) picks it up.
 
+**Cross-stage rule — success-criteria coverage.** Once the modules are named here, every success criterion in `docs/scope.md` must carry a `*Delivered by: <module>[, <module>]*` clause naming existing modules. Check them: backfill any clause Stage 1 left open, and correct any that names a module this stage renamed or dissolved. A criterion no module delivers is a real finding — surface it at this stage's gate (the criterion is unowned, or a module is missing) rather than inventing a pointer. Include these clauses in the drafted content presented at the gate, and write them to `docs/scope.md` alongside `architecture.md`.
+
 **Cross-stage rule.** Every Stage 4 `new module` operation requires a corresponding software-architecture entry in this stage. If the brief lists a new module under Stage 4 without a Stage 3 delta covering its software-architecture entry, surface this at the Stage 3 gate as a brief inconsistency and ask the operator to amend before drafting.
 
 **Gate:** Present the drafted architecture content, grouping runtime-view edits and software-architecture edits separately so the gate is scannable. Ask: "Confirm the architecture content, or adjust."
 
-**Write:** `docs/architecture.md` (edit in place; on greenfield, full new file).
+**Write:** `docs/architecture.md` (edit in place; on greenfield, full new file), plus any `Delivered by:` clauses in `docs/scope.md` this stage backfilled or corrected.
 
 ## Stage 4: Module and Feature Plans
 

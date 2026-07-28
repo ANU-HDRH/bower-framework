@@ -100,7 +100,7 @@ Skip only if Step 2 listed Decision impact as `none`.
    - Stay at invariant-level. Navigation map, screen inventory, layout patterns, interaction conventions — yes. Pixel coordinates, exact copy, component implementation details — no.
 2. **Feature `plan.md`** — update any that the proposal listed.
 3. **`module-status.md`** `## Module integration` `Notes:` — update if the change shifted what the module-boundary integration test must assert (rare for visual work; common when introducing a testable interaction pattern). Do not flip the marker.
-4. **`scope.md`** — only if the change shifted scope, changed non-goals, or closed a success criterion. Most UI work does not touch scope.
+4. **`scope.md`** — only if the change shifted the scope boundary, changed a non-goal, or added/removed/reworded a success criterion. Never to record a criterion as met: criteria carry no status. Most UI work does not touch scope at all.
 
 `Next move:` is a literal slash command:
 

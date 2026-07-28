@@ -44,6 +44,29 @@ This is a shape rule, not a full template: the constitution's headings are other
 
 **Documentation style:** design layer is narrative and explains *why*; operational layer is terse bullets and tables. Write for future-you in 6 months. Update docs as part of implementation, not after.
 
+## scope.md — Boundary, Not Tracker
+
+`scope.md` answers *what is this project trying to be, right now* — three sections: current scope, current non-goals, and success criteria. It is a **present-state** doc: it is edited in place when the boundary moves, and it carries no history. A criterion the project has abandoned is **deleted outright**, not struck through and not annotated as withdrawn — `problem-space.md`, ADRs, and git hold history; scope holds the boundary.
+
+**Success criteria carry no achievement state.** Each criterion is a statement of what must be true, followed by a `Delivered by:` clause naming the module or modules responsible:
+
+```markdown
+## Success criteria
+
+- Ingested documents are searchable within 60 seconds of upload.
+  *Delivered by: ingest, search*
+- An operator can reconstruct why any given record was rejected.
+  *Delivered by: audit*
+```
+
+No status column, no marker, no met/unmet field. Whether a criterion is *achieved* is derived: it holds when the modules named in its `Delivered by:` clause are complete (every feature ✓ **and** the `## Module integration` marker ✓). `/b-recap` computes and reports this; nothing writes it down.
+
+Two reasons the state does not live here. First, **no command rewrites this file wholesale** — `/b-feature`, `/b-module`, `/b-integration`, and `/b-ui` each patch `scope.md` conditionally, seeing only their own change, so a stored status column is write-rarely and never-audited, and drifts silently while sitting on the orientation read-path of nearly every command. Second, the status marker vocabulary (`✓ 🚧 ⏸ …`) describes *build progress*, which is a property of features and modules; applied to a criterion it is a category error — a criterion is not "paused."
+
+The `Delivered by:` pointer stops at the **module**. It does not name features or components. Scope states what must be true and who owns making it true; how the work is actually decomposed drifts between features as dependencies resolve, and scope should not track that drift.
+
+**The general rule this follows:** *state has exactly one home, and a document may only hold state that some command rewrites wholesale.* Conditional patching of the same fact from several commands always drifts. Everything else references the home, or derives from it at read time.
+
 ## status.md — Resumption Framing
 
 `status.md` answers one question: *if I picked this up tomorrow, what's the state and what's the next move?* Current state in a short paragraph or bullets; next move explicit (a literal slash command); open issues only if they affect resumption. No history, no changelog, no solved-issue residue. Bug backlog belongs in the external tracker, not here. Budget ~150 words — over budget is a signal to compress, not to split.

@@ -9,7 +9,7 @@ You do **not** write files. You do **not** commit. You do **not** call `AskUserQ
 Read these and only these, and only if they exist:
 
 1. `docs/index.md` — project-level structure and module status markers. Also note a leading `🌱 Adoption in progress` banner if present: the project is in the **adoption phase**, which changes how `🚧` features and the next action are read (see below).
-2. `docs/scope.md` — current scope and success-criteria state (met/unmet)
+2. `docs/scope.md` — current scope, non-goals, and the success criteria with their `Delivered by:` module clauses. The criteria carry **no** stored status; you derive it (see *Success criteria* below).
 3. `docs/modules/**/module-status.md` — `## Build order` and `## Module integration` state for each module
 4. `docs/modules/**/<feature>/status.md` — only for features currently at 🚧, 🟡, 🔴, or 🔧 (skip ✓ and ⏸). **A `🚧` feature with no `status.md` is an adopted-but-unverified feature, not an in-progress one** (adoption marks features as-built `🚧` and deliberately writes no `status.md`). Do not treat the missing file as an error or an omission — there is simply no session state to summarise; report it under *Adopted (unverified)*, not *Currently in progress*.
 5. `docs/modules/**/review-plan.md` — only check for existence; if present, a `/b-review` left reconciliation owed. Read its `## Reconciliations` checklist to count done/total. Do not read it for any other purpose — it is a transient work list, not project state.
@@ -27,12 +27,16 @@ From those inputs, compose:
 - **Currently in progress** — any feature at 🚧 **that has a `status.md`**, with a one-line state from it. In the adoption phase, features at `🚧` with no `status.md` are *not* in progress — they belong under *Adopted (unverified)*.
 - **Adopted (unverified)** — adoption-phase only: features at `🚧` with no `status.md` (as-built from existing code, not yet verified to the `✓` bar). List per module, or a one-line count if many. Omit this section when not in the adoption phase.
 - **Degraded or blocked** — any feature at 🟡, 🔴, or 🔧 with the reason
+- **Success criteria** — derived, never read from `scope.md`. A criterion is **satisfied** when every module named in its `*Delivered by:*` clause is complete: all features ✓ **and** the `## Module integration` marker ✓. Otherwise it is outstanding, and you name the modules holding it up. Report the count (`N of M satisfied`) and list the outstanding ones with their blocking modules. Three edge cases, all reported rather than guessed at:
+  - A criterion with **no `Delivered by:` clause** (pre-v0.24 scope, or one the design left open) is *underivable* — list it as such, do not infer a module from the wording, and do not count it as satisfied.
+  - A clause naming a module that **does not exist** under `docs/modules/` is a stale pointer — list it as such. It usually means a module was renamed or dissolved without `scope.md` being re-pointed.
+  - During the adoption phase, `🚧` as-built features are not ✓, so criteria will read outstanding. That is correct — adopted code is unverified — but say so in one clause so it isn't read as missing work.
 - **Recommended next action** — derived from build order *and* module-integration state. Always emitted as a literal slash command (or the explicit `(none — ...)` form), never as prose:
   - **Adoption phase takes precedence:** if the `🌱` banner is present, the next move is to drain the ledger, not to build — adopted features already exist in code. Emit the ledger as the next action: `Drain docs/adoption-ledger.md (N open) — per item: /b-adr (resolve), /b-feature or /b-design (remediate), or delete the line (dismiss); remove the banner when empty.` Do not recommend `/b-feature <name>` merely because features sit at `🚧` — that `🚧` is as-built, not in-progress.
   - If a module has features in 🚧 **with a `status.md`** (genuine in-progress work), continue via `/b-feature <name>`.
   - Else, if a module has all features ✓ but its `## Module integration` `Test:` marker is ⏸ or 🚧, recommend `/b-integration <module>` — this is the residual case the rule was designed for.
   - Else, the first ⏸ feature in the first not-yet-complete module's build order. Recommend `/b-module <module>` if remaining features are few and unambiguous, else `/b-feature <feature>`.
-  - If everything is ✓ (features and module integration) and success criteria in `scope.md` are met, emit `(none — project complete)`.
+  - If everything is ✓ (features and module integration) and every success criterion derives as satisfied, emit `(none — project complete)`. An underivable or stale-pointer criterion blocks this: emit `Reconcile docs/scope.md — <N> success criteria have no resolvable Delivered by: module` instead, since the project cannot be declared complete against criteria nothing owns.
 - **Module integration state** — list any module where features are ✓ but the integration marker is ⏸/🚧/🟡/🔴, with the marker shown
 - **Open review plans** — any module with a `review-plan.md`, shown as reconciliations done/total, with `Run /b-review <module>` to continue. An open plan means a prior review left reconciliation owed
 - **Awaiting manual verification** — any feature whose `status.md` contains a `Pending verification:` line, with the checks listed
@@ -60,6 +64,10 @@ Adopted (unverified):                          (adoption phase only; omit otherw
 
 Degraded / blocked:
   - (none) | <module>/<feature> — <reason>
+
+Success criteria: <N> of <M> satisfied
+  - outstanding: <criterion, abbreviated> — blocked on <module> (🚧)
+  - unresolvable: <criterion, abbreviated> — no Delivered by: module   (omit line if none)
 
 Module integration:
   - (none pending) | <module> — Test: <path or "not yet defined"> <marker>

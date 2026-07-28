@@ -53,7 +53,7 @@ problem-space.md: <description of edit, or "no change">
 scope.md: <description of edit, or "no change">
 ```
 
-Problem-space.md edits should be rare on revisions — it is framing history. Scope.md edits are more common (a change may shift what's in scope or close a success criterion).
+Problem-space.md edits should be rare on revisions — it is framing history. Scope.md edits are more common (a change may shift what's in scope, change a non-goal, or add/remove/reword a success criterion or re-point its `Delivered by:` module clause). Never propose marking a criterion as met — criteria carry no status; achievement is derived from module completion by `/b-recap`.
 
 ### `## Stage 2 — Decisions`
 

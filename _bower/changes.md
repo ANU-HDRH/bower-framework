@@ -6,6 +6,79 @@ This file is the changelog for the *framework itself* — not for projects built
 
 ---
 
+## v0.24 — 2026-07-28
+
+### Success criteria stop carrying status — scope states the boundary, modules track the work
+
+Observed on a real project: `docs/scope.md` held a success-criteria table with a status column, and an agent reading it found all ten criteria marked *paused* when seven were in fact complete. The stored status was not merely stale — it had never been maintained, and its vocabulary was borrowed from a doc it had nothing to do with.
+
+Two distinct defects, and both are structural rather than a one-off agent error.
+
+**1. State with no wholesale writer.** Four commands patched criteria status — `/b-feature` step 8, `/b-module` step 11, `/b-integration`, `/b-ui` — and every one of them was *conditional* and *local*: each saw only its own change and asked "did I close a criterion?" Nothing ever read the whole set and reconciled it against module state. Write-rarely plus never-audited guarantees drift. Compare `status.md`, which stays honest precisely because `/b-feature` rewrites it from scratch every reconcile, and the index files, which stay honest because `/b-index` recomputes their derived rows. And this particular drift was load-bearing: `scope.md` sits on the orientation read-path of `/b-feature`, `/b-module`, `/b-integration`, `bower-analyst`, and `/b-recap`, so a criterion wrongly reading unmet makes an agent plan work that already exists, and one wrongly reading met hides work.
+
+**2. An undefined state vocabulary invited a leak.** The framework said criteria carried "met/unmet state" and never defined the values. Given a status column with no defined domain, drafting agents reached for the one marker set they did have — the build-order markers — and wrote `⏸ planned`. A criterion cannot be paused: build progress is a property of features and modules, not of a statement about the world. The category error was available because the framework left the field's domain open.
+
+**The fix is to derive, not to maintain.** A criterion is met exactly when the work that delivers it is done, and that work's state already lives under `docs/modules/` under full-rewrite discipline. So `scope.md` now states each criterion followed by a `*Delivered by: <module>[, <module>]*` clause and **no status field of any kind**; `/b-recap` derives satisfaction at read time (all features ✓ **and** the `## Module integration` marker ✓ for every named module) and reports `N of M satisfied` with the blocking modules for the rest.
+
+**The pointer stops at the module, deliberately.** It does not name features or components. Work drifts between features as dependencies resolve live — that is normal and healthy — and a criterion pinned to a feature would need re-pointing every time scope moved between siblings, reintroducing exactly the maintenance burden this change removes. Scope says what must be true and who owns making it true; the module tree owns how.
+
+**Withdrawn criteria are deleted, not annotated.** `scope.md` is present-state: it describes the boundary of what is being built now. History lives in `problem-space.md`, ADRs, and git. A struck-through criterion with a withdrawal note is history wearing scope's clothes.
+
+**What changed**
+
+- **`_bower/framework-reference.md`** — new `## scope.md — Boundary, Not Tracker` section: the three-section shape, the criterion + `Delivered by:` form with a worked example, the explicit no-status-column rule, why the pointer stops at the module, and the general rule the change follows — *state has exactly one home, and a document may only hold state that some command rewrites wholesale.*
+- **`_bower/framework.md`** — the *Current boundary* navigation line now carries the rule in the always-loaded router, since ad-hoc work outside `/b-*` commands is where a status column would otherwise be reinvented. The *What to Update When* table's `Scope shift / criterion closed` row is renamed to `Scope boundary shift (incl. criterion added/deleted/reworded/re-pointed)` — "criterion closed" is no longer a `scope.md` write reason.
+- **`_bower/brief-schema.md`** — the Stage 1 guidance no longer offers "close a success criterion" as a scope edit; briefs may propose boundary edits (scope, non-goals, criterion add/remove/reword/re-point) but never marking a criterion met.
+- **`_bower/rationale.md`** — *Scope as Current State* revised; new *State Has One Home* subsection recording both the wholesale-writer rule and the undefined-vocabulary-invites-a-leak lesson.
+- **`.claude/commands/b-design.md`** — Stage 1 drafts criteria with `Delivered by:` clauses and no status. Stage 3 gains a cross-stage rule: once modules are named, every criterion must point at an existing one; backfill clauses Stage 1 left open, re-point any the stage renamed or dissolved, and surface an unowned criterion at the gate rather than inventing a pointer. Stage 3's write set now includes those `scope.md` clauses.
+- **`.claude/commands/b-recap.md`** — new derived **Success criteria** section, an output-shape block for it, and a completion rule that refuses `(none — project complete)` while any criterion is unresolvable. Handles three edge cases explicitly: a criterion with no clause (underivable — report, never infer a module from the wording), a clause naming a module that no longer exists (stale pointer), and the adoption phase (as-built `🚧` is not ✓, so criteria correctly read outstanding).
+- **`.claude/commands/b-feature.md`, `b-module.md`, `b-integration.md`, `b-ui.md`** — the four "update `scope.md` if a criterion is met" instructions are gone. Each now writes `scope.md` only when the *boundary* moves: scope changed, a non-goal changed, or a criterion added, deleted, reworded, or re-pointed. Orientation reads are re-scoped to match. The `b-module`/`b-integration` handoff option `(none — all modules ✓ and scope criteria met)` becomes `(none — all modules ✓; project completion is /b-recap's call, which derives success-criteria satisfaction)` — neither command derives criteria, so neither may claim them met.
+- **`.claude/commands/b-adopt.md`** — reconstructed criteria get `Delivered by:` clauses from the modules reconstructed in the prior step and no status field; the `scope.md` schema-compatibility test for the required-anchor gate is updated to match.
+
+**Why not just fix the write path**
+
+Making every command recompute the full criteria table on every reconcile was the alternative. It costs a full module-tree read on changes that have nothing to do with scope, and it still leaves the same fact stored in two places and able to disagree. Deriving in the one command whose whole job is orientation costs nothing extra — `/b-recap` already reads every `module-status.md`.
+
+### Migration
+
+Two steps. The first is mechanical. The second is judgement-required and should be done with the user in the room, because it involves deleting content from a co-authored doc and inferring ownership the old file did not record.
+
+**1. Re-scaffold.** Run the scaffold script over the project to pick up the updated `_bower/framework.md`, `_bower/framework-reference.md`, `_bower/rationale.md`, `_bower/brief-schema.md`, `.claude/commands/b-design.md`, `.claude/commands/b-recap.md`, `.claude/commands/b-feature.md`, `.claude/commands/b-module.md`, `.claude/commands/b-integration.md`, `.claude/commands/b-ui.md`, and `.claude/commands/b-adopt.md`. No project content is touched by this step.
+
+**2. Convert `docs/scope.md`'s success criteria — judgement required.**
+
+If the project has no `docs/scope.md`, or it has no success-criteria section, there is nothing to do — skip to the end.
+
+Read `docs/scope.md`. Locate the success-criteria section, in whatever form it takes — commonly a table with a Status or State column, sometimes a bulleted list with `✓`/`⏸` markers or "met"/"unmet" annotations.
+
+**Do not read the existing status values as evidence of anything.** They are the defect this version removes; on the project that prompted the change, seven of ten were wrong. Do not carry them forward, do not use them to decide which criteria to keep, and do not use them to cross-check your work in the next step.
+
+Then, for each criterion:
+
+- **Determine the responsible module(s).** List the directories under `docs/modules/`. For each criterion, read enough to decide which module owns making it true: each module's `module-status.md` (its `## Module integration` notes and `## Build order` name the features it contains) and, where the module's purpose is not obvious from that, the `## Software architecture` section of `docs/architecture.md`, which states each module's purpose and data-concern boundary in one place. Most criteria map to one module; some genuinely span two or three, and listing several is correct — list every module whose completion the criterion depends on, since `/b-recap` requires all of them to be complete before it reports the criterion satisfied. **Do not name features or components** — the pointer stops at the module by design.
+- **If no module delivers it**, do not guess. Collect these and raise them with the user at the end (see below).
+
+Rewrite the section in the new form: each criterion as a statement of what must be true, followed on the next line by an italic `*Delivered by: <module>[, <module>]*` clause. Drop the Status column, the markers, and any met/unmet annotation entirely. If the criteria were a table, a bulleted list is usually the better target form, since a table with one content column is just a list. For example:
+
+```markdown
+## Success criteria
+
+- Ingested documents are searchable within 60 seconds of upload.
+  *Delivered by: ingest, search*
+- An operator can reconstruct why any given record was rejected.
+  *Delivered by: audit*
+```
+
+Leave the `## Current scope` and `## Non-goals` sections alone; this migration touches only the criteria.
+
+**Then bring the user one list before writing anything**, since this is a co-authored doc and the mapping is inferred:
+
+- The proposed `Delivered by:` clause for each criterion, with a few words on why that module. Flag any you were unsure about.
+- Any criterion **no module delivers**. Each is one of three things and the user decides which: the criterion is genuinely abandoned and should be **deleted** (scope is present-state — delete it outright, do not strike it through or annotate it as withdrawn); a module is **missing** from the design, which is a real finding and probably wants `/b-design`; or the criterion is worded at the wrong level and should be **reworded** to something a module can own.
+- Any criterion the user wants deleted for other reasons — this is a natural moment to ask whether the stated criteria still reflect what the project is trying to be.
+
+Write the file only after the user confirms. Then run `/b-recap` and check the new **Success criteria** line against the user's own sense of where the project is: this migration's whole purpose is that the derived number is trustworthy, so a surprising count means either a `Delivered by:` clause is pointing at the wrong module or a module's status markers are themselves stale — worth resolving now rather than discovering later.
+
 ## v0.23 — 2026-07-27
 
 ### Constitution truthfulness — normative shape, flag-don't-fix, consent gate

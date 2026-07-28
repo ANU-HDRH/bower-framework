@@ -75,7 +75,15 @@ Audience drives style. A narrative `status.md` wastes the agent's context window
 
 ### Scope as Current State
 
-`docs/scope.md` is a *present-state* document: what's in scope now, what's been explicitly deferred, which success criteria are met or unmet. It is deliberately distinct from `problem-space.md`, which is framing history — frozen at Stage 1 of full design, capturing the problem as originally understood. When reality shifts, `scope.md` is updated in place; `problem-space.md` stays as the Day-1 snapshot. Keeping the two apart prevents either from doing the other's job badly.
+`docs/scope.md` is a *present-state* document: what's in scope now, what's explicitly a non-goal, and what has to be true for the project to have succeeded. It is deliberately distinct from `problem-space.md`, which is framing history — frozen at Stage 1 of full design, capturing the problem as originally understood. When reality shifts, `scope.md` is updated in place; `problem-space.md` stays as the Day-1 snapshot. Keeping the two apart prevents either from doing the other's job badly. Because it is present-state, an abandoned criterion is deleted rather than annotated: history lives in `problem-space.md`, ADRs, and git.
+
+Scope states criteria; it does not track their achievement. Each criterion points at the module or modules responsible, and whether it has been met is derived from those modules' completion state at read time by `/b-recap`. Through v0.23 `scope.md` carried a stored met/unmet field, and it drifted badly in practice — the reasons generalise into a rule the framework now applies everywhere.
+
+### State Has One Home
+
+**A document may only hold state that some command rewrites wholesale.** `status.md` stays honest because `/b-feature`'s reconcile rewrites it from scratch every time; the index files stay honest because `/b-index` recomputes their derived rows. Success-criteria state had no such owner — four commands patched it *conditionally*, each seeing only its own change and asking "did I close one?", and nothing ever read the whole set and reconciled it against reality. Write-rarely plus never-audited is a guarantee of drift, and this particular drift sat on the orientation read-path of nearly every command: a criterion wrongly reading unmet makes an agent plan work that already exists, and wrongly reading met hides work.
+
+The second failure was subtler and is worth naming because it recurs. The framework said criteria carried "met/unmet state" but never defined the vocabulary, so drafting agents reached for the one marker set they *did* have — the build-order markers — and wrote criteria as `⏸ planned`. A criterion cannot be paused; build progress is a property of features and modules, not of a statement about the world. Leaving a state field's domain undefined is an invitation for a neighbouring vocabulary to leak in, and the leak reads as legitimate because the symbols are familiar. Where state is genuinely needed, define its values; where it can be derived, derive it.
 
 ### ADRs as Decision Log
 

@@ -28,7 +28,7 @@ If any of these fail, stop and recommend the user run `/b-feature` instead, feat
 Batch all independent reads — issue them together, not one per turn.
 
 1. Read `docs/architecture.md` for system context
-2. Read `docs/scope.md` — current scope and any unmet success criteria this module should close
+2. Read `docs/scope.md` — current scope, non-goals, and any success criteria whose `Delivered by:` clause names this module (those are the criteria this build is responsible for)
 3. Read the target module's `module-status.md` — integration notes and build order
 4. Read `docs/constitution.md` for testing conventions
 5. Read any `plan.md` / `status.md` that already exist in this module (e.g. from partial prior work)
@@ -48,7 +48,7 @@ Prepare a combined proposal covering **all features in the module's build order*
 Then, at the module level:
 
 - **Integration test** — what test exercises the module boundary (per the integration notes in `module-status.md`)
-- **Scope impact** — which `scope.md` success criteria this module closes, if any
+- **Scope impact** — whether this build moves the scope boundary, changes a non-goal, or reveals that a success criterion is missing, wrongly worded, or points at the wrong module. Name the criteria this module is responsible for (those naming it under `Delivered by:`) as context for the plan, but do not treat satisfying them as a `scope.md` edit — criteria carry no status
 - **Decision impact** — list any accepted ADR loaded in Step 1 that this module's build *touches*: confirms, contradicts (must supersede), narrows (partial-supersession ADR), or surfaces as drifted. Note any new cross-cutting decision the module introduces that needs an ADR.
 - **What you won't touch** — explicitly note adjacent areas left alone
 
@@ -105,7 +105,7 @@ Skip only if no Decision impact was identified at the gate. If the user rejects 
 ## Step 5: Finalise
 
 10. Update integration notes in `module-status.md` `## Module integration` `Notes:` if behaviour differs from Stage 4's assumptions. Confirm the `Test:` marker reflects the real outcome of Step 3.9.
-11. Update `scope.md` if any success criterion is now met. Only count criteria whose manual checks have passed.
+11. Update `scope.md` only if the build moved the scope boundary, changed a non-goal, or requires a criterion to be added, deleted, reworded, or re-pointed at a different module. Do **not** mark criteria as met — they carry no status, and `/b-recap` derives achievement from module completion.
 12. Run `/b-index` or update `docs/index.md` so module-level status reflects reality.
 
 ## Step 6: Handoff
@@ -122,7 +122,7 @@ Next move:
     Run /b-feature <name>                      (next ⏸ feature, if next module is exploratory)
     Run /b-integration <module>         (re-run after fixing PENDING USER items)
     Run /b-recap                               (orient before deciding)
-    (none — all modules ✓ and scope criteria met)
+    (none — all modules ✓; project completion is /b-recap's call, which derives success-criteria satisfaction)
 ```
 
 Pick exactly one recommended next command. Mention at most one alternative on a second line. `/b-review` is optional — if the module completed cleanly and the project is small, the operator may reasonably skip it; name it so it's one keystroke away, but don't force it ahead of the next module's build.
