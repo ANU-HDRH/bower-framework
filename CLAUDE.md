@@ -5,7 +5,8 @@
 ## What this means in practice
 
 - **Do not invoke `/b-*` skills on this repo.** `/b-design`, `/b-feature`, `/b-module`, `/b-integration`, `/b-adr`, `/b-recap`, `/b-analysis`, `/b-index`, `/b-spec` are all designed for *Bower projects*. This repo has no `docs/modules/`, no `docs/architecture.md`, no `docs/scope.md` — running them here is meaningless. Edit framework files directly instead.
-- **Every framework change gets a `_bower/changes.md` entry.** Prepend a new versioned section (most recent first) describing what changed, why, and any migration notes for projects already on a previous version. Bump the version in **both** `_bower/VERSION` (the canonical source, read by tooling) **and** `_bower/framework.md`'s top heading (a human-visible label) at the same time.
+- **Every framework change gets a `_bower/changes.md` entry.** Prepend a new versioned section (most recent first) describing what changed, why, and any migration notes for projects already on a previous version, **and** add a row to the `## Version index` table at the top of the file (version, date, one-line summary, migration class: `none` / `mechanical` / `judgement`).
+- **The version string lives in four places — bump all four in the same commit.** In order of authority: `_bower/VERSION` (canonical, read by the scaffold script, `/b-upgrade`, and `scripts/release.sh` — unprefixed, e.g. `0.25`), `_bower/framework.md`'s top heading, `README.md`'s top heading, and the new `_bower/changes.md` section heading. The last three are human-visible labels that nothing reads, which is exactly why they get forgotten — `README.md`'s especially, since it is otherwise untouched by most framework changes. Check all four before committing: `grep -rn 'v0\.[0-9]*' README.md _bower/framework.md | head -2` and `cat _bower/VERSION`.
 - **The project-facing CLAUDE.md is a template, not the live one.** This file (the root `CLAUDE.md`) is contributor-only. The template that projects receive lives at `_bower/project-CLAUDE.md`; it `@`-includes `_bower/framework.md`. When you change framework guidance, edit `_bower/framework.md` — projects pick up the change by re-running the scaffold script over their `_bower/` directory.
 
 ## Migration-notes authoring discipline
@@ -21,12 +22,27 @@ Write notes under a `### Migration` subheading inside the version's section. Rul
 - **List file references inline.** Migration notes that say "read the schema in `_bower/brief-schema.md`" are fine — that file is now in the project after scaffold. Migration notes that reference files only in the framework repo (not scaffolded) need to inline the content.
 - **Discuss with the user when uncertain.** If a change has subtle migration implications you're not sure about, ask the user before settling on the notes. A bad migration note compounds across every project that runs `/b-upgrade` after this version.
 
-The historical entries (v0.8 through v0.12) use `**Migration notes**` bold paragraphs rather than `### Migration` subheadings; the skill is forgiving about that. Going forward, use the subheading form.
+The historical entries (v0.8 through v0.12, now in `docs/changes-archive.md`) use `**Migration notes**` bold paragraphs rather than `### Migration` subheadings; the skill is forgiving about that. Going forward, use the subheading form.
+
+## Archiving old changelog entries
+
+`_bower/changes.md` is scaffolded into every project and read by `/b-upgrade`, so it cannot grow without bound. v0.8–v0.19 were archived to `docs/changes-archive.md` in v0.25; the head file carries v0.20 onward.
+
+When to archive again: when `_bower/changes.md` passes roughly 500 lines *and* there is a version that marks a genuine architectural break — a release after which the earlier entries describe surfaces that no longer exist. Both conditions matter; size alone is not a reason to cut, because a mid-era cut splits entries that still explain the current design. Discuss the cut point with the user rather than picking one unilaterally.
+
+How to archive:
+
+- **Move entries verbatim.** Cut and paste; do not reword, summarise, or compact. An archived migration note's value is being the exact instruction a past upgrade followed — a project on an old version upgrading today needs the note as written. Compaction risks silently changing what an upgrade does.
+- **Archive into `docs/`, never `_bower/`.** The scaffold copies all of `_bower/`, so an archive there would defeat the purpose. `docs/` is not scaffolded, and `/b-upgrade` clones this repo anyway, so archived notes stay reachable at `<clone>/docs/changes-archive.md`.
+- **Keep both index tables accurate.** Each file has a `## Version index` covering only its own entries. Move the corresponding rows along with the bodies.
+- **Update the boundary version in `.claude/commands/b-upgrade.md`.** Step 3.5 and Step 6a name the version at which entries move to the archive (currently v0.19/v0.20). A stale boundary sends the skill looking in the wrong file.
+- **Do not reuse `changes-archive.md`'s name for a second cut** without deciding whether older archives merge into it or get their own file. Merging into the one file is simpler and preferred; if you do that, `/b-upgrade` needs no new path, only the boundary version updated.
 
 ## Framework reference (read these before changing framework behaviour)
 
 - `_bower/rationale.md` — **Why Bower works the way it does.** Design principles, comparisons to alternatives, and the reasoning behind structural choices. Consult before changing framework behaviour so the change stays coherent with the design.
-- `_bower/changes.md` — **Versioned log of framework changes.** Most recent first. Append a new entry for every framework change in the same commit.
+- `_bower/changes.md` — **Versioned log of framework changes**, v0.20 onward. Most recent first, behind a `## Version index` table. Prepend a new entry (and an index row) for every framework change in the same commit. This file is scaffolded into every project and read by `/b-upgrade`, so its size has a real cost — see the archiving convention below.
+- `docs/changes-archive.md` — **Archived changelog entries, v0.8–v0.19**, verbatim. Not scaffolded into projects; `/b-upgrade` reads it from its clone when a project is upgrading from a pre-v0.20 version. Historical reference only — never add new entries here.
 - `_bower/roadmap.md` — **Deferred improvements and their revisit triggers.** Check before proposing new framework work (it may already be deferred with a stated reason); update when deferring something new.
 - `_bower/brief-schema.md` — **Schema the `bower-analyst` subagent emits** and `/b-design` Stage 0 consumes. Touch alongside any change to the analyst, the brief format, or Stage 0.
 - `_bower/framework.md` — **The project-facing router** that gets `@`-included into a Bower project's CLAUDE.md (always loaded, keep it lean). Edit this when changing how Bower projects are *used*, as opposed to how the framework itself is *built*.
@@ -44,7 +60,7 @@ _bower/
 ├── project-CLAUDE.md      # Template seeded into new projects' CLAUDE.md
 ├── project-settings.json  # Template seeded into new projects' .claude/settings.json
 ├── rationale.md           # Design principles (above)
-├── changes.md             # Version log (above)
+├── changes.md             # Version log, v0.20 onward (above)
 ├── roadmap.md             # Deferred work (above)
 ├── brief-schema.md        # Change-brief schema (above)
 ├── review-schema.md       # Review-report schema
@@ -57,6 +73,7 @@ scripts/
 ├── scaffold.ps1           # PowerShell equivalent for Windows
 └── release.sh             # Cuts a GitHub release from the current _bower/VERSION section
 docs/                      # Material for the README / external readers (not a Bower project's docs/)
+└── changes-archive.md     # Archived changelog entries v0.8–v0.19; not scaffolded
 ```
 
 ## Scaffolding a project from this repo

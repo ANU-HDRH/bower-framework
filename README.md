@@ -1,4 +1,4 @@
-# Bower Framework v0.24
+# Bower Framework v0.25
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -121,7 +121,7 @@ It clones from the URL in `_bower/SOURCE`, so forks just work: scaffold from you
 ## Where the detail lives
 
 - [`_bower/rationale.md`](_bower/rationale.md): why Bower works the way it does
-- [`_bower/changes.md`](_bower/changes.md): versioned log of framework changes
+- [`_bower/changes.md`](_bower/changes.md): versioned log of framework changes (v0.20 onward; earlier entries are archived verbatim in [`docs/changes-archive.md`](docs/changes-archive.md))
 - [`_bower/roadmap.md`](_bower/roadmap.md): deferred improvements and their triggers
 - [`_bower/framework-reference.md`](_bower/framework-reference.md): document schemas and detailed specs
 

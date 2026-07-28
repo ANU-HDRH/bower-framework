@@ -21,7 +21,7 @@ The user's optional argument: $ARGUMENTS
 ## Step 1: Preconditions
 
 1. Run `git status --porcelain`. If the output is non-empty, stop. Tell the user the upgrade requires a clean working tree (so `git reset --hard` remains a valid escape) and recommend `git stash` or a commit. Do not proceed.
-2. Read `_bower/VERSION` from the project. If the file is missing, the project predates the VERSION convention — use AskUserQuestion to ask the user what version their project is currently on (offer the versions listed in `_bower/changes.md` once you've read it in Step 3). Stop and wait for their answer before proceeding.
+2. Read `_bower/VERSION` from the project. If the file is missing, the project predates the VERSION convention — use AskUserQuestion to ask the user what version their project is currently on (offer the versions from the heading lists you gather in Step 3 — those cover both the current-era changelog and the archive). Stop and wait for their answer before proceeding.
 3. Read `_bower/SOURCE` from the project for the framework repo URL. If missing, use AskUserQuestion to ask the user for the framework repo URL (default suggestion: `https://github.com/ANU-HDRH/bower-framework.git`).
 
 ## Step 2: Clone the framework
@@ -39,12 +39,19 @@ If the clone fails (network, auth, bad URL), surface the error to the user and s
 ## Step 3: Determine the upgrade plan
 
 1. Read `<clone>/_bower/VERSION` — this is the new version.
-2. Read `<clone>/_bower/changes.md` — this is the source of truth for migration notes.
+2. List the version headings — **do not read `changes.md` whole.** It is the source of truth for migration notes, but you only need the heading list at this point, and you will read individual sections one at a time in Step 6:
+
+   ```
+   grep -n '^## v[0-9]' <clone>/_bower/changes.md
+   ```
+
+   This gives each version and its starting line number. Keep the line numbers — Step 6a uses them to read exactly one version's section.
 3. Compare:
    - If `new == old`: tell the user "Already at v<old>" and stop. Clean up the temp dir.
    - If `new < old` (project is newer than framework remote — possible if the user is on a fork or a dev branch): stop with a confused message; do not proceed.
    - If `new > old`: continue.
-4. Parse `changes.md` for the ordered list of `## vX.Y` headings strictly above `old` and up to and including `new`. This is the list of migration steps. E.g. project at v0.10, framework at v0.13 → steps = [0.11, 0.12, 0.13].
+4. From the heading list, take the ordered `vX.Y` versions strictly above `old` and up to and including `new`. This is the list of migration steps. E.g. project at v0.10, framework at v0.13 → steps = [0.11, 0.12, 0.13].
+5. **If any step version is absent from the heading list, it is archived.** Versions at or below v0.19 live in `<clone>/docs/changes-archive.md`, which is not scaffolded into projects. Run `grep -n '^## v[0-9]' <clone>/docs/changes-archive.md` to get its heading list too, and note for each step which of the two files carries it. If a step version appears in neither file, stop and tell the user — the version is unaccounted for and guessing at its migration is worse than not upgrading.
 
 ## Step 4: Decide commit cadence (only if multi-step)
 
@@ -78,7 +85,12 @@ For each version in the step list, in order, oldest first:
 
 ### 6a. Extract migration notes for this version
 
-Open the project's now-updated `_bower/changes.md`. Find the `## v<X.Y>` heading. Read everything under it up to the next `## v` heading. This is the version's full entry — what changed, why, and the migration notes.
+Read **only this version's section** — not the whole changelog. Use the heading line numbers from Step 3: the section runs from this version's `## v<X.Y>` line to the line before the next `## v<X.Y>` heading. For the oldest entry in a file, it runs to the `## Earlier versions` pointer if the file has one, otherwise to end of file. Read that range with the Read tool's `offset` and `limit`:
+
+- **Current-era versions (v0.20 and above)** are in the project's now-updated `_bower/changes.md`.
+- **Archived versions (v0.19 and below)** are in `<clone>/docs/changes-archive.md`, which the scaffold does not copy into projects. Read them from the clone. The project's `_bower/changes.md` carries a version index covering them, but not their bodies.
+
+Either way the result is the version's full entry — what changed, why, and the migration notes. Reading one section at a time is deliberate: it keeps the migration you're applying the only one in context, and it means the changelog's total size never bounds an upgrade.
 
 Identify the migration content within that entry. Contributors write it under a `### Migration` subheading or a `**Migration notes**` bold paragraph (older entries). If the section is absent, "none", or describes no project-side work, treat the step as a no-op — just bump VERSION (and optionally commit) and continue.
 

@@ -44,7 +44,7 @@ DATE=$(sed -n "${START_LINE}p" "$CHANGES_FILE" | sed -E "s/^## v${VERSION} — /
 TITLE="v$VERSION — $DATE"
 
 # Find the next "## v" heading after START_LINE, or fall through to EOF
-REL_NEXT=$(tail -n +$((START_LINE + 1)) "$CHANGES_FILE" | grep -n "^## v" | head -1 | cut -d: -f1 || true)
+REL_NEXT=$(tail -n +$((START_LINE + 1)) "$CHANGES_FILE" | grep -n "^## v[0-9]" | head -1 | cut -d: -f1 || true)
 if [[ -n "$REL_NEXT" ]]; then
   END_LINE=$((START_LINE + REL_NEXT - 1))
 else
