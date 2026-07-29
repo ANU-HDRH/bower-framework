@@ -68,6 +68,7 @@ ADRs record **cross-cutting commitments** — decisions that constrain more than
 - **The architectural guard is hard.** Changes to architecture, module structure, or scope — including UI work that swaps frameworks, navigation patterns, or state management — are never made ad-hoc, even on user instruction. Name what makes the change architectural and redirect to `/b-design`. This gate is the reason a project adopts Bower; honouring it is the framework's job. (Rationale: `_bower/rationale.md`, "Holding the Line on Architecture.")
 - **Testing:** e2e for pipelines, integration at module boundaries, unit for complex logic; generate tests alongside implementation. Project-specific runner, fixtures, and verified-for-✓ rules live in `docs/constitution.md`.
 - **Literal-command handoffs.** Every "next move" names the exact slash command to type (`Run /b-integration foundation`), never free prose. If there is genuinely none: `(none — <reason>)`.
+- **Doc links are repo-root-based.** Write `[ADR-xxxx](/docs/adr/xxxx-yyy.md)`, never `../../../adr/…`. Targets must start with `/`, `#` or a URL scheme.
 
 ## UI Changes — Paths and the Gate
 
