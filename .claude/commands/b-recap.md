@@ -10,9 +10,9 @@ Read these and only these, and only if they exist:
 
 1. `docs/index.md` — project-level structure and module status markers. Also note a leading `🌱 Adoption in progress` banner if present: the project is in the **adoption phase**, which changes how `🚧` features and the next action are read (see below).
 2. `docs/scope.md` — current scope, non-goals, and the success criteria with their `Delivered by:` module clauses. The criteria carry **no** stored status; you derive it (see *Success criteria* below).
-3. `docs/modules/**/module-status.md` — `## Build order` and `## Module integration` state for each module
+3. `docs/modules/**/module-status.md` — `## Build order`, `## Module integration`, and `## Module review` state for each module
 4. `docs/modules/**/<feature>/status.md` — only for features currently at 🚧, 🟡, 🔴, or 🔧 (skip ✓ and ⏸). **A `🚧` feature with no `status.md` is an adopted-but-unverified feature, not an in-progress one** (adoption marks features as-built `🚧` and deliberately writes no `status.md`). Do not treat the missing file as an error or an omission — there is simply no session state to summarise; report it under *Adopted (unverified)*, not *Currently in progress*.
-5. `docs/modules/**/review-plan.md` — only check for existence; if present, a `/b-review` left reconciliation owed. Read its `## Reconciliations` checklist to count done/total. Do not read it for any other purpose — it is a transient work list, not project state.
+5. `docs/modules/**/review-plan.md` — check *existence* across all modules (one glob; you need it for every module, whatever its marker, to catch marker/plan disagreement). Read the file itself only for modules whose `Review:` marker is 🚧, to count disposed/total from its `## Findings` checklist (`[x]` and `[~]` both count as disposed) and to name the open items' commands. Do not read it for any other purpose — it is a transient work list, not project state.
 6. `docs/adoption-ledger.md` — only if the adoption banner is present. Count its open items (one bullet each) and note a couple of examples; do not otherwise read it line-by-line.
 
 If `docs/index.md` does not exist, the project has not been designed yet. Say so in one line and recommend `/b-design`. Stop.
@@ -33,12 +33,19 @@ From those inputs, compose:
   - During the adoption phase, `🚧` as-built features are not ✓, so criteria will read outstanding. That is correct — adopted code is unverified — but say so in one clause so it isn't read as missing work.
 - **Recommended next action** — derived from build order *and* module-integration state. Always emitted as a literal slash command (or the explicit `(none — ...)` form), never as prose:
   - **Adoption phase takes precedence:** if the `🌱` banner is present, the next move is to drain the ledger, not to build — adopted features already exist in code. Emit the ledger as the next action: `Drain docs/adoption-ledger.md (N open) — per item: /b-adr (resolve), /b-feature or /b-design (remediate), or delete the line (dismiss); remove the banner when empty.` Do not recommend `/b-feature <name>` merely because features sit at `🚧` — that `🚧` is as-built, not in-progress.
+  - **An open review holding a `/b-design` item outranks all build work.** If any module is `Review: 🚧` and its plan has an open `route:/b-design` finding, recommend `/b-design` — boundary erosion is the one thing the framework does not let accumulate. An open review holding only `/b-feature` items does *not* get this precedence; it competes normally below.
   - If a module has features in 🚧 **with a `status.md`** (genuine in-progress work), continue via `/b-feature <name>`.
+  - Else, if a module is `Review: 🚧`, recommend continuing the review — `/b-review <module>` to resume mediation, or the specific open command if one dominates. Finishing an open review beats starting a new module.
   - Else, if a module has all features ✓ but its `## Module integration` `Test:` marker is ⏸ or 🚧, recommend `/b-integration <module>` — this is the residual case the rule was designed for.
   - Else, the first ⏸ feature in the first not-yet-complete module's build order. Recommend `/b-module <module>` if remaining features are few and unambiguous, else `/b-feature <feature>`.
   - If everything is ✓ (features and module integration) and every success criterion derives as satisfied, emit `(none — project complete)`. An underivable or stale-pointer criterion blocks this: emit `Reconcile docs/scope.md — <N> success criteria have no resolvable Delivered by: module` instead, since the project cannot be declared complete against criteria nothing owns.
 - **Module integration state** — list any module where features are ✓ but the integration marker is ⏸/🚧/🟡/🔴, with the marker shown
-- **Open review plans** — any module with a `review-plan.md`, shown as reconciliations done/total, with `Run /b-review <module>` to continue. An open plan means a prior review left reconciliation owed
+- **Review state** — one line per module from its `## Module review` `Review:` marker. This is an **orthogonal axis**: never fold it into the module's status marker in the Progress overview, and never let it affect the success-criteria derivation — review is optional, so an unreviewed module is not thereby incomplete. Report:
+  - `🚧 in review` — with the plan's disposed/total count and the open items' commands. This **is** outstanding work; it competes for the recommended next action.
+  - `✓ reviewed <date>` — and derive staleness: compare the `(N of N features)` snapshot count against the module's current `## Build order` length. If the roster is now longer, say `stale — <k> features added since`. Never treat staleness as an error or recommend a re-review on the strength of it alone; it is information the operator acts on if they choose.
+  - `⏸ never reviewed` — for complete modules only (all features ✓ and integration ✓), since that is the point at which review becomes available and useful. Do not report `⏸` on a mid-build module; it would be noise on every line of a young project.
+  - **Missing `## Module review` section** — report as `review state not recorded` for that module, which means the project predates the section and has not run `/b-review` since. Do not infer a past review from anything else.
+  - **Marker/plan disagreement** — `🚧` with no `review-plan.md`, or a plan present under `⏸`/`✓`. Report it as a broken review state with `Run /b-review <module>` to resolve; the two are written together, so a mismatch means a run died or something was hand-edited. Do not guess which side is right.
 - **Awaiting manual verification** — any feature whose `status.md` contains a `Pending verification:` line, with the checks listed
 - **Open questions / blockers** — anything explicitly flagged in `status.md` files
 
@@ -72,8 +79,12 @@ Success criteria: <N> of <M> satisfied
 Module integration:
   - (none pending) | <module> — Test: <path or "not yet defined"> <marker>
 
-Open review plans:
-  - (none) | <module> — 2 of 5 reconciliations done — Run /b-review <module>
+Review state:
+  - <module> — 🚧 in review, 3 of 7 findings disposed — Run /b-review <module>
+  - <module> — ✓ reviewed 2026-07-12 (stale — 2 features added since)
+  - <module> — ⏸ never reviewed (complete — Run /b-review <module>)
+  - <module> — review state not recorded
+  - (nothing to report)
 
 Awaiting manual verification:
   - (none) | <module>/<feature> — <pending check>

@@ -7,3 +7,7 @@ Notes: Asserts feature-a's output is the shape feature-b consumes.
 
 1. feature-a — ✓
 2. feature-b — ✓
+
+## Module review
+
+Review: ✓ 2026-07-20 (2 of 2 features)

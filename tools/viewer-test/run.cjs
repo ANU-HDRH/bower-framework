@@ -87,6 +87,11 @@ const EXPECTED = [
   'module-status-divergence',
   'arch-feature-roster',
   'build-order-unparsed',
+  // module review state (v0.29)
+  'review-section-missing',
+  'review-open-no-plan',
+  'review-plan-not-open',
+  'review-stale',
   // scope criteria (v0.24)
   'criterion-no-owner',
   'criterion-stale-pointer',
@@ -161,8 +166,8 @@ for (const [kind, want] of [
 // ── structure the views depend on ────────────────────────────────────────────
 
 assert(
-  g.counts.modules === 5,
-  'five modules (two documented, one ghost, one undeclared, one unparseable build order)',
+  g.counts.modules === 6,
+  'six modules (two documented, one ghost, one undeclared, one unparseable build order, one stale-reviewed)',
   `got ${g.counts.modules}`,
 );
 assert(g.schema.match === true, 'fixture is on the schema version the viewer parses', JSON.stringify(g.schema));
@@ -195,6 +200,50 @@ assert(
 );
 const boldorder = g.modules.find((m) => m.name === 'boldorder');
 assert(boldorder.buildOrder.length === 0, 'nothing half-parsed leaks into the roster', `got ${boldorder.buildOrder.length}`);
+
+// v0.29 module review state. The marker and review-plan.md are two sides of one
+// fact — /b-review writes them together — so a disagreement is mechanically
+// detectable, which is the whole reason the redundancy exists.
+const rvOf = (n) => (g.modules.find((m) => m.name === n) || {}).review;
+assert(rvOf('clean').marker === '✓', 'a closed review is read from the marker', JSON.stringify(rvOf('clean')));
+assert(rvOf('clean').date === '2026-07-20', 'the review date is extracted', rvOf('clean').date);
+assert(rvOf('clean').featureCount === 2, 'the roster snapshot is extracted', `got ${rvOf('clean').featureCount}`);
+assert(rvOf('boldorder') === null, 'a module with no ## Module review section reports null, not ⏸');
+assert(rvOf('drifted').marker === '🚧', 'an open review is read from the marker', JSON.stringify(rvOf('drifted')));
+
+// Review is orthogonal to completion: folding it into the rollup would silently
+// make an optional command mandatory. `reviewstale` is ⏸ everywhere but ✓
+// reviewed; `drifted` is mid-build with a review open. Neither marker moves the
+// other, and this is the assertion that catches someone wiring them together.
+const rs = g.modules.find((m) => m.name === 'reviewstale');
+assert(rs.status === '⏸', 'a reviewed module still rolls up from its own features', `got ${rs.status}`);
+assert(rs.review.marker === '✓', 'and keeps its review marker independently', `got ${rs.review.marker}`);
+
+// Staleness is derived from the snapshot, never stored — so nothing has to
+// remember to invalidate a review when the module grows.
+const staleF = g.health.find((h) => h.kind === 'review-stale');
+assert(staleF && staleF.module === 'reviewstale', 'staleness is derived for the grown module', staleF && staleF.module);
+assert(staleF && /2 added since/.test(staleF.message) === false && /1 added since/.test(staleF.message),
+  'it reports how many features the review never saw', staleF && staleF.message);
+assert(
+  g.health.filter((h) => h.kind === 'review-stale').length === 1,
+  'a review whose snapshot matches its roster is not stale',
+);
+for (const [kind, want] of [
+  ['review-open-no-plan', 'warn'],
+  ['review-plan-not-open', 'warn'],
+  ['review-stale', 'info'],
+  ['review-section-missing', 'info'],
+])
+  assert(sevOf(kind) === want, `${kind} is ${want}`, `got ${sevOf(kind)}`);
+
+// The plan's checklist carries three dispositions: `[ ]` open holds the review
+// open, `[x]` resolved and `[~]` won't-fix both discharge it. Won't-fix is an
+// operator decision recorded here and deliberately left no other trace.
+const bp = g.reviewPlans.find((p) => p.module === 'boldorder');
+assert(bp && bp.total === 3, 'every finding in the plan is tracked, routed included', `got ${bp && bp.total}`);
+assert(bp && bp.open === 1, 'only `[ ]` items hold the review open', `got ${bp && bp.open}`);
+assert(bp && bp.wontFix === 1, "`[~]` is counted as won't-fix", `got ${bp && bp.wontFix}`);
 
 // v0.24 derived success criteria.
 assert(g.scope.total === 5, 'five success criteria parsed', `got ${g.scope.total}`);

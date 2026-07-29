@@ -115,7 +115,7 @@ This is the stage that most often does real work on revisions. It covers four ki
 - **Plan touches** (existing `plan.md` files): Draft each edit per the brief's one-line reason. Touches range from a sentence to a paragraph. Show the edit in context.
 - **Build-order updates** (existing `module-status.md` `## Build order` sections): Draft the reordering or append.
 - **Module integration notes** (existing `module-status.md` `## Module integration` `Notes:` line): Draft the refreshed line. Do not flip the integration marker — that's `/b-integration`'s job.
-- **New modules** (greenfield, or a revision that adds a module): Draft the new module's `module-status.md` placeholder with a `## Module integration` section (`Test: not yet defined — ⏸` and `Notes:` from the brief) and a `## Build order` section listing the module's features in order, each marked `⏸`. Do not create feature `plan.md` or `status.md` files — those belong to implementation.
+- **New modules** (greenfield, or a revision that adds a module): Draft the new module's `module-status.md` placeholder with a `## Module integration` section (`Test: not yet defined — ⏸` and `Notes:` from the brief), a `## Build order` section listing the module's features in order, each marked `⏸`, and a `## Module review` section with `Review: ⏸`. Do not create feature `plan.md` or `status.md` files — those belong to implementation.
 
 **Gate:** Present all Stage 4 drafts together. Group by file path so the gate is scannable. Ask: "Confirm the plan and module-status edits, or adjust."
 

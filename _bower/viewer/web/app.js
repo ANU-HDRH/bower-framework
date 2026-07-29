@@ -454,9 +454,9 @@ function banners() {
         el(
           'a',
           { class: 'banner warn', href: rp.route },
-          el('b', {}, `Open review plan · ${rp.module}`),
-          ` ${rp.open} of ${rp.total} item${rp.total === 1 ? '' : 's'} not yet applied. ` +
-            `Re-running /b-review resumes the apply rather than re-diagnosing.`,
+          el('b', {}, `In review · ${rp.module}`),
+          ` ${rp.open} of ${rp.total} finding${rp.total === 1 ? '' : 's'} still open. ` +
+            `Running /b-review ${rp.module} resumes mediation — it does not re-diagnose.`,
         ),
       );
   return out;
@@ -969,7 +969,8 @@ function viewModules() {
     pageHead(
       [el('a', { href: '#/' }, 'Overview'), el('span', {}, '·'), el('span', {}, 'Modules')],
       'Module graph',
-      G.buildOrderRationale || 'Modules in build order. Status is the worst marker across features and integration.',
+      G.buildOrderRationale ||
+        'Modules in build order. Status is the worst marker across features and integration; review is a separate axis.',
     ),
     spine(),
     el(
@@ -992,9 +993,85 @@ function viewModules() {
             badge(m.status, { bare: true }),
             el('span', { class: 'ident', style: 'min-width:112px' }, m.name),
             el('span', { class: 'note grow' }, plain(m.purpose)),
+            // Review is its own axis, sitting beside the status marker rather
+            // than inside it — an unreviewed module is not thereby incomplete.
+            m.review && m.review.marker
+              ? el(
+                  'span',
+                  { class: 'eyebrow', title: `Review: ${m.review.raw}` },
+                  `review ${m.review.marker}`,
+                )
+              : null,
           ),
         ),
       ),
+    ),
+  );
+}
+
+// A module moves build → integration → review, and until v0.29 only the first
+// two were visible anywhere. The three stages are separate axes, not a single
+// ladder: review is optional framework work and is deliberately *not* an input
+// to the module's status rollup, so it is shown beside the rollup, never folded
+// into it (framework-reference.md, "The review state is orthogonal to
+// completion"). Staleness is derived here the same way /b-recap derives it.
+function lifecycle(m) {
+  const RANK = ['🔴', '🟡', '🚧', '⏸', '🔧', '✓'];
+  const feats = G.features.filter((f) => f.module === m.name);
+  const markers = feats.map((f) => f.marker).filter(Boolean);
+  const buildMk = markers.length
+    ? RANK.find((r) => markers.includes(r)) || null
+    : null;
+  const done = markers.filter((k) => k === '✓').length;
+
+  const rv = m.review;
+  const rp = (G.reviewPlans || []).find((p) => p.module === m.name);
+  const stale =
+    rv && rv.marker === '✓' && rv.featureCount !== null && m.buildOrder.length > rv.featureCount
+      ? `${m.buildOrder.length - rv.featureCount} feature${m.buildOrder.length - rv.featureCount === 1 ? '' : 's'} added since`
+      : null;
+
+  let reviewMk = rv ? rv.marker : null;
+  let reviewDetail;
+  if (!rv) reviewDetail = 'Not recorded — no “Module review” section (a project predating v0.29).';
+  else if (rv.marker === '🚧')
+    reviewDetail = rp
+      ? `In review · ${rp.total - rp.open} of ${rp.total} findings disposed${rp.wontFix ? ` (${rp.wontFix} won't fix)` : ''}`
+      : 'Marked in review, but no review-plan.md on disk.';
+  else if (rv.marker === '✓')
+    reviewDetail =
+      `Reviewed${rv.date ? ` ${rv.date}` : ''}` +
+      (rv.featureCount !== null ? ` against ${rv.featureCount} feature${rv.featureCount === 1 ? '' : 's'}` : '') +
+      (stale ? ` · stale — ${stale}` : '');
+  else reviewDetail = 'Never reviewed. /b-review is optional, and offered once the module is complete.';
+
+  const stage = (label, mk, detail, warn) =>
+    el(
+      'div',
+      { class: 'panel-head', style: 'gap:10px' },
+      badge(mk),
+      el('span', { class: 'eyebrow', style: 'min-width:74px' }, label),
+      el('span', { class: warn ? 'shrunk' : 'muted', style: 'font-size:12.5px' }, detail),
+    );
+
+  return el(
+    'section',
+    { class: 'block' },
+    el('h2', {}, 'Lifecycle'),
+    el(
+      'div',
+      { class: 'panel' },
+      stage(
+        'Build',
+        buildMk,
+        markers.length ? `${done} of ${markers.length} features ✓` : 'No features yet.',
+      ),
+      stage(
+        'Integration',
+        m.integration ? m.integration.marker : null,
+        m.integration ? m.integration.test || 'Test not yet defined.' : 'No module-integration section.',
+      ),
+      stage('Review', reviewMk, reviewDetail, !!stale || (rv && rv.marker === '🚧' && !rp)),
     ),
   );
 }
@@ -1109,6 +1186,7 @@ function viewModule(name) {
         ),
       ),
     ),
+    lifecycle(m),
     m.integration
       ? el(
           'section',

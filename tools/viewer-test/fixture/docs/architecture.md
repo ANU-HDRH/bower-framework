@@ -39,3 +39,13 @@ Two modules and two deliberate defects.
 **Depends on.** `clean`
 
 **Consumed by.** Nothing.
+
+### reviewstale
+
+**Purpose.** Reviewed once, then grown — the derived-staleness condition.
+
+**Data concern.** The `snapshot` table.
+
+**Depends on.** Nothing.
+
+**Consumed by.** Nothing.

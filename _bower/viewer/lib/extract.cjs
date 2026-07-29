@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.28';
+const SCHEMA_VERSION = '0.29';
 
 // ---------------------------------------------------------------- helpers
 
@@ -332,7 +332,11 @@ function extract(root) {
         const nameCell = row.find((c) => /`[a-z0-9-]+`/i.test(c || ''));
         const name = nameCell ? M.backticked(nameCell)[0] : null;
         if (!name) continue;
-        const mk = row.map((c) => M.trailingMarker(c)).find(Boolean);
+        // A `Review:` clause is stripped before scanning: the review marker is
+        // a separate axis (its own column per /b-index), but an index that
+        // wrongly appended it inside the Status cell must not have its ✓ read
+        // as the module's declared status — MARKERS checks ✓ first.
+        const mk = row.map((c) => M.trailingMarker((c || '').replace(/Review:.*$/i, ''))).find(Boolean);
         if (mk) declaredStatus.set(name, mk);
       }
     }
@@ -453,6 +457,7 @@ function extract(root) {
     const msAbs = path.join(modDir, 'module-status.md');
     let integration = null;
     const buildOrder = [];
+    let review = null;
     candidate('missing-module-status', !exists(msAbs));
     if (exists(msAbs)) {
       const body = read(msAbs);
@@ -467,6 +472,22 @@ function extract(root) {
         notes: (/^\s*Notes:\s*([\s\S]*)$/m.exec(mi) || [])[1] || '',
         rel: msRel,
       };
+      // v0.29 review state. `Review: ⏸ | 🚧 | ✓ YYYY-MM-DD (N of N features)`.
+      // Deliberately redundant with review-plan.md's existence so a crashed or
+      // hand-edited review is a mechanical finding rather than something only a
+      // reading agent would notice — same reasoning as ADR supersession symmetry.
+      if ('Module review' in secs) {
+        const reviewLine = (/^\s*Review:\s*(.*)$/m.exec(secs['Module review']) || [])[1] || '';
+        const snap = /\((\d+)\s+of\s+\d+\s+features?\)/i.exec(reviewLine);
+        review = {
+          marker: M.trailingMarker(reviewLine),
+          date: (/(\d{4}-\d{2}-\d{2})/.exec(reviewLine) || [])[1] || null,
+          featureCount: snap ? Number(snap[1]) : null,
+          raw: reviewLine.trim(),
+          rel: msRel,
+        };
+      }
+
       const bo = secs['Build order'] || '';
       for (const line of bo.split('\n')) {
         const m = /^\s*(\d+)\.\s+`?([A-Za-z0-9._-]+)`?\s*(?:—|-)\s*(.*)$/.exec(line);
@@ -515,12 +536,17 @@ function extract(root) {
 
     // -- transient review plan (/b-review's recovery anchor)
     const rpAbs = path.join(modDir, 'review-plan.md');
-    if (exists(rpAbs)) {
+    const planPresent = exists(rpAbs);
+    if (planPresent) {
       const rpRel = `docs/modules/${name}/review-plan.md`;
       const body = read(rpAbs);
       docRoutes.set(rpRel, route);
-      const items = [...body.matchAll(/^\s*[-*]\s+\[( |x|X)\]\s+(.*)$/gm)].map((m) => ({
-        done: m[1].toLowerCase() === 'x',
+      // `[x]` resolved and `[~]` won't-fix both count as disposed of; only `[ ]`
+      // holds the review open. Won't-fix is an operator decision recorded in the
+      // plan and deliberately left no other trace.
+      const items = [...body.matchAll(/^\s*[-*]\s+\[( |x|X|~)\]\s+(.*)$/gm)].map((m) => ({
+        done: m[1] !== ' ',
+        wontFix: m[1] === '~',
         text: m[2].trim(),
       }));
       reviewPlans.push({
@@ -529,8 +555,67 @@ function extract(root) {
         route,
         items,
         open: items.filter((i) => !i.done).length,
+        wontFix: items.filter((i) => i.wontFix).length,
         total: items.length,
       });
+    }
+
+    // -- v0.29 review state vs plan. The marker and the plan are written
+    // together by /b-review, so a disagreement is mechanically detectable and
+    // means a run died mid-flight or something was hand-edited.
+    if (exists(msAbs)) {
+      // Deliberately NOT registered with the obsolescence tripwire. Firing on
+      // every module is this check's expected state on any project that has not
+      // yet run the v0.29 migration — it is a version-boundary notice, not a
+      // convention test, so universality here is the signal rather than decay.
+      if (!review)
+        flag(
+          'info',
+          'review-section-missing',
+          `${name}'s module-status.md has no \`## Module review\` section, so its review state is unrecorded ` +
+            `(a project predating v0.29 — the v0.29 migration adds it with \`Review: ⏸\`).`,
+          msRel,
+          { module: name },
+        );
+
+      candidate('review-open-no-plan', !!review && review.marker === '🚧' && !planPresent);
+      if (review && review.marker === '🚧' && !planPresent)
+        flag(
+          'warn',
+          'review-open-no-plan',
+          `${name} is marked \`Review: 🚧\` but docs/modules/${name}/review-plan.md does not exist — ` +
+            `a review was opened and its plan is gone, so the findings are lost. Run /b-review ${name} to resolve.`,
+          msRel,
+          { module: name },
+        );
+
+      const notOpen = planPresent && (!review || review.marker !== '🚧');
+      candidate('review-plan-not-open', notOpen);
+      if (notOpen)
+        flag(
+          'warn',
+          'review-plan-not-open',
+          `${name} has an open review-plan.md but \`Review:\` is ${review && review.marker ? review.marker : 'unset'}, not 🚧 — ` +
+            `the marker was never set, or the review was closed without deleting the plan.`,
+          msRel,
+          { module: name },
+        );
+
+      // Staleness is derived, never stored: the snapshot count against the
+      // roster now. Catches features *added* since the review, not features
+      // modified in place — see framework-reference.md "Staleness is derived".
+      const stale = !!review && review.marker === '✓' && review.featureCount !== null && buildOrder.length > review.featureCount;
+      candidate('review-stale', stale);
+      if (stale)
+        flag(
+          'info',
+          'review-stale',
+          `${name} was reviewed${review.date ? ` on ${review.date}` : ''} against ${review.featureCount} ` +
+            `${review.featureCount === 1 ? 'feature' : 'features'}, but its build order now lists ${buildOrder.length} — ` +
+            `${buildOrder.length - review.featureCount} added since, so the review does not cover them.`,
+          msRel,
+          { module: name },
+        );
     }
 
     const featureDirs = lsDirs(modDir);
@@ -785,6 +870,7 @@ function extract(root) {
       archAnchor: arch ? arch.anchor : null,
       hasArch: !!arch,
       integration,
+      review,
       buildOrder,
       featureNames: modFeatures.map((f) => f.name),
       status: rollup,

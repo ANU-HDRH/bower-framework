@@ -2,13 +2,13 @@
 
 The review report is the structured artifact produced by the **bower-reviewer** subagent at the start of `/b-review`. It is the authoritative answer to *what did we actually build in this module, and where does it diverge from what the docs, the decisions, and the rest of the module say it should be?*
 
-`/b-review` executes against the report: it gates the findings with the operator, writes the accepted **owned** findings to a `review-plan.md` checklist, applies them, and routes the rest to the commands that own them.
+`/b-review` executes against the report: it gates the findings with the operator, writes **every** accepted finding to a `review-plan.md` checklist, applies the owned ones itself, and leaves the routed ones tracked until the operator runs the commands that own them. Diagnosis opens a review state (`Review: 🚧`) that closes only when every finding is disposed of.
 
 A review is **module-scoped**. The reviewer surveys one module's features, its plans and status files, the ADRs that touch it, and its code. It does not review the whole project — that breadth belongs to `/b-recap` (orientation) and `/b-analysis` (forward-looking change impact). Review looks *down* into one finished module and *backward* at what was built.
 
 ## Where reports are used
 
-- `/b-review <module>` — invokes `bower-reviewer` internally, presents the findings at a triage gate, writes the accepted owned findings to `docs/modules/<module>/review-plan.md`, applies them, and routes the rest.
+- `/b-review <module>` — invokes `bower-reviewer` internally, presents the findings at a triage gate, writes the accepted findings to `docs/modules/<module>/review-plan.md`, applies the owned ones, and tracks the routed ones until closeout.
 
 There is no read-only "print the report and stop" entry point, the way `/b-analysis` is for the change brief. A review that surfaced findings and did nothing with them would be a report that rots — exactly the artifact Bower avoids. The findings are consumed immediately into a plan or a routed handoff; they are not preserved as a standalone document.
 
@@ -35,10 +35,12 @@ Every finding carries a **class** that determines what `/b-review` does with it.
 | `test-backfill` | A missing test for *already-built, already-agreed* behaviour — closing a coverage gap, not driving new behaviour. | Writes the test inline and runs it. Owned plan item. If writing it reveals the code is actually wrong, the finding is re-classed `route:/b-feature`. |
 | `status-fix` | A dishonest marker (✓ with pending verification, floor-not-sum violation). | Corrects the marker inline; `/b-index` is re-run at the end. Owned plan item. |
 | `adr-supersede` | An accepted ADR contradicted by the code. | Invokes `/b-adr` to supersede (its own gate fires). Owned plan item. |
-| `route:/b-feature` | A behavioural fix or consistency change beyond a doc reconcile — needs the propose-confirm-acceptance gate. | **Routed**, not owned. Reported as a next-move; never applied by `/b-review`. |
-| `route:/b-design` | Boundary erosion / architectural drift. | **Routed**, not owned. The hard-redirect rule applies — `/b-review` refuses to action it. |
+| `route:/b-feature` | A behavioural fix or consistency change beyond a doc reconcile — needs the propose-confirm-acceptance gate. | **Routed**, not owned. Tracked as a plan item naming the command to run; never applied by `/b-review`. |
+| `route:/b-design` | Boundary erosion / architectural drift. | **Routed**, not owned. Tracked as a plan item; the hard-redirect rule applies — `/b-review` refuses to action it. |
 
-**Owned** classes (`inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`) are the ones `/b-review` can resolve itself, because each is individually ad-hoc-safe under existing framework rules. **Routed** classes (`route:/b-feature`, `route:/b-design`) require another command's gate and are surfaced as literal-command next moves, not put in the checklist.
+**Owned** classes (`inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`) are the ones `/b-review` can resolve itself, because each is individually ad-hoc-safe under existing framework rules. **Routed** classes (`route:/b-feature`, `route:/b-design`) require another command's gate.
+
+The distinction governs **who acts**, not what is tracked: every accepted finding of either kind goes in the one `## Findings` checklist in `review-plan.md`, and holds the review open (`Review: 🚧` in `module-status.md`) until it is resolved or explicitly won't-fixed. A routed item is ticked when the operator has *run* the command it names. A report whose findings are entirely routed is a normal outcome and still opens a review — it does not mean there is nothing to track.
 
 ## Schema
 

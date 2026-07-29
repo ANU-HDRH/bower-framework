@@ -18,7 +18,7 @@ repo-root-link check.
 
 ## Modules
 
-| Module | Status | Docs |
-| --- | --- | --- |
-| `clean` | ✓ | [module-status](/docs/modules/clean/module-status.md) |
-| `drifted` | ✓ | [module-status](/docs/modules/drifted/module-status.md) |
+| Module | Status | Review | Docs |
+| --- | --- | --- | --- |
+| `clean` | ✓ | ✓ 2026-07-20 | [module-status](/docs/modules/clean/module-status.md) |
+| `drifted` | ✓ | 🚧 | [module-status](/docs/modules/drifted/module-status.md) |

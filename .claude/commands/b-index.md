@@ -52,7 +52,7 @@ If `docs/index.md` already exists, follow the **Regeneration contract** above: r
 
 ## Feature Modules
 
-### <Module Name> [<status>]
+### <Module Name> [<status>] · Review: <review marker>
 <Brief description from the module's architecture.md `## Software architecture` entry>
 - [<Feature>](/docs/modules/<module>/<feature>/) [<status>]
 - ...
@@ -129,13 +129,15 @@ While deriving the Relations column, verify the pairs are symmetric and live: ev
 - Derive status markers from status.md files: ✓ 🚧 ⏸ 🟡 🔴 🔧
 - If a feature listed in a module's `## Build order` has **no** `status.md` (an adopted feature awaiting its first Bower touch — see the adoption banner), take its marker from the build-order line as-is. Do **not** treat a missing `status.md` as an error and do **not** synthesize `✓` from the feature merely existing in code — adoption marks as-built features `🚧`, and only verified work promotes them to `✓`.
 - Module-level status is the "worst" status across both its feature markers *and* its `## Module integration` `Test:` marker (🔴 > 🟡 > 🚧 > ⏸ > 🔧 > ✓). A module with all features ✓ but module integration ⏸ surfaces as 🚧 — the constitution's verified-for-✓ rule made observable.
+- **Review state is a separate field, never an input to that rollup.** Take each module's `## Module review` `Review:` marker verbatim and render it after the status marker: `### Auth [✓] · Review: ✓ 2026-07-12`, or `· Review: 🚧` / `· Review: ⏸`. Review is *optional* framework work, so folding it into the worst-of derivation would silently make it mandatory and would knock every complete-but-unreviewed module off `✓`. Omit the `· Review:` clause entirely for a module whose `module-status.md` has no `## Module review` section (a project that predates it) — do not write `⏸`, which would claim the state is recorded when it is not, and note the gap in the run summary. Never synthesise the marker from git history, from a `review-plan.md`, or from anything but that line. **In an index that renders modules as a table rather than headings, the review marker gets its own `Review` column — add the column if absent (as with the ADR index's Scope column), and never append the marker inside the Status cell.** Anything parsing that cell (the docs viewer included) reads it as a single status marker, and a second marker in the same cell makes the declared status ambiguous.
 - Only include sections that exist (skip Design Context if no `design/` and no `adr/` directory)
 - Include a brief description for each module, taken from that module's entry in `docs/architecture.md` `## Software architecture` — its one-line purpose, condensed if needed. Module purpose has exactly one home and that is it. Do **not** source the description from `module-status.md`: that file is operational (integration marker, build order, integration notes) and defines no description field, so taking one from there means either paraphrasing the integration `Notes:` — which states what the boundary test asserts, not what the module is for — or inducing projects to grow a duplicate purpose line that nothing maintains. If a module has no `## Software architecture` entry, omit its description rather than inventing one, and note the gap in the run summary.
 - If no modules exist yet, write the Core System and Design Context sections only
 - For ADR tables: render `scope` literally; an accepted ADR with no `scope` field is *unclassified* (pre-v0.20) — never promote it to universal. Order ADRs by ID ascending. Do **not** invent rows — read frontmatter literally.
 - If any accepted ADRs are unclassified, add one line under the active-decisions table: `N unclassified pre-v0.20 ADRs — classify by adding scope/topics frontmatter (see the v0.20 migration notes in _bower/changes.md).`
 - If an ADR is malformed (missing required field, unknown status), include it in a final `## Malformed` section with the file path and the issue, so it can be fixed manually. This is the only way schema violations surface.
-- Ignore any `docs/modules/*/review-plan.md` — it is a transient `/b-review` work list, not project state, and never appears in the index.
+- Ignore any `docs/modules/*/review-plan.md` — it is a transient `/b-review` work list, not project state, and never appears in the index. The index carries the durable `Review:` marker instead; the plan file's existence is `/b-recap`'s and the viewer's business.
+- Never write a module's `Review:` marker. `/b-review` is its only writer — this command reads and renders it, exactly as it reads the `## Module integration` `Test:` marker without flipping it.
 - Preserve a `🌱 Adoption in progress` banner at the top of `docs/index.md` verbatim if present — it is the adoption-phase flag (curated structure), not derived state. It is removed only by hand when `docs/adoption-ledger.md` is emptied, never by regeneration.
 
 ## Run summary
@@ -146,5 +148,6 @@ Close with a short report — a few lines, not a narrative. It carries the thing
 - **Status prose reduced or deleted**, per *Status is never curated*: name the section and what replaced it. This is an edit the operator did not ask for, so it is always reported.
 - **Curated sections over budget**, and any `module-status.md` over its ~250-word budget: name the section, its approximate size, and the derived source that already covers its content. Report only — the operator decides.
 - Modules with no `## Software architecture` entry (description omitted), unclassified ADRs, malformed ADRs, and any one-sided or dead `narrows` / `narrowed-by` pair.
+- Modules whose `module-status.md` has no `## Module review` section (review clause omitted) — the project predates the section and its review state is unrecorded.
 
 If none of these apply, one line is the right length.

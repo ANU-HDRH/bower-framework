@@ -70,7 +70,8 @@ defines it. Changing a row means changing `lib/extract.cjs` and
 | ADR frontmatter: `narrows` / `narrowed-by`, target stays `accepted` | same section, *Narrowing* | narrowing pairs and their checks |
 | `constitution.md` `## Not yet in force` | `framework-reference.md` → *constitution.md — Normative Shape* | separates aspiration from rule |
 | `docs/index.md` 🌱 banner + `docs/adoption-ledger.md` | `framework-reference.md` → *Adoption phase* | phase detection; suppresses per-feature status warnings |
-| `docs/modules/<m>/review-plan.md` checklist | `framework-reference.md` → *Module Review* | open-review-plan banner |
+| `## Module review` `Review:` line — marker, date, `(N of N features)` snapshot | `framework-reference.md` → *module-status.md — Integration and Build Order* | review state, derived staleness, the lifecycle panel |
+| `docs/modules/<m>/review-plan.md` `## Findings` checklist — `[ ]` / `[x]` / `[~]` | `framework-reference.md` → *Module Review* | in-review banner, disposed/total counts, marker↔plan agreement |
 | `docs/index.md` Modules table markers | `/b-index` | each module's *declared* status, compared with the derived one |
 | Repo-root-based doc links (`/docs/…`) | `framework.md` Working Conventions | backlinks; broken- and relative-link checks |
 | `git log -- docs` | — | recency (optional; degrades if absent) |
@@ -112,12 +113,25 @@ document against the filesystem.
 - a success criterion has no `Delivered by:` clause, or still carries a marker
 - a doc link does not resolve
 - the adoption ledger is empty but the 🌱 banner is still up
+- a module is `Review: 🚧` with no `review-plan.md` on disk — a review was opened
+  and its findings are gone
+- a `review-plan.md` exists but `Review:` is not 🚧 — the marker was never set, or
+  the review closed without deleting the plan. `/b-review` writes the two
+  together, which is what makes either direction detectable at all
 - a table cell holds a paragraph of prose — a formatter then aligns every sibling
   row out to match it, and on a real project one 15,000-character cell became
   75kB of padding in `docs/index.md`, on the orientation read-path of nearly
   every command. Ordinary column alignment costs a few kB and is not reported.
 
-**Info — a convention note.** Including two aimed at the viewer itself:
+**Info — a convention note.** Two concern review state: a closed review whose
+roster snapshot is smaller than the build order is now (features exist that the
+review never saw — derived, since nothing invalidates a review), and a
+`module-status.md` with no `## Module review` section at all. The second fires on
+every module of a project that has not run the v0.29 migration, so it is
+deliberately exempt from the obsolescence tripwire below — universality is the
+signal there, not decay.
+
+Also including two aimed at the viewer itself:
 `schema-version-skew` when it and the project disagree about the framework
 version, and `check-may-be-obsolete` when a check fires on *every* candidate.
 That second one is a tripwire for this tool's own decay — a check matching
@@ -137,6 +151,16 @@ untouched module is ⏸. That is what `framework-reference.md`'s own worked exam
 describes: all features ✓ with `## Module integration` still ⏸ surfaces as 🚧.
 Where the rollup disagrees with `docs/index.md`, both are shown and the
 difference is reported rather than silently resolved.
+
+**Review is not in that rollup.** A module page shows a *Lifecycle* panel with
+three separate axes — build, integration, review — because `/b-review` is
+optional framework work. Folding its marker into the worst-of derivation would
+silently make it mandatory and would knock every complete-but-unreviewed module
+off ✓. So the review state sits beside the status marker and never inside it: a
+module can be ✓ and never reviewed, or mid-build with a review open, and both are
+honest. Review staleness is derived the same way `/b-recap` derives it — the
+`(N of N features)` snapshot against the current build order — so it catches
+features *added* since the review, not features modified in place.
 
 ## Keeping it honest when the framework changes
 

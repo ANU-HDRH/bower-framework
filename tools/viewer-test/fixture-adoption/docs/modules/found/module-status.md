@@ -6,3 +6,7 @@ Notes: No boundary test exists; adoption records none.
 ## Build order
 
 1. observed-feature — 🚧
+
+## Module review
+
+Review: ⏸

@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.29 | 2026-07-30 | Module review becomes a recorded three-state lifecycle: a `Review:` marker in `module-status.md`, routed findings tracked in one checklist across sessions, staleness derived | judgement |
 | v0.28 | 2026-07-29 | The docs viewer ships in `_bower/viewer/`; index status prose becomes derived rather than curated, with a budget and four closed escapes; the scaffold prunes retired `_bower/` files | mechanical |
 | v0.27 | 2026-07-29 | ADR narrowing gets frontmatter: `narrows` / `narrowed-by`, replacing body-only partial supersession | judgement |
 | v0.26 | 2026-07-29 | One home each for module features (build order) and module purpose (`architecture.md`); repo-root doc links versioned and enforced | judgement |
@@ -21,6 +22,64 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.29 — 2026-07-30
+
+### Module review is a recorded state, not an unrecorded pass
+
+Until now nothing recorded that a module had been reviewed. `review-plan.md` existed only while reconciliation was owed and was deleted when it finished, so a reviewed-and-reconciled module was indistinguishable from one never reviewed — and a module reviewed *clean* wrote no plan at all, making the best outcome the one with no evidence. `module-status.md` gains a `## Module review` section carrying `Review: ⏸ | 🚧 | ✓ <date> (<N> of <N> features)`, written by `/b-review` alone. It records the fact of a review, not its findings: what was fixed is in the commits, and what was not was an operator decision at a gate. Reasoning in `_bower/rationale.md`.
+
+**Changed:**
+
+- **`_bower/framework-reference.md`** — `module-status.md` schema gains the `## Module review` section: three states, the roster snapshot, single-writer rule, derived staleness, and why review is orthogonal to the status floor.
+- **`_bower/framework.md`** — Status Markers gains the `Review:` writer rule; per-feature state line names review state.
+- **`.claude/commands/b-index.md`** — renders the marker as a `· Review: <marker>` clause on each module heading; never writes it; reports modules with no section in the run summary.
+- **`.claude/commands/b-recap.md`** — new *Review state* output section covering all four cases plus marker/plan disagreement; derives staleness; an open review competes for the next action.
+- **`.claude/commands/b-design.md`**, **`b-adopt.md`** — write `Review: ⏸` when creating a `module-status.md`.
+- **`_bower/viewer/`** — `extract.cjs` parses the section and adds four checks (`review-open-no-plan`, `review-plan-not-open` — warn; `review-stale`, `review-section-missing` — info); `app.js` gains a per-module *Lifecycle* panel (build · integration · review) and a review column in the module list; `SCHEMA_VERSION` → `0.29`; README schema-contract rows and check list updated.
+- **`tools/viewer-test/`** — new `reviewstale` fixture module, review conditions across three others, 17 new assertions.
+
+### Findings survive the session, routed ones included
+
+A review that turned up mostly `/b-feature`-class findings wrote no plan, printed them to the console, and lost them on scroll. Owned-vs-routed now governs *who acts*, not what is tracked: every accepted finding goes in one `## Findings` checklist and holds the review open until resolved (`[x]`) or won't-fixed (`[~]`). Diagnosis sets `Review: 🚧`; a closeout gate fires only when every item is disposed of, then deletes the plan and writes `Review: ✓`. Re-running `/b-review <module>` resumes mediation and never re-diagnoses.
+
+**Changed:**
+
+- **`.claude/commands/b-review.md`** — Step 0 becomes a marker×plan mode table with a broken-state path; the plan's two sections merge into one `## Findings` checklist with three dispositions; a plan is written for any accepted finding including routed-only; Step 5 becomes *Mediate*; new *Gate: Closeout*; handoff leads with review state; constraints extended.
+- **`_bower/review-schema.md`** — resolution-class table and preamble updated: routed findings are tracked plan items, not console-only next moves.
+- **`.claude/commands/b-feature.md`**, **`b-module.md`** — the optional `/b-review` offer says the review is resumable.
+- **`_bower/roadmap.md`** — adoption-aware `/b-review` split out of the `/b-adopt` v2 item with the four surviving review dimensions analysed; new item on the diagnosis-time vs closeout-time roster snapshot.
+
+### Migration
+
+Three parts. Part A is mechanical. Part B is **judgement-required** — it decides each module's initial review state from evidence, and getting it wrong either claims a review that never happened or discards one that did. Part C is a one-line check.
+
+**Part A — add the section to every module.** For each `docs/modules/<module>/module-status.md` in the project, append a new section at the end of the file:
+
+```markdown
+## Module review
+
+Review: ⏸
+```
+
+Do this for every module, including modules that are mid-build or empty. The section is mandatory: a missing section and a never-reviewed module must not be the same string, which is why `⏸` is written explicitly rather than left implied. Do not add the section to anything other than a `module-status.md`.
+
+**Part B — decide whether any module has actually been reviewed, and record it.** `⏸` from Part A is the default and the safe answer. Change it only on positive evidence, and only with the operator's confirmation.
+
+1. Grep every `module-status.md` for pre-existing prose about reviews — `grep -rn -i 'review' docs/modules/*/module-status.md`. Earlier versions of the framework defined no slot for this, so an agent may have written an unstructured note ("reviewed 2026-06-14", "review complete", a `Reviewed:` line). Anything you find is the strongest available evidence.
+2. Check for a `docs/modules/*/review-plan.md` still on disk. If one exists, that module has a review **open**, not complete.
+3. Ask the operator directly: "Have any of these modules had a `/b-review` pass? I found evidence for `<list>`; the rest will be recorded as never reviewed." Present what you found per module — quote the prose line and its file, or say "no evidence". Do **not** search git history to reconstruct review dates: a commit touching a `review-plan.md` shows a review happened but not what it covered, and a date without a roster count produces a snapshot that cannot be checked for staleness.
+4. Write each module's state from the operator's answer:
+   - **Never reviewed** → leave `Review: ⏸`. This is the default; use it whenever evidence is absent or ambiguous.
+   - **Reviewed and finished** → `Review: ✓ YYYY-MM-DD (<N> of <N> features)`, where the date is the one the operator confirms (use the date found in prose if there is one; if the operator knows a review happened but not when, ask them for an approximate date rather than inventing one) and `<N>` is the number of entries in that module's `## Build order` **as it is now**. The snapshot will slightly over-claim if features were added since — say so in the upgrade report, and note that the alternative (guessing the historical roster) is worse.
+   - **Review open** → `Review: 🚧`, and confirm `docs/modules/<module>/review-plan.md` exists. The marker and the plan are two sides of one fact from this version on; the viewer reports a mismatch as a broken state.
+5. If a `review-plan.md` exists whose checklist splits into `## Reconciliations` and `## Routed` sections (the pre-v0.29 shape), convert it: merge both into a single `## Findings` section, keeping each item's existing tick state, giving each line its resolution class, and turning routed bullets into unticked `- [ ]` items naming the command to run. Add the disposition legend line: ``Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision, with date).`` Routed items now hold the review open, so this conversion may reopen work the old shape treated as closed — that is the intended behaviour, and it is worth naming to the operator explicitly.
+
+**Part C — regenerate the index.** Run `/b-index` so the review state appears in `docs/index.md`. Which edit that means depends on the index's existing shape, and `/b-index` handles both: heading-form module entries gain a `· Review: <marker>` clause after the status marker; an index that renders modules as a table gains a dedicated `Review` column (added if absent — never appended inside the Status cell, which readers parse as a single status marker). Modules whose `module-status.md` somehow still lacks the section will be reported in the run summary rather than getting a `⏸` — if any appear, Part A missed them.
+
+Nothing else changes. No `docs/` document other than `module-status.md` (and any open `review-plan.md`) is edited by this migration, and no source code is touched.
 
 ---
 

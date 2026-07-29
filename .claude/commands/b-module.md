@@ -125,7 +125,7 @@ Next move:
     (none — all modules ✓; project completion is /b-recap's call, which derives success-criteria satisfaction)
 ```
 
-Pick exactly one recommended next command. Mention at most one alternative on a second line. `/b-review` is optional — if the module completed cleanly and the project is small, the operator may reasonably skip it; name it so it's one keystroke away, but don't force it ahead of the next module's build.
+Pick exactly one recommended next command. Mention at most one alternative on a second line. `/b-review` is optional — if the module completed cleanly and the project is small, the operator may reasonably skip it; name it so it's one keystroke away, but don't force it ahead of the next module's build. It is also resumable: a review opens a `Review: 🚧` state that re-running `/b-review <module>` continues, so it need not be finished in one sitting.
 
 ## Partial Failure
 

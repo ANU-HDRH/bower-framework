@@ -96,7 +96,7 @@ If any acceptance criterion agreed at a gate has not yet been verified (typicall
 
 ## module-status.md — Integration and Build Order
 
-`module-status.md` captures three things: the module-boundary integration test (location and status), the build order of features within the module, and free-form integration notes. Populated during full design (Stage 4), maintained as features progress. Budget ~250 words total.
+`module-status.md` captures four things: the module-boundary integration test (location and status), the build order of features within the module, free-form integration notes, and the module's review state. Populated during full design (Stage 4), maintained as features progress. Budget ~250 words total.
 
 ```markdown
 ## Module integration
@@ -123,7 +123,27 @@ Order reflects intra-module dependencies identified at design time; reorderings 
 
 If the absorption leaves nothing to build, the entry stays ⏸ with `Remaining: none — verify and close via /b-feature <name>`. Do **not** mark it ✓ on the strength of another feature's criteria having passed: ✓ means *this* feature's agreed criteria were verified, and the code that landed early has not been checked against them. The entry earns ✓ through a normal (and now very short) `/b-feature` pass, or the operator removes it as no longer a distinct feature.
 
-**Module-level status is a floor, not a sum.** `/b-index` derives a module's status as the worst across both feature markers and the module-integration marker. A module with all features ✓ but `## Module integration` still ⏸ surfaces as 🚧 — making the constitution's verified-for-✓ rule observable rather than aspirational.
+**Module-level status is a floor, not a sum.** `/b-index` derives a module's status as the worst across both feature markers and the module-integration marker. A module with all features ✓ but `## Module integration` still ⏸ surfaces as 🚧 — making the constitution's verified-for-✓ rule observable rather than aspirational. The review state (below) is **not** an input to this floor.
+
+```markdown
+## Module review
+
+Review: ⏸ | 🚧 | ✓
+```
+
+Three states, and the section is mandatory — a module with no review yet carries `Review: ⏸`, not a missing section, because absence and not-yet-reviewed must not be the same string.
+
+- **`⏸` never reviewed.** The starting state for every module, written at design time (Stage 4) alongside the rest of the file.
+- **`🚧` in review.** A `/b-review` run diagnosed findings and reconciliation is owed. `docs/modules/<module>/review-plan.md` exists for exactly as long as this marker does; the two are written and cleared together.
+- **`✓` reviewed, with a date and a roster snapshot** — `Review: ✓ 2026-07-30 (5 of 5 features)`. The count is the length of `## Build order` at the time the review was diagnosed.
+
+**Only `/b-review` writes this line.** Not `/b-feature`, not `/b-module`, not `/b-index`, not `/b-integration` — a review is the only thing that establishes or discharges review state, exactly as only `/b-integration` (or `/b-module`'s integration pass) flips the `Test:` marker. This matters because the alternative — having `/b-feature` invalidate a stale review — would put a review obligation on the framework's hottest path for a fact it does not care about.
+
+**Staleness is derived, never stored.** A module reviewed when it had 5 features and now carrying 8 has a review that predates three features. `/b-recap` and the docs viewer compute that by comparing the snapshot count against the current `## Build order` length and report it (`reviewed 2026-07-30 — stale, 3 features added since`); nothing writes a fourth marker state and no command has to remember to invalidate anything. The known limit: this catches features *added*, not features *modified in place*. That is deliberate — a review invalidated by every `/b-feature modify` pass would be stale almost always, which trains readers to ignore it.
+
+**The review state is orthogonal to completion, and stays that way.** `/b-review` is explicitly optional (see *Module Review* below), so folding `Review:` into the module-status floor would silently make it mandatory and would flip every complete module in every existing project off `✓`. It is reported as its own axis — a column in `docs/index.md`'s modules table, its own `/b-recap` line, its own viewer lane. `Review: 🚧` *is* outstanding work and `/b-recap` reports it as such; `Review: ⏸` is not.
+
+**A review can be diagnosed on an incomplete module.** `/b-review` recommends completion but does not require it, so `Review: ✓` on a module whose rollup is 🚧 is legal and merely worth noticing, not an error.
 
 ## ADRs — Architectural Decision Records
 
@@ -210,7 +230,19 @@ When a module reaches completion — every feature ✓ and the `## Module integr
 
 Review delegates diagnosis to the read-only `bower-reviewer` subagent — the isolation buys adversarial freshness: the implementing agent is biased to read its own code as correct; a subagent given only docs, criteria, ADRs, and code hunts for where they *disagree*. The report is scoped to six dimensions (test coverage, spec↔code drift, cross-feature consistency, status honesty, ADR drift, boundary integrity) — deliberately not a linter or security audit.
 
-Findings split into **owned** classes `/b-review` reconciles itself behind one triage gate (stale doc lines, missing tests for agreed behaviour, dishonest markers, drifted ADRs via `/b-adr`) and **routed** classes surfaced as literal-command next moves (behavioural fixes → `/b-feature`; boundary erosion → *always* `/b-design`). Accepted reconciliations land in a transient `docs/modules/<module>/review-plan.md` written before any are applied — the recovery anchor — and deleted when every item is checked. One open plan per module; re-invoking `/b-review` while one is open resumes the apply rather than re-diagnosing. `/b-recap` surfaces an open plan; `/b-index` ignores it.
+Findings split into **owned** classes `/b-review` reconciles itself behind one triage gate (stale doc lines, missing tests for agreed behaviour, dishonest markers, drifted ADRs via `/b-adr`) and **routed** classes it never actions itself (behavioural fixes → `/b-feature`; boundary erosion → *always* `/b-design`). The split governs *who acts*, not what is tracked: **every accepted finding, owned and routed alike, goes in one `## Findings` checklist** in `docs/modules/<module>/review-plan.md`, written before anything is applied.
+
+**Review is a state with three phases**, and `## Module review`'s marker is the durable half of it:
+
+1. **Diagnose.** The reviewer surveys, `/b-review` gates the findings, writes the plan, and sets `Review: 🚧`.
+2. **Mediate.** Owned items are reconciled by `/b-review`; routed items are ticked when the operator has *run* the command they name. Each item ends ticked (`[x]`, resolved) or won't-fixed (`[~]`, a recorded operator decision). This phase can span many sessions — re-invoking `/b-review <module>` resumes it and never re-diagnoses.
+3. **Close out.** When every item carries a disposition, a closeout gate confirms, the plan is deleted, and `Review: ✓ <date> (<N> of <N> features)` is written.
+
+A plan is written whenever there is at least one accepted finding — **including a routed-only review**, which is the common shape and the one that used to leave nothing on disk at all. `review-plan.md` and `Review: 🚧` are two sides of one fact, deliberately: the redundancy is what lets the docs viewer catch a crashed or abandoned review mechanically (marker set, plan missing) instead of needing an agent to read prose. Same reasoning as ADR `supersedes`/`superseded-by` symmetry.
+
+**No permanent findings log.** Once a review closes, what got fixed is in the commits and what did not was an operator decision; a stored findings history would be a second copy of both with nothing maintaining it. The durable record is precisely `Review: ✓` plus its date and roster snapshot — enough to answer *was this reviewed, and is that review still current*, which is the question a findings log was never needed for.
+
+One open plan per module. `/b-recap` surfaces both the marker and the open plan's progress; `/b-index` reports the marker as a modules-table column and still ignores the plan file itself.
 
 ## Adoption phase
 
