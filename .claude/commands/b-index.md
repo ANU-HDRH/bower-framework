@@ -54,7 +54,7 @@ The UI line is included only if `docs/ui.md` exists. The Decision Log line is in
 
 ## Output: `docs/adr/index.md`
 
-If `docs/adr/` does not exist, skip. If `docs/adr/index.md` already exists, follow the **Regeneration contract** above: refresh the derived tables and the accepted/superseded counts in place, and preserve the project's schema reference, section ordering, and any prose — including the project's existing table *layout* (a pre-v0.20 index may still split active decisions into module-scoped and cross-cutting tables; refresh those in place rather than restructuring, but add a Scope column if absent so classification is visible). The structure below is the seed used only on first generation:
+If `docs/adr/` does not exist, skip. If `docs/adr/index.md` already exists, follow the **Regeneration contract** above: refresh the derived tables and the accepted/superseded counts in place, and preserve the project's schema reference, section ordering, and any prose — including the project's existing table *layout* (a pre-v0.20 index may still split active decisions into module-scoped and cross-cutting tables; refresh those in place rather than restructuring, but add a Scope column if absent so classification is visible, and a Relations column if absent so narrowing and supersession are visible). The structure below is the seed used only on first generation:
 
 ```markdown
 # Architectural Decision Records
@@ -78,18 +78,24 @@ Frontmatter fields:
 | `topics` | no | Kebab-case subject keywords for topical matching (e.g. `streaming`) |
 | `supersedes` | no | List of ADR IDs this entry replaces |
 | `superseded-by` | no | List of ADR IDs that replaced this entry |
+| `narrows` | no | List of ADR IDs this entry scopes an exception to; those ADRs stay `accepted` |
+| `narrowed-by` | no | List of ADR IDs that narrowed this entry — it remains `accepted` and in force |
 
 Body sections (in order): `## Context`, `## Decision`, `## Consequences`, `## Alternatives considered`.
 
 Filter by `status: accepted` for "what's true now." Older statuses are historical. Only `scope: universal` ADRs apply to every change; commands select the rest by module, topic, or title relevance.
 
+Supersession retires a decision; **narrowing does not**. An ADR carrying `narrowed-by` is still `accepted` and still binding — an exception has been carved out of it by the named ADR, and the scope of that exception is stated in the narrowing ADR's body.
+
 ## Active decisions
 
-| ID | Title | Scope | Modules | Topics | Date |
-|---|---|---|---|---|---|
-| [ADR-NNNN](/docs/adr/NNNN-kebab-title.md) | <title> | <scope or *unclassified*> | <modules or —> | <topics or —> | <date> |
+| ID | Title | Scope | Modules | Topics | Relations | Date |
+|---|---|---|---|---|---|---|
+| [ADR-NNNN](/docs/adr/NNNN-kebab-title.md) | <title> | <scope or *unclassified*> | <modules or —> | <topics or —> | <relations or —> | <date> |
 
 (Listed by ascending ID. Includes all `status: accepted` ADRs. An ADR with no `scope` field is shown as *unclassified* — a pre-v0.20 entry awaiting classification; commands treat it as loadable on module or topical match only, never as universal.)
+
+The **Relations** cell is derived from frontmatter and renders each relationship this ADR participates in, comma-separated: `narrows ADR-NNNN`, `narrowed by ADR-NNNN`, `supersedes ADR-NNNN`. Write `—` when the ADR carries none. This is the column that makes narrowing visible: without it, a narrowed ADR is indistinguishable from an unqualified one, since its status is correctly still `accepted`. `superseded-by` never appears here — an ADR carrying it is not in this table.
 
 ## Superseded and deprecated
 
@@ -100,6 +106,10 @@ Filter by `status: accepted` for "what's true now." Older statuses are historica
 ```
 
 The schema section is **boilerplate** — on first generation, write it verbatim. It is the canonical schema reference for the project. On regeneration, treat it as curated: if the project has elaborated it (e.g. expanded the field notes, added lifecycle or access-pattern prose), leave that intact rather than overwriting it with this seed. The tables underneath are derived from frontmatter and are always recomputed.
+
+One exception to that curated treatment: the field table must not omit a field the project's ADRs actually use. On regeneration, check the field table for a row per field named in the seed above; if a row is missing, add it with the seed's wording and leave every other row as the project wrote it. A schema reference that omits `narrows`/`narrowed-by` while ADRs carry them teaches the wrong schema to the next reader.
+
+While deriving the Relations column, verify the pairs are symmetric and live: every `narrows` entry should have a matching `narrowed-by` on its target (and vice versa), and neither field should name an ADR whose `status` is `superseded` or `deprecated`. Report any one-sided pair or dead pointer to the operator as a probable interrupted write — do not repair the frontmatter yourself; `/b-adr` owns those fields and the fix belongs there.
 
 ## Rules
 

@@ -86,7 +86,7 @@ Without this framing the operator gets "does it look right?" with no anchor; wit
 
 - **Confirmed** — no action.
 - **Contradicted / drifted** — invoke `/b-adr` to write a superseding ADR.
-- **Narrowed** — invoke `/b-adr` for a partial-supersession ADR (both remain accepted).
+- **Narrowed** — invoke `/b-adr` to write a narrowing ADR. Pass the rationale and the ADR-ID being narrowed. The new ADR carries `narrows: [ADR-NNNN]`, the old one gains `narrowed-by` and keeps `status: accepted`.
 - **New cross-cutting decision** — invoke `/b-adr` to record it.
 
 Skip only if Step 2 listed Decision impact as `none`.

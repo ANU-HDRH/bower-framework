@@ -121,6 +121,8 @@ modules: [<bower-module-name>, ...]   # required when scope: module
 topics: [<kebab-keyword>, ...]        # optional subject keywords
 supersedes: [ADR-NNNN, ...]           # omit if empty
 superseded-by: [ADR-NNNN, ...]        # omit if empty
+narrows: [ADR-NNNN, ...]              # omit if empty; target keeps status: accepted
+narrowed-by: [ADR-NNNN, ...]          # omit if empty
 ---
 ```
 
@@ -128,7 +130,15 @@ superseded-by: [ADR-NNNN, ...]        # omit if empty
 
 **Body:** two required sections (`## Context`, `## Decision`) and two optional (`## Consequences` when there's a non-obvious cost or ongoing burden not already implied by the Decision; `## Alternatives considered` when real alternatives were weighed). Order is fixed. A good ADR is **~150 words** and rarely over 300. ADRs may bundle several closely-related decisions under one coherent umbrella title — the split test is whether the title honestly covers the scope. If the title would have to be "X and also Y," that's two ADRs.
 
-**Lifecycle.** Bodies are **immutable once accepted**. Reversals are new ADRs with `supersedes: [ADR-NNNN]`; the old ADR's frontmatter gains `status: superseded`, `superseded-by: [ADR-NNNN]` — both files in one commit. Partial supersession (a new decision scopes an exception): write the new ADR, leave the old one `accepted`, describe the relationship in the new body. Frontmatter is mutable — adding `scope`/`topics` classification to a legacy ADR is allowed and encouraged.
+**Lifecycle.** Bodies are **immutable once accepted**. Reversals are new ADRs with `supersedes: [ADR-NNNN]`; the old ADR's frontmatter gains `status: superseded`, `superseded-by: [ADR-NNNN]` — both files in one commit. Frontmatter is mutable — adding `scope`/`topics` classification to a legacy ADR is allowed and encouraged.
+
+**Narrowing.** A decision that scopes an exception to an earlier one — leaving its central commitment in force — **narrows** rather than supersedes it. The new ADR carries `narrows: [ADR-NNNN]`; the narrowed ADR gains `narrowed-by: [ADR-NNNN]` and **keeps `status: accepted`**. Both sides are written in one commit by whichever command created the new ADR; a one-sided pair is an error, not a partial state. Rules:
+
+- **The test.** Would someone implementing the earlier ADR's *main* decision today still be right? Yes → `narrows`. No → `supersedes`. Frontmatter that claims supersession while the body says the earlier decision stands is a defect: it marks live policy dead.
+- **`narrows` never changes the target's `status`.** That is the whole point of the field. Nothing else about the target's frontmatter changes either.
+- **The body must say what is narrowed and what survives.** The frontmatter is an index entry, not the explanation — a reader who follows `narrowed-by` must find the scope of the exception stated in the narrowing ADR's `## Context` and `## Decision`.
+- A narrowed ADR stays in the index's active table, annotated with the relationship. It remains loadable and citable; it has not been retired.
+- **Supersession prunes narrowing pointers.** Retiring either side of a pair must not leave the survivor pointing at a dead ADR. Superseding a *narrowing* ADR: its exception dies with it — remove its ID from each target's `narrowed-by` — unless the superseding ADR re-asserts the exception with its own `narrows`, in which case the target's `narrowed-by` moves to the new ID. Superseding a *narrowed* ADR: decide at the gate whether each narrowing ADR's exception still applies to the replacement decision — if yes, rewrite its `narrows` to the new ID and give the new ADR `narrowed-by`; if not, remove the retired ID from its `narrows`. Delete any field left empty; the narrowing ADR's own `status` never changes.
 
 **Access pattern.** `docs/adr/index.md` is the canonical entry point — schema reference plus navigable index, regenerated from frontmatter by `/b-index`. Read the index first; open individual ADRs only when relevant to the current change. Do not grep frontmatter directly — the index absorbs schema evolution. Filter by `status: accepted` for "what's true now."
 

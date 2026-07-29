@@ -67,7 +67,7 @@ Prepare a proposal covering:
   - **UI:** if the change introduces, removes, or restructures any screen/view/component, name which sections of `docs/ui.md` will be created or updated (navigation, screens, layout grammar, interaction patterns, visual language). If `docs/ui.md` does not yet exist and the change introduces UI, this is the first UI in the project — Step 6 will create the file with the sections this change requires. Write `none` if the change is pure under-the-hood code.
   - **Module integration:** does this shift what the module's integration test must assert? If yes, the test itself likely needs updating — flag it here so the Step 6 `Next move:` can point to `/b-integration <module>`.
 - **Scope impact:** Does this change what's in scope, change a non-goal, or add/remove/reword a success criterion in `scope.md`? Merely *satisfying* an existing criterion is not scope impact — criteria carry no status and are not updated when work lands.
-- **Decision impact:** List any accepted ADR loaded in Step 1 that this change *touches* — i.e. the change either confirms it (no action needed), contradicts it (must supersede), narrows it (partial-supersession ADR), or surfaces it as drifted from the code (the ADR is stale and should be superseded). If no ADRs are touched, write `none`. Also note if this change introduces a new cross-cutting decision that does not yet have an ADR — flag it here so the reconcile step can write one.
+- **Decision impact:** List any accepted ADR loaded in Step 1 that this change *touches* — i.e. the change either confirms it (no action needed), contradicts it (must supersede), narrows it (a narrowing ADR — the old decision stays `accepted`), or surfaces it as drifted from the code (the ADR is stale and should be superseded). If no ADRs are touched, write `none`. Also note if this change introduces a new cross-cutting decision that does not yet have an ADR — flag it here so the reconcile step can write one.
 - **Acceptance criteria:** How we'll know this works. Be specific:
   - Tests to write, update, or remove (with brief description of what each verifies)
   - Manual verification steps if applicable
@@ -146,7 +146,7 @@ Handling:
 
 - **Confirmed** (change implements the decision as recorded) — no action.
 - **Contradicted / drifted** (change violates an accepted ADR, or the ADR was already stale relative to the code) — invoke `/b-adr` to write a new ADR superseding the old one. Pass the rationale and the ADR-ID being superseded in the description.
-- **Narrowed** (change scopes an exception without invalidating the original) — invoke `/b-adr` to write a partial-supersession ADR (new ADR; old one stays accepted).
+- **Narrowed** (change scopes an exception without invalidating the original) — invoke `/b-adr` to write a narrowing ADR. Pass the rationale and the ADR-ID being narrowed. The new ADR carries `narrows: [ADR-NNNN]`, the old one gains `narrowed-by` and keeps `status: accepted`.
 - **New cross-cutting decision** (change introduces a commitment that didn't have an ADR) — invoke `/b-adr` to record it.
 
 Skip only if no Decision impact was identified at the gate (Step 2 listed it as `none`). Otherwise this is not optional — silent decision drift is exactly what the ADR mechanism exists to prevent.

@@ -9,7 +9,7 @@ The user's description of the change: $ARGUMENTS
 ## Important Behavioural Rules
 
 - **The brief is the contract.** Stage 0 produces a change brief and gates on it. Stages 1–5 execute against the confirmed brief — they do not re-derive applicability. If a stage's brief section is `Status: nothing to do`, that stage emits a one-line acknowledgment and proceeds. The applicability question is settled once, up front, not re-asked five times.
-- **ADR IDs are pre-allocated in the brief.** Stage 2 operations in the brief carry real, pre-allocated IDs (e.g. `new ADR-0034`). Stages 1, 3, and 4 cross-reference these IDs verbatim when drafting edits to `scope.md`, `architecture.md`, or `plan.md` files — **never use `ADR-NNNN` as a literal placeholder** in any draft, because draft content is what gets written to disk on gate confirmation. If the brief lacks pre-allocated IDs for `new`/`supersedes`/`partial-supersedes` operations, halt and surface the issue rather than inventing or placeholdering them.
+- **ADR IDs are pre-allocated in the brief.** Stage 2 operations in the brief carry real, pre-allocated IDs (e.g. `new ADR-0034`). Stages 1, 3, and 4 cross-reference these IDs verbatim when drafting edits to `scope.md`, `architecture.md`, or `plan.md` files — **never use `ADR-NNNN` as a literal placeholder** in any draft, because draft content is what gets written to disk on gate confirmation. If the brief lacks pre-allocated IDs for `new`/`supersedes`/`narrows` operations, halt and surface the issue rather than inventing or placeholdering them.
 - **Surface mid-flight discoveries.** If a stage uncovers work that wasn't in the brief, surface it to the user and ask whether to amend the brief or skip it. Do not silently expand scope; do not silently shrink it either.
 - **Consult at every content gate.** Stages with non-nil delta use AskUserQuestion to confirm the **drafted content** (the ADR text, the architecture edit, the plan touches) — not applicability, which Stage 0 has already settled.
 - **Per-stage writes.** Each stage with delta writes its files immediately after its gate is confirmed. There is no consolidated write step.
@@ -72,15 +72,15 @@ Stage-specific drafting and write rules follow.
 **Drafting:** For each operation in the brief's list:
 
 - **new** — Draft a new ADR per the schema in `/b-adr`: frontmatter (including `scope`, and `modules`/`topics` where applicable) + two required sections (Context, Decision) and two optional (Consequences, Alternatives considered). ~150 words, ceiling 300.
-- **supersedes ADR-NNNN** — Draft the new ADR with `supersedes: [ADR-NNNN]` in the frontmatter. Also draft the frontmatter update for the superseded ADR (`status: superseded`, `superseded-by: [<new-id>]`). The superseded ADR's body is **not** edited.
-- **partial-supersedes ADR-NNNN** — Draft the new ADR referencing the original in `## Context` and `## Consequences`. Both ADRs remain `accepted`; neither's frontmatter changes.
+- **supersedes ADR-NNNN** — Draft the new ADR with `supersedes: [ADR-NNNN]` in the frontmatter. Also draft the frontmatter update for the superseded ADR (`status: superseded`, `superseded-by: [<new-id>]`). The superseded ADR's body is **not** edited. If the superseded ADR carries `narrows` or `narrowed-by`, also draft the pointer updates on those third ADRs per the narrowing rules in `_bower/framework-reference.md` — a retired ADR must not stay referenced by a live one; where a narrowing ADR's exception may or may not survive the replacement, ask at the gate.
+- **narrows ADR-NNNN** — Draft the new ADR with `narrows: [ADR-NNNN]` in the frontmatter, referencing the original in `## Context` and `## Decision` and stating what the exception is and what remains in force. Also draft the frontmatter update for the narrowed ADR: `narrowed-by: [<new-id>]` added, **`status` left at `accepted`**. The narrowed ADR's body is **not** edited. Do not use this operation where the earlier decision no longer holds at all — that is `supersedes`.
 - **confirms ADR-NNNN** — **No file is written.** Acknowledge in the stage output: "Confirmed ADR-NNNN, no new ADR written." This is a deliberate signal that the operator considered it.
 
 **ID verification.** The brief's Stage 2 operations carry pre-allocated IDs (per `_bower/brief-schema.md`). Before writing, scan `docs/adr/*.md` for the current highest existing `NNNN-` prefix and verify the brief's pre-allocated IDs are `<highest> + 1`, `<highest> + 2`, etc. — i.e. no ADR has been created between Stage 0 and now. If verification passes, use the brief's IDs throughout. If a discrepancy is found (another ADR was added in the interim), surface it at the gate: ask the operator whether to renumber the new ADRs forward or abort the stage.
 
-**Gate:** Present the drafted ADRs (and any supersession frontmatter changes) together. Ask: "Confirm the ADRs and supersession updates, or adjust before writing."
+**Gate:** Present the drafted ADRs (and any supersession or narrowing frontmatter changes) together. Ask: "Confirm the ADRs and the supersession/narrowing updates, or adjust before writing."
 
-**Write:** New ADR files to `docs/adr/NNNN-kebab-title.md`. Frontmatter updates to superseded ADRs (body untouched). Create `docs/adr/` if it doesn't exist.
+**Write:** New ADR files to `docs/adr/NNNN-kebab-title.md`. Frontmatter updates to superseded and narrowed ADRs (bodies untouched) — written in the same step as the ADR that names them, never left one-sided. Create `docs/adr/` if it doesn't exist.
 
 ## Stage 3: Architecture
 

@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.27 | 2026-07-29 | ADR narrowing gets frontmatter: `narrows` / `narrowed-by`, replacing body-only partial supersession | judgement |
 | v0.26 | 2026-07-29 | One home each for module features (build order) and module purpose (`architecture.md`); repo-root doc links versioned and enforced | judgement |
 | v0.25 | 2026-07-28 | Changelog split at v0.20; `/b-upgrade` reads one section at a time | none |
 | v0.24 | 2026-07-28 | Success criteria stop carrying status — scope states the boundary, modules track the work | judgement |
@@ -21,6 +22,57 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
 
 ---
+
+## v0.27 — 2026-07-29
+
+### ADR narrowing becomes frontmatter, not prose
+
+Partial supersession — a decision that scopes an exception to an earlier one whose central commitment still holds — was already a first-class concept in seven places, with the rule "leave the old one `accepted`, describe the relationship in the new body." Body-only is legible to a model holding both files and to nothing else: an index, a `grep`, or a rendering tool could not distinguish a narrowed decision from an unqualified one. That left an author with two bad options — overclaim `supersedes` (marking live policy dead, which tools then act on) or stay silent (conformant, invisible). The relationship now has a field, and the operation is renamed from `partial-supersedes` to `narrows` so there is one vocabulary end to end. `narrows` was chosen over `partially-supersedes` partly because the latter contains `supersedes`/`superseded-by` as substrings, so every existing string match would silently match the new fields. Full reasoning in `_bower/rationale.md`.
+
+**Changed:**
+
+- **`_bower/framework-reference.md`** — the frontmatter schema gains `narrows` and `narrowed-by`; a new **Narrowing** paragraph states the symmetry, the status-preservation rule, the body requirement, the supersede-vs-narrow test, and the pruning rule for superseding either side of an existing pair.
+- **`.claude/commands/b-adr.md`** — Step 2 is renamed *Determine ID and Relationship* and its partial-supersession bullet becomes a narrowing branch that now writes the target's frontmatter; new prose gives the choice test and routes genuine ambiguity to the gate. Step 4 gains the `narrowed-by` write with an explicit leave-`status`-alone instruction, a rule that both sides of a relationship are one write (aborting rather than leaving a half-written pair), and pruning rules so superseding an ADR that participates in a narrowing pair transfers or removes the pointers in the same write. The gate shows the target's diff and states what survives; the handoff and `<critical_constraints>` gain narrowing lines.
+- **`.claude/commands/b-index.md`** — schema table gains both fields; the **Active decisions** table gains a `Relations` column rendering `narrows` / `narrowed by` / `supersedes` from frontmatter, which is what makes narrowing visible given the status is correctly still `accepted`. The regeneration contract adds the column when absent, and the otherwise-curated schema block now gains any field row it is missing. Regeneration also verifies each pair is symmetric and live, reporting one-sided or dead pointers rather than repairing them.
+- **`.claude/commands/b-design.md`** — Stage 2's `partial-supersedes` operation becomes `narrows` and now drafts the target's frontmatter update, dropping "neither's frontmatter changes." `supersedes` operations now also draft the pointer updates for any narrowing pair the retired ADR participates in.
+- **`.claude/agents/bower-analyst.md`, `_bower/brief-schema.md`** — operation renamed in ID pre-allocation and the Stage 2 template; the semantics line states the choice test.
+- **`.claude/commands/b-feature.md`, `.claude/commands/b-module.md`, `.claude/commands/b-ui.md`** — the *Narrowed* reconcile branches (and `/b-module`'s gate line) name the fields and the status-preservation rule.
+- **`.claude/agents/bower-reviewer.md`, `.claude/commands/b-review.md`** — the `adr-supersede` finding class explicitly covers partial contradiction too; `/b-adr`'s supersede-vs-narrow test decides which is recorded.
+- **`_bower/rationale.md`** — new paragraphs: frontmatter as the machine-legible projection of the body, the operation-implies-a-field rule, and why narrowing is the one sanctioned exception to *State Has One Home* (one writer, both copies, one operation).
+- **`_bower/roadmap.md`** — the duplicated-schema item records that this change nearly fired its revisit trigger, and why canonicalisation was not bundled in.
+
+### Migration
+
+Four parts. Part A is judgement-required; B, C and D are mechanical. Skip all of it if the project has no `docs/adr/` directory.
+
+**Part A — find and record existing narrowing relationships.** These exist in bodies today and are invisible in frontmatter. Do not infer them silently; propose and confirm.
+
+1. Read every ADR under `docs/adr/` whose `status` is `accepted`. For each, scan the body — `## Context`, `## Decision`, `## Consequences` — for language asserting a *partial* relationship to another ADR: "narrows", "does not supersede", "scopes an exception to", "remains correct", "remains in force", "still applies except", "unlike ADR-NNNN", or any sentence naming another ADR and limiting rather than replacing it.
+2. For each candidate, identify the target ADR ID and apply the test: **would someone implementing the target's main decision today still be right?** If yes, it is a narrowing. If no, the body is describing a supersession that was never recorded — that is a different finding; report it and do not treat it as a narrowing.
+3. Present every candidate pair to the operator before writing anything: the narrowing ADR's ID and title, the target's ID and title, and the sentence from the body that establishes the relationship. Ask for confirmation per pair. Do not batch-apply.
+4. On confirmation, for each pair: add `narrows: [ADR-TARGET]` to the narrowing ADR's frontmatter, and add `narrowed-by: [ADR-NARROWER]` to the target's frontmatter. **Do not change the target's `status`** — it stays `accepted`. **Do not edit either body** — bodies are immutable, and the body already says what is needed. Extend the list if either field already exists.
+
+**Part B — repair frontmatter that overclaims supersession.** This is a pre-existing conformance defect that Part A's reading will surface.
+
+1. For each ADR carrying `supersedes: [ADR-NNNN]`, read its body. If the body states that ADR-NNNN's decision still holds, is still correct, or is only partly displaced, then the `supersedes` claim is false: it is a narrowing.
+2. Confirm with the operator, quoting the contradicting sentence. On confirmation: remove `ADR-NNNN` from `supersedes` (delete the field if the list becomes empty), add `narrows: [ADR-NNNN]` instead, and on ADR-NNNN remove this ADR's ID from `superseded-by` (deleting the field if empty) and add `narrowed-by`. Then, **only if ADR-NNNN's `superseded-by` is now empty**, set its `status: accepted`; if another ADR still genuinely supersedes it, leave `status: superseded`.
+3. If a target's `status` was `superseded` **only** because of this false claim, it is now `accepted` again and re-enters the active set — say so explicitly in the report, because it changes which ADRs commands load.
+
+**Part C — add the two field rows to the project's ADR index schema block.** `/b-index` treats that block as curated and will not overwrite it, so this will not happen on its own.
+
+1. Open `docs/adr/index.md` and find the frontmatter-fields table in its `## Schema` section. If the file or table does not exist, skip to Part D.
+2. After the `superseded-by` row, add these two rows verbatim, matching the table's existing column count and separator style:
+
+   ```
+   | `narrows` | no | List of ADR IDs this entry scopes an exception to; those ADRs stay `accepted` |
+   | `narrowed-by` | no | List of ADR IDs that narrowed this entry — it remains `accepted` and in force |
+   ```
+
+3. Leave every other row, and any prose the project added around the table, exactly as written.
+
+**Part D — regenerate.** Run `/b-index`. It adds the `Relations` column to the active-decisions table and populates it from the frontmatter written in Parts A and B.
+
+Report to the operator: every pair recorded in Part A with the evidence sentence, every overclaim repaired in Part B including any ADR whose status returned to `accepted`, and whether Part C found a schema table to amend.
 
 ## v0.26 — 2026-07-29
 

@@ -2,7 +2,7 @@
 
 You are scaffolding an Architectural Decision Record (ADR) — a single-file, append-only entry in the project's decision log at `docs/adr/`. ADRs capture cross-cutting commitments: choices that constrain more than one feature and would surprise a future reader if not written down.
 
-This command produces exactly one deliverable: a new ADR file (and, if superseding, a frontmatter update to the ADR being replaced). It does not modify code, plans, or status documents — those are the job of the command that called this one (typically `/b-feature` reconcile or `/b-design` Stage 2).
+This command produces exactly one deliverable: a new ADR file (and, if superseding or narrowing, a frontmatter update to the ADR being replaced or narrowed). It does not modify code, plans, or status documents — those are the job of the command that called this one (typically `/b-feature` reconcile or `/b-design` Stage 2).
 
 The user's description of the decision: $ARGUMENTS
 
@@ -24,11 +24,13 @@ The user's description of the decision: $ARGUMENTS
 
 Do **not** load every ADR. The point of the index is that you don't have to.
 
-## Step 2: Determine ID and Supersession
+## Step 2: Determine ID and Relationship
 
 - **ID.** Scan `docs/adr/*.md` filenames for the highest existing `NNNN-` prefix; the new ID is that number + 1, zero-padded to four digits. If the directory is empty or missing, the new ID is `0001`. IDs are immutable and never reused — gaps from deleted entries are fine.
 - **Supersession.** If the user's description names an existing ADR being replaced, this is a supersession. The new ADR will carry `supersedes: [ADR-NNNN]` and the old ADR's frontmatter will be updated with `superseded-by: [<new-id>]` and `status: superseded`. Both files will be written in this command's output. The old ADR's **body is not touched**.
-- **Partial supersession.** If the user describes a decision that scopes an exception to an existing ADR rather than fully replacing it (e.g. "ADR-0011 says use Postgres for all stores; this module uses ClickHouse instead"), do **not** mark the old one superseded. Both ADRs remain `accepted`. Reference the original in the new ADR's `## Context` and `## Consequences` sections.
+- **Narrowing.** If the user describes a decision that scopes an exception to an existing ADR rather than fully replacing it (e.g. "ADR-0011 says use Postgres for all stores; this module uses ClickHouse instead"), this is a **narrowing**. The new ADR carries `narrows: [ADR-NNNN]` and the old ADR's frontmatter gains `narrowed-by: [<new-id>]` — and **nothing else**: its `status` stays `accepted`, because its central decision is still in force. Both files are written in this command's output. The old ADR's **body is not touched**.
+
+**Choosing between them.** Apply this test before deciding: *would someone implementing the old ADR's main decision today still be right?* If yes, it is a narrowing — the old decision survives with an exception carved out. If no, it is a supersession. When the answer is genuinely unclear, put the question to the user at the gate rather than guessing; the two are not interchangeable, and recording a narrowing as a supersession marks live policy dead. Do not use `supersedes` for a relationship the new ADR's own body describes as partial.
 
 ## Step 3: Draft the ADR
 
@@ -44,6 +46,7 @@ scope: universal | module | integration | operational
 modules: [<module-name>, ...]
 topics: [<kebab-keyword>, ...]
 supersedes: [ADR-NNNN]
+narrows: [ADR-NNNN]
 ---
 
 ## Context
@@ -84,6 +87,7 @@ Frontmatter rules:
 - `modules:` — required when `scope: module` (exact directory names under `docs/modules/`); otherwise include only if a specific module is implicated. Do not write `modules: []`.
 - `topics:` — optional list of kebab-case subject keywords (e.g. `[streaming, control-codes]`). Include when the decision should surface for topically-related changes regardless of module.
 - `supersedes:` and `superseded-by:` — omit when empty.
+- `narrows:` and `narrowed-by:` — omit when empty. Symmetric: if the new ADR carries `narrows: [ADR-MMMM]`, then ADR-MMMM must gain `narrowed-by: [<new-id>]` in the same write. Never both `supersedes` and `narrows` naming the *same* ADR — pick one per relationship. Do not add `narrows` targeting an ADR whose status is `superseded` or `deprecated`; there is nothing left to narrow, and if the retired decision is the right subject, the live ADR that replaced it is what the new one narrows.
 - `date:` — today's date in `YYYY-MM-DD`.
 - `status:` — `accepted`.
 
@@ -103,7 +107,7 @@ Present the drafted ADR to the user via AskUserQuestion. Show:
 
 Before presenting, self-audit: does the Decision section's central sentence fit under the title? If not, flag a possible second ADR. Does `## Consequences`, if included, name a non-obvious cost — or is it restating the Decision? If the latter, propose omitting it. Is `## Context` paraphrasing a doc already referenced? If so, tighten to one or two sentences pointing at the doc. Is `scope` the narrowest true value — would `universal` really constrain *every* feature, or is this a module, integration, or operational decision wearing a broad label?
 
-If this is a supersession, also show the frontmatter change to the older ADR (status, superseded-by, date).
+If this is a supersession, also show the frontmatter change to the older ADR (status, superseded-by, date). If this is a narrowing, show the older ADR's frontmatter change too (`narrowed-by` added, `status` unchanged at `accepted`) and state in one line what the narrowing leaves in force — that is the claim the user is confirming, and it is the one a mistaken supersession would have destroyed. If the ADR being superseded participates in a narrowing pair (`narrows` or `narrowed-by` in its frontmatter), show the pointer updates to those third ADRs too — and where a narrowing ADR's exception may or may not survive the replacement decision, ask rather than assume (see Step 4's pruning rules).
 
 Frame as: "Here's the ADR I'd write. Confirm to commit it to disk, or tell me what to adjust."
 
@@ -119,7 +123,17 @@ After confirmation:
    - Set `status: superseded`
    - Add or extend `superseded-by: [<new-id>]`
    - Leave the body completely untouched.
-4. Run `/b-index` to regenerate `docs/adr/index.md` (and `docs/index.md` if it references the ADR section). If `/b-index` is not available in this session, write a minimal `docs/adr/index.md` yourself — see schema in `b-index.md`.
+   - If the older ADR carries `narrows` or `narrowed-by`, prune those pointers per the paragraph below — a retired ADR must not stay referenced by a live one.
+4. If narrowing, update the narrowed ADR's frontmatter:
+   - Add or extend `narrowed-by: [<new-id>]`
+   - **Leave `status` as `accepted`.** Do not change it. Do not add `superseded-by`.
+   - Leave the body completely untouched.
+
+**Superseding either side of a narrowing pair prunes the pointers.** If the ADR being superseded carries `narrows: [ADR-T]`, the exception it carved dies with it: remove its ID from each target's `narrowed-by` (deleting the field if empty) — unless the new ADR re-asserts the exception by carrying its own `narrows: [ADR-T]`, in which case update the target's `narrowed-by` to the new ID instead. If it carries `narrowed-by: [ADR-X]`, whether ADR-X's exception survives against the replacement decision is a judgement — it was asked at the gate. If it survives, rewrite ADR-X's `narrows` entry to the new ID and add `narrowed-by: [ADR-X]` to the new ADR; if not, remove the retired ID from ADR-X's `narrows` (deleting the field if empty). ADR-X's own `status` never changes either way.
+
+**Both sides of a relationship are written together.** A `narrows` or `supersedes` field on the new ADR and the matching `narrowed-by` or `superseded-by` on the target are one write, not two steps that might be separated. Write the new ADR and the target's frontmatter update before doing anything else — before running `/b-index`, before emitting the handoff. If the target file cannot be written (missing, unreadable, malformed frontmatter), stop and report it rather than leaving the new ADR on disk claiming a relationship the other side does not record. This command is the only writer of both fields, and that is what keeps them consistent; there is no later reconcile pass that would notice a half-written pair.
+
+5. Run `/b-index` to regenerate `docs/adr/index.md` (and `docs/index.md` if it references the ADR section). If `/b-index` is not available in this session, write a minimal `docs/adr/index.md` yourself — see schema in `b-index.md`.
 
 ## Step 5: Handoff
 
@@ -133,6 +147,7 @@ Emit a single short handoff block. The next move depends on context:
 ADR-NNNN recorded: <title> [<status>]
 <Filename>
 <If supersession: ADR-MMMM marked superseded.>
+<If narrowing: ADR-MMMM narrowed (still accepted).>
 
 Next move:
   - <literal slash command, or "(none — ADR recorded; resume your next task)">
@@ -143,7 +158,10 @@ Next move:
 
 - Do not modify the body of an existing ADR — bodies are immutable
 - Do not write the ADR before the gate
-- Do not skip the supersession frontmatter update on the older ADR
+- Do not skip the supersession or narrowing frontmatter update on the older ADR — both sides of the relationship are written in the same step
+- Do not set `status: superseded` on a narrowed ADR, or add `superseded-by` to it — a narrowed decision stays `accepted` and in force
+- Do not record a narrowing as a supersession because it is simpler — if the new ADR's body says the earlier decision still holds, the frontmatter must say `narrows`
+- Do not leave `narrows` or `narrowed-by` pointing at a superseded ADR — prune or transfer the pointers in the same supersession write
 - Do not invent sentinels in `modules:` — omit the field when no specific module is implicated
 - Do not default `scope` to `universal` — it is the rare, every-feature-pays-for-it classification; pick the narrowest true value
 - Do not bundle decisions the title can't honestly cover — that's two ADRs (but bundling related commitments under a coherent umbrella title is fine)

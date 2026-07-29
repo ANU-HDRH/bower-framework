@@ -70,7 +70,7 @@ Status: <N> operation(s)
 2. supersedes ADR-MMMM (new ADR-NNNN) — <decision title>
    Rationale: ...
 
-3. partial-supersedes ADR-MMMM (new ADR-NNNN) — <decision title>
+3. narrows ADR-MMMM (new ADR-NNNN) — <decision title>
    Rationale: ...
 
 4. confirms ADR-MMMM — <decision title>
@@ -82,7 +82,7 @@ Where `NNNN` and `MMMM` in this template are placeholders for real IDs (e.g. `AD
 Operation semantics (per CLAUDE.md):
 - `new` — no existing ADR covers this; new file at the pre-allocated ID.
 - `supersedes` — replaces an existing decision; old ADR's frontmatter updated to `status: superseded`, body untouched.
-- `partial-supersedes` — scopes an exception; both ADRs remain `accepted`.
+- `narrows` — scopes an exception to an existing decision whose central commitment still holds; both ADRs remain `accepted`, the new one carries `narrows: [ADR-MMMM]` and the old one gains `narrowed-by`. Choose between this and `supersedes` by asking whether someone implementing the old ADR's main decision today would still be right — yes → `narrows`, no → `supersedes`.
 - `confirms` — existing ADR reaffirmed; **no new ADR is written**, **no ID consumed**. Listed so the operator can see the analyst considered it.
 
 ### `## Stage 3 — Architecture`

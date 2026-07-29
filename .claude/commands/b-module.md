@@ -49,7 +49,7 @@ Then, at the module level:
 
 - **Integration test** — what test exercises the module boundary (per the integration notes in `module-status.md`)
 - **Scope impact** — whether this build moves the scope boundary, changes a non-goal, or reveals that a success criterion is missing, wrongly worded, or points at the wrong module. Name the criteria this module is responsible for (those naming it under `Delivered by:`) as context for the plan, but do not treat satisfying them as a `scope.md` edit — criteria carry no status
-- **Decision impact** — list any accepted ADR loaded in Step 1 that this module's build *touches*: confirms, contradicts (must supersede), narrows (partial-supersession ADR), or surfaces as drifted. Note any new cross-cutting decision the module introduces that needs an ADR.
+- **Decision impact** — list any accepted ADR loaded in Step 1 that this module's build *touches*: confirms, contradicts (must supersede), narrows (a narrowing ADR — the old decision stays `accepted`), or surfaces as drifted. Note any new cross-cutting decision the module introduces that needs an ADR.
 - **What you won't touch** — explicitly note adjacent areas left alone
 
 ## Gate: Confirm or Adjust
@@ -98,7 +98,7 @@ For each check:
 - **FAIL** — treat as a bug; if fixable in scope, fix and re-verify. If not, leave the feature 🟡 or 🔴 with the failure noted in its `status.md`.
 - **Deferred** — leave the feature 🚧 with `Pending verification:` intact. `/b-recap` will surface it later.
 
-**Decision reconciliation.** Review the **Decision impact** noted at the gate. For each touched ADR: confirmed → no action; contradicted/drifted → invoke `/b-adr` with the ADR-ID being superseded; narrowed → invoke `/b-adr` for a partial-supersession ADR; new cross-cutting decision → invoke `/b-adr` to record it.
+**Decision reconciliation.** Review the **Decision impact** noted at the gate. For each touched ADR: confirmed → no action; contradicted/drifted → invoke `/b-adr` with the ADR-ID being superseded; narrowed → invoke `/b-adr` for a narrowing ADR (the narrowed ADR keeps `status: accepted`); new cross-cutting decision → invoke `/b-adr` to record it.
 
 Skip only if no Decision impact was identified at the gate. If the user rejects the drafted ADR at `/b-adr`'s gate, redraft with their adjustments rather than skipping; if they want to abandon ADR creation entirely, re-classify the impact (likely "confirmed") — do not silently skip. Complete any ADR work before continuing to Step 5.
 
