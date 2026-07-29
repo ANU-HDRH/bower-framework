@@ -57,7 +57,8 @@ Include extension points if relevant to the audience.]
 ## Modules
 
 ### [Module Name]
-[From module-status.md: what this group of features does together.
+[From the module's entry in architecture.md `## Software architecture`:
+what this group of features does together — its purpose and data concern.
 From each feature's plan.md: purpose, how it works, key components,
 integration points. Omit source locations, test paths, and internal
 status tracking — the reader doesn't need those.]

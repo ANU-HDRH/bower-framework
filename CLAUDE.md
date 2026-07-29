@@ -9,6 +9,20 @@
 - **The version string lives in four places — bump all four in the same commit.** In order of authority: `_bower/VERSION` (canonical, read by the scaffold script, `/b-upgrade`, and `scripts/release.sh` — unprefixed, e.g. `0.25`), `_bower/framework.md`'s top heading, `README.md`'s top heading, and the new `_bower/changes.md` section heading. The last three are human-visible labels that nothing reads, which is exactly why they get forgotten — `README.md`'s especially, since it is otherwise untouched by most framework changes. Check all four before committing: `grep -rn 'v0\.[0-9]*' README.md _bower/framework.md | head -2` and `cat _bower/VERSION`.
 - **The project-facing CLAUDE.md is a template, not the live one.** This file (the root `CLAUDE.md`) is contributor-only. The template that projects receive lives at `_bower/project-CLAUDE.md`; it `@`-includes `_bower/framework.md`. When you change framework guidance, edit `_bower/framework.md` — projects pick up the change by re-running the scaffold script over their `_bower/` directory.
 
+## Changelog entries are terse — the migration notes are not
+
+The prose part of a `_bower/changes.md` entry is a record, not an essay. Per sub-change: one short paragraph saying what changed and why, then a bulleted list of the files touched with a clause each. That is the whole budget. This file is scaffolded into every project and read by `/b-upgrade`, so length has a real cost, and long entries are the reason the log had to be cut once already.
+
+Do not write into a changelog entry:
+
+- **Process narrative** — how the problem was found, what was surveyed, what the sweep turned up, what was considered and rejected, why a commit was or wasn't rewritten. Nobody reads a changelog for this.
+- **Extended rationale** — design reasoning belongs in `_bower/rationale.md`, which is where a reader looking for *why* will go. Put it there and give the entry a one-clause pointer to it. If the reasoning does not warrant a `rationale.md` paragraph, it does not warrant space in the changelog either.
+- **Comparisons to earlier versions**, restatements of rules already written in `framework-reference.md`, or a recap of what the entry is about to say.
+
+The `### Migration` subheading is the exception and is exempt from all of the above: `/b-upgrade` executes those notes in a downstream project, so verbosity there is functional. Be as explicit and long as correctness requires — see the next section.
+
+If asked to trim an entry, cut the prose and leave the migration notes and the file list intact.
+
 ## Migration-notes authoring discipline
 
 Every framework change gets migration notes in its `_bower/changes.md` entry. These notes are read by the `/b-upgrade` skill running in a downstream project — a model audience walking through one version at a time. Authoring discipline matters because a vague or context-dependent note will produce inconsistent upgrades across projects, and the failure may not surface until much later.
@@ -16,7 +30,7 @@ Every framework change gets migration notes in its `_bower/changes.md` entry. Th
 Write notes under a `### Migration` subheading inside the version's section. Rules:
 
 - **Self-contained.** Do not write "see also v0.10's note" or "as in the previous version." `/b-upgrade` reads one version's section at a time; a cross-reference is a dangling pointer.
-- **Written for a model audience.** Be explicit about which files to read, what to look for, and what to write. "Update `architecture.md`" is too vague. "For each module under `docs/modules/`, read its `module-status.md` and any `plan.md` to understand its purpose; add a `## Software architecture` section to `docs/architecture.md` with one entry per module covering purpose, data-concern boundary, constituent features, and inter-module dependencies" is the shape.
+- **Written for a model audience.** Be explicit about which files to read, what to look for, and what to write. "Update `architecture.md`" is too vague. "For each module under `docs/modules/`, read its `module-status.md` and any `plan.md` to understand its purpose; add a `## Software architecture` section to `docs/architecture.md` with one entry per module covering purpose, data-concern boundary, and inter-module dependencies" is the shape.
 - **Name "no migration needed" explicitly.** If a version has no project-side migration work, write `### Migration` with a single line: `None — no project-side changes required.` Silence is ambiguous; "none" is decisive.
 - **Distinguish mechanical from judgement-required work.** If a step is a direct file edit, say so. If it requires the model to read project content and synthesise (e.g. backfilling a section with content inferred from existing files), say *that* — the operator's self-assessment in `/b-upgrade` depends on knowing where discretion was exercised.
 - **List file references inline.** Migration notes that say "read the schema in `_bower/brief-schema.md`" are fine — that file is now in the project after scaffold. Migration notes that reference files only in the framework repo (not scaffolded) need to inline the content.

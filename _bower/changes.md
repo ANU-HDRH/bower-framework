@@ -12,12 +12,90 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.26 | 2026-07-29 | One home each for module features (build order) and module purpose (`architecture.md`); repo-root doc links versioned and enforced | judgement |
 | v0.25 | 2026-07-28 | Changelog split at v0.20; `/b-upgrade` reads one section at a time | none |
 | v0.24 | 2026-07-28 | Success criteria stop carrying status — scope states the boundary, modules track the work | judgement |
 | v0.23 | 2026-07-27 | Constitution truthfulness — normative shape, flag-don't-fix, consent gate | judgement |
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.26 — 2026-07-29
+
+### `architecture.md` stops listing module features — the build order is the only roster
+
+The `## Software architecture` entry listed each module's constituent features, duplicating that module's `module-status.md` `## Build order`. No command ever wrote the roster back into `architecture.md` — it was populated once at `/b-design` Stage 3 or `/b-adopt` and decayed from there; a real project was found two features out of date. This fails the one-home rule in `framework-reference.md` ("scope.md — Boundary, Not Tracker"). The dependency lists in the same entry are kept: nothing else records them, so they are the view's own state, not a copy. Full reasoning in `_bower/rationale.md`.
+
+**Changed:**
+
+- **`.claude/commands/b-design.md`** — Stage 3's software-architecture view drops `constituent features` from the entry fields, with an explicit instruction not to enumerate features and a pointer to the build order as the roster's only home.
+- **`.claude/commands/b-adopt.md`** — the architecture deliverable's entry fields drop the feature roster; adoption writes it to `## Build order` only (which it already did).
+- **`.claude/agents/bower-reviewer.md`** — Phase 1 input 3 no longer reads constituent features from `architecture.md`, and takes the roster from `module-status.md` (input 1) instead.
+- **`_bower/brief-schema.md`** — the Stage 3 view description, the software-architecture delta line format (`edit (purpose / data concern / depends on / consumed by)`), and the worked example all drop the features field. Feature-roster deltas were already reported under Stage 4's build-order subsection.
+- **`_bower/framework-reference.md`** — the `## Build order` spec gains a paragraph naming it the module's only feature roster and stating that `architecture.md` deliberately stops short of one.
+- **`_bower/rationale.md`** — the two-view paragraph drops the field; new paragraphs record why, the keep/drop test for future fields, and the rejected illustrative-list option.
+
+### `/b-index` sources module descriptions from `architecture.md`, not `module-status.md`
+
+The same defect in the other direction. `/b-index` was told to take module descriptions from `module-status.md`, which defines no description field — its schema is the integration marker, the build order, and integration notes. Module purpose lives in `architecture.md` `## Software architecture`. Satisfying the old instruction meant either paraphrasing the integration `Notes:` (what the boundary test asserts, not what the module is for) or growing a purpose line in `module-status.md` that nothing maintains.
+
+**Changed:**
+
+- **`.claude/commands/b-index.md`** — Process step 1 now reads each module's one-line purpose from `docs/architecture.md` `## Software architecture` alongside the system overview. The description rule names that section as the single source, states why `module-status.md` is the wrong source, and directs the command to omit a description (and note the gap) rather than invent one when a module has no software-architecture entry.
+- **`.claude/commands/b-spec.md`** — the spec template's per-module description had the same wrong source; it now draws from the module's `## Software architecture` entry (purpose and data concern), which Step 1 already reads.
+
+### Repo-root-based doc links
+
+This convention was added to `_bower/framework.md` Working Conventions after v0.25 without a version entry:
+
+> **Doc links are repo-root-based.** Write `[ADR-xxxx](/docs/adr/xxxx-yyy.md)`, never `../../../adr/…`. Targets must start with `/`, `#` or a URL scheme.
+
+It is versioned here with the conformance work it needed: two commands emit links from templates, and every template target was relative, so `/b-index` wrote non-conformant links on every run.
+
+**Changed:**
+
+- **`.claude/commands/b-index.md`** — all eight link targets in the `docs/index.md` seed template and the `docs/adr/index.md` ADR-table row are now repo-root-based (`/docs/architecture.md`, `/docs/modules/<module>/module-status.md`, `/docs/adr/NNNN-kebab-title.md`, …), with the rule stated for the template — it holds even though these links sit inside `docs/`, where a relative target resolves. On regeneration, relative targets in an existing `docs/index.md` are rewritten: link targets are derived values, so preserve-don't-flatten does not shield them.
+- **`.claude/commands/b-adopt.md`** — the adoption banner's ledger link becomes `/docs/adoption-ledger.md`.
+
+### Migration
+
+Three parts. Part A is judgement-required; Parts B and C are mechanical, and B may find nothing to do.
+
+**Part A — remove feature rosters from `architecture.md`. Do not perform this as a blind delete.** The drift runs in both directions, and one direction destroys information.
+
+1. Read `docs/architecture.md` and locate the `## Software architecture` section. If the file has no such section, or no entry in it names features, there is nothing to do — stop here.
+2. For each module entry that lists features (a `Features:` clause, a `Features.` sentence, or a bulleted feature list inside the entry), read that module's `docs/modules/<module>/module-status.md` `## Build order`.
+3. Compare the two lists by feature name:
+   - **Names in `## Build order` but not in the architecture entry** — this is the common case and needs no action. The build order is authoritative and already complete.
+   - **Names in the architecture entry but not in `## Build order`** — the architecture entry is the sole surviving record of that feature, and deleting the clause would destroy it. Do **not** silently append and do **not** silently drop. Surface each such name to the operator with both lists quoted, and ask which it is: a feature that should be appended to `## Build order` (add it with a `⏸` marker, placed where its dependencies dictate, or `🚧` if code for it plainly exists), a feature that was renamed (identify the current name and confirm), or a design-time feature that was folded into another or abandoned (drop it). Apply the operator's answer to `## Build order` before step 4.
+4. Once every name is accounted for, delete the feature list from the architecture entry. Keep the entry's purpose, data-concern boundary, and depends-on / consumed-by clauses. Do not add a replacement pointer line such as "Features: see module-status.md" — the convention is stated once in `_bower/framework-reference.md` and a per-entry pointer is noise. If deleting the clause leaves a stub sentence or dangling punctuation, repair the prose.
+5. If any module has an architecture entry but no `module-status.md`, or a `module-status.md` with no `## Build order`, that is a separate pre-existing defect — report it rather than fixing it here, since creating a build order requires design input.
+
+Report to the operator: which entries were edited, and every name from step 3 that required a decision along with the decision taken.
+
+**Part B — remove any module description that accumulated in `module-status.md`.**
+
+1. For each module under `docs/modules/`, read its `module-status.md`. The valid shape is a `## Module integration` section (`Test:` and `Notes:` lines) and a `## Build order` section, plus the optional pull-forward annotations on build-order entries. Look for anything beyond that which reads as a *description or purpose statement* for the module — a leading sentence or paragraph before the first heading, a `## Purpose` / `## Overview` / `## Description` section, or a `Purpose:` line.
+2. If there is none, this module needs nothing. This is the expected outcome for projects that followed the schema.
+3. If there is one, compare it with the module's purpose line in `docs/architecture.md` `## Software architecture` (Part A step 1 already located that section):
+   - **Says the same thing** — delete it from `module-status.md`. `architecture.md` is the home.
+   - **Says something `architecture.md` does not** — the `module-status.md` copy is carrying real information. Move the substance into the architecture entry's purpose line (condensing to one line; if it is genuinely about what the boundary test asserts rather than what the module is for, it belongs in the `## Module integration` `Notes:` line instead), then delete it from `module-status.md`. Show the operator the before/after of the architecture entry.
+   - **No architecture entry exists for this module** — do not delete anything. Report it; this is the same gap Part A step 5 covers.
+4. Do not add a description to any `module-status.md` that lacks one, and do not otherwise reformat these files.
+
+Then run `/b-index` so `docs/index.md`'s module descriptions are regenerated from `architecture.md`. Report which `module-status.md` files were trimmed and any purpose text that was moved rather than deleted.
+
+**Part C — convert doc links to the repo-root form.** Mechanical.
+
+1. Find every relative markdown link target in `docs/` — a target that starts with neither `/`, `#`, nor a URL scheme (`http:`, `https:`, `mailto:`). Both `../` forms and bare same-directory forms (`architecture.md`, `adr/index.md`) count. A grep such as `grep -rnE '\]\([^/#][^)]*\)' docs/ --include='*.md'` finds candidates; it will also match URL schemes, so filter those out by eye.
+2. Rewrite each to the repo-root form: the path the target resolves to from the repository root, with a leading `/`. A link to `architecture.md` from `docs/index.md` becomes `/docs/architecture.md`; a link to `../../adr/0007-caching.md` from `docs/modules/search/ranking/plan.md` becomes `/docs/adr/0007-caching.md`. **Resolve each target against the file it lives in** — do not pattern-match the filename, because the same basename can appear in more than one directory.
+3. If a target does not resolve to an existing file, do not invent a path. Leave it and report it — a relative link that was already broken is a separate finding, and rewriting it would only hide the breakage.
+4. Anchors within a target are preserved: `../scope.md#success-criteria` becomes `/docs/scope.md#success-criteria`. A bare `#anchor` target is already conformant — leave it.
+5. Leave links inside `_bower/` alone. Those are framework files, refreshed by the scaffold rather than maintained by the project.
+
+Report the count of links rewritten and any unresolvable targets from step 3.
 
 ---
 

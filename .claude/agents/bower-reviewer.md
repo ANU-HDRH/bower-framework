@@ -51,7 +51,7 @@ Run these phases in order. Phases are guidance for *what to read*; the report it
 
 1. `<root>/docs/modules/<module>/module-status.md` — the build order, the `## Module integration` `Test:` marker and notes. This names the features you'll review and the boundary the integration test is supposed to assert.
 2. `<root>/docs/constitution.md` — testing conventions and what "verified" means for this project. Coverage and status-honesty findings are judged against *these*, not against a generic bar. Note the line numbers of the claims you lean on: if the survey later contradicts one, you will need to quote it verbatim and locate it. Treat anything under a `## Not yet in force` heading as non-existent — it is not a convention and not a contradiction.
-3. `<root>/docs/architecture.md` `## Software architecture` — this module's stated purpose, data-concern boundary, constituent features, and declared inter-module dependencies. Boundary-integrity findings are measured against the declared dependencies.
+3. `<root>/docs/architecture.md` `## Software architecture` — this module's stated purpose, data-concern boundary, and declared inter-module dependencies. Boundary-integrity findings are measured against the declared dependencies. This entry does not list the module's features; take the roster from `module-status.md` `## Build order` (input 1).
 4. `<root>/_bower/review-schema.md` — the schema you must conform to, if not already internalised.
 
 ### Phase 2 — Survey the module's own state

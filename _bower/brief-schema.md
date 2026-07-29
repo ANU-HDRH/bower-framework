@@ -87,7 +87,7 @@ Operation semantics (per CLAUDE.md):
 
 ### `## Stage 3 — Architecture`
 
-`architecture.md` carries two views — a **runtime view** (topology, components, data flow, technology stack, constraints, extension points) and a **software architecture view** (`## Software architecture` section: per-module purpose, data-concern boundary, constituent features, inter-module dependencies). The analyst reports deltas against each view separately so `/b-design` Stage 3 can present them as distinct edits at the gate.
+`architecture.md` carries two views — a **runtime view** (topology, components, data flow, technology stack, constraints, extension points) and a **software architecture view** (`## Software architecture` section: per-module purpose, data-concern boundary, inter-module dependencies — **no feature roster**; that lives in the module's `module-status.md` `## Build order` and is reported under Stage 4, not here). The analyst reports deltas against each view separately so `/b-design` Stage 3 can present them as distinct edits at the gate.
 
 Either `Status: nothing to do` or:
 
@@ -99,7 +99,7 @@ Runtime view:
 - (none, if no runtime-view changes)
 
 Software architecture view:
-- <module-name>: <new entry | edit (purpose / data concern / features / depends on / consumed by) | remove entry>
+- <module-name>: <new entry | edit (purpose / data concern / depends on / consumed by) | remove entry>
 - (none, if no software-architecture changes)
 ```
 
@@ -218,7 +218,7 @@ Runtime view:
 - Data sources section: add one paragraph introducing the seasonal-availability feed, its refresh cadence, and its staleness handling. Cross-reference ADR-0010.
 
 Software architecture view:
-- seasonal-data: new entry — purpose: ingests and caches the external seasonal-availability feed, exposes a lookup API. Data concern: per-ingredient seasonality windows. Features: feed-ingest, seasonal-lookup. Depends on: (no internal dependencies; consumes the external feed). Consumed by: meal-planner, ingredient-search.
+- seasonal-data: new entry — purpose: ingests and caches the external seasonal-availability feed, exposes a lookup API. Data concern: per-ingredient seasonality windows. Depends on: (no internal dependencies; consumes the external feed). Consumed by: meal-planner, ingredient-search.
 
 ## Stage 4 — Module and feature plans
 

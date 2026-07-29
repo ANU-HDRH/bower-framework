@@ -14,7 +14,7 @@ Deciding derived vs. curated: a section is *derived* only if its content is mech
 
 ## Process
 
-1. Read `docs/architecture.md` for the system overview (if it exists)
+1. Read `docs/architecture.md` (if it exists) for the system overview **and**, from its `## Software architecture` section, each module's one-line purpose — that section is where module purpose lives, and it is the source for the module descriptions in the output below
 2. Read `docs/constitution.md` to confirm it exists
 3. Read `docs/ui.md` if it exists. Its presence enables the `UI` link in the index; if the file has a leading summary sentence or paragraph, use it for the link description (otherwise use the canonical "Experience surface (navigation, screens, interaction patterns)"). Parallel to how `architecture.md` is scanned for the system overview.
 4. Scan `docs/design/` for design documents
@@ -31,22 +31,24 @@ If `docs/index.md` already exists, follow the **Regeneration contract** above: r
 # Project Index
 
 ## Core System
-- [Architecture](architecture.md) — System overview and key decisions
-- [UI](ui.md) — Experience surface (navigation, screens, interaction patterns)
-- [Constitution](constitution.md) — Development conventions and standards
+- [Architecture](/docs/architecture.md) — System overview and key decisions
+- [UI](/docs/ui.md) — Experience surface (navigation, screens, interaction patterns)
+- [Constitution](/docs/constitution.md) — Development conventions and standards
 
 ## Design Context
-- [Problem Space](design/problem-space.md) — What we're solving and why
-- [Decision Log](adr/index.md) — Architectural Decision Records (N accepted, M superseded)
+- [Problem Space](/docs/design/problem-space.md) — What we're solving and why
+- [Decision Log](/docs/adr/index.md) — Architectural Decision Records (N accepted, M superseded)
 
 ## Feature Modules
 
 ### <Module Name> [<status>]
-<Brief description from module-status.md>
-- [<Feature>](modules/<module>/<feature>/) [<status>]
+<Brief description from the module's architecture.md `## Software architecture` entry>
+- [<Feature>](/docs/modules/<module>/<feature>/) [<status>]
 - ...
-- [Module Status](modules/<module>/module-status.md)
+- [Module Status](/docs/modules/<module>/module-status.md)
 ```
+
+Every link target is **repo-root-based** — a leading `/`, per the doc-link convention in `_bower/framework.md` Working Conventions. Write `/docs/architecture.md`, never `architecture.md` or `../../architecture.md`, even though these links sit inside `docs/` and a relative target would resolve. On regeneration, if the existing `docs/index.md` carries relative targets, rewrite them to the repo-root form as part of the derived-value refresh — link targets are derived, not curated structure.
 
 The UI line is included only if `docs/ui.md` exists. The Decision Log line is included only if `docs/adr/` exists and contains at least one ADR. Counts come from frontmatter `status` fields. Omit the Design Context section entirely if neither `docs/design/` nor `docs/adr/` exists.
 
@@ -85,7 +87,7 @@ Filter by `status: accepted` for "what's true now." Older statuses are historica
 
 | ID | Title | Scope | Modules | Topics | Date |
 |---|---|---|---|---|---|
-| [ADR-NNNN](NNNN-kebab-title.md) | <title> | <scope or *unclassified*> | <modules or —> | <topics or —> | <date> |
+| [ADR-NNNN](/docs/adr/NNNN-kebab-title.md) | <title> | <scope or *unclassified*> | <modules or —> | <topics or —> | <date> |
 
 (Listed by ascending ID. Includes all `status: accepted` ADRs. An ADR with no `scope` field is shown as *unclassified* — a pre-v0.20 entry awaiting classification; commands treat it as loadable on module or topical match only, never as universal.)
 
@@ -107,7 +109,7 @@ The schema section is **boilerplate** — on first generation, write it verbatim
 - If a feature listed in a module's `## Build order` has **no** `status.md` (an adopted feature awaiting its first Bower touch — see the adoption banner), take its marker from the build-order line as-is. Do **not** treat a missing `status.md` as an error and do **not** synthesize `✓` from the feature merely existing in code — adoption marks as-built features `🚧`, and only verified work promotes them to `✓`.
 - Module-level status is the "worst" status across both its feature markers *and* its `## Module integration` `Test:` marker (🔴 > 🟡 > 🚧 > ⏸ > 🔧 > ✓). A module with all features ✓ but module integration ⏸ surfaces as 🚧 — the constitution's verified-for-✓ rule made observable.
 - Only include sections that exist (skip Design Context if no `design/` and no `adr/` directory)
-- Include brief descriptions for each module from its module-status.md
+- Include a brief description for each module, taken from that module's entry in `docs/architecture.md` `## Software architecture` — its one-line purpose, condensed if needed. Module purpose has exactly one home and that is it. Do **not** source the description from `module-status.md`: that file is operational (integration marker, build order, integration notes) and defines no description field, so taking one from there means either paraphrasing the integration `Notes:` — which states what the boundary test asserts, not what the module is for — or inducing projects to grow a duplicate purpose line that nothing maintains. If a module has no `## Software architecture` entry, omit its description rather than inventing one, and note the gap in the run summary.
 - If no modules exist yet, write the Core System and Design Context sections only
 - For ADR tables: render `scope` literally; an accepted ADR with no `scope` field is *unclassified* (pre-v0.20) — never promote it to universal. Order ADRs by ID ascending. Do **not** invent rows — read frontmatter literally.
 - If any accepted ADRs are unclassified, add one line under the active-decisions table: `N unclassified pre-v0.20 ADRs — classify by adding scope/topics frontmatter (see the v0.20 migration notes in _bower/changes.md).`

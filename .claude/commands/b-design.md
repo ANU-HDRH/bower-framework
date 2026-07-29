@@ -89,7 +89,7 @@ Stage-specific drafting and write rules follow.
 `architecture.md` carries two views that must both be present on greenfield and maintained as the project evolves:
 
 - **Runtime view** — system overview, topology, components (containers, processes, external services), data flow, technology stack, known constraints, extension points. Cross-references the ADRs written in Stage 2 by ID rather than restating decisions.
-- **Software architecture view** — a `## Software architecture` section listing each Bower module with: its purpose in one line, the data concern that justifies the module boundary (per the constitution's module rubric), constituent features, and inter-module dependencies (depends on / consumed by). This is the code-structure complement to the runtime view; it is the home for *why these modules and not others*.
+- **Software architecture view** — a `## Software architecture` section listing each Bower module with: its purpose in one line, the data concern that justifies the module boundary (per the constitution's module rubric), and inter-module dependencies (depends on / consumed by). This is the code-structure complement to the runtime view; it is the home for *why these modules and not others*. **Do not enumerate the module's features here** — the feature roster lives in that module's `module-status.md` `## Build order`, which is the only place any command maintains it.
 
 **Drafting:**
 
