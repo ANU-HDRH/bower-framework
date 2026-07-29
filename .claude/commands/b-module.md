@@ -106,7 +106,7 @@ Skip only if no Decision impact was identified at the gate. If the user rejects 
 
 10. Update integration notes in `module-status.md` `## Module integration` `Notes:` if behaviour differs from Stage 4's assumptions. Confirm the `Test:` marker reflects the real outcome of Step 3.9.
 11. Update `scope.md` only if the build moved the scope boundary, changed a non-goal, or requires a criterion to be added, deleted, reworded, or re-pointed at a different module. Do **not** mark criteria as met — they carry no status, and `/b-recap` derives achievement from module completion.
-12. Run `/b-index` or update `docs/index.md` so module-level status reflects reality.
+12. Run `/b-index` so module-level status reflects reality. Do **not** hand-edit `docs/index.md` as an alternative — its status is derived from the markers you just wrote, and prose appended there has no writer that ever compacts it (see *Status is never curated* in `b-index.md`). If `/b-index` is not invokable, leave the index to the next regeneration.
 
 ## Step 6: Handoff
 

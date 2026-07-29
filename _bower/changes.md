@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.28 | 2026-07-29 | The docs viewer ships in `_bower/viewer/`; index status prose becomes derived rather than curated, with a budget and four closed escapes; the scaffold prunes retired `_bower/` files | mechanical |
 | v0.27 | 2026-07-29 | ADR narrowing gets frontmatter: `narrows` / `narrowed-by`, replacing body-only partial supersession | judgement |
 | v0.26 | 2026-07-29 | One home each for module features (build order) and module purpose (`architecture.md`); repo-root doc links versioned and enforced | judgement |
 | v0.25 | 2026-07-28 | Changelog split at v0.20; `/b-upgrade` reads one section at a time | none |
@@ -20,6 +21,161 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.28 — 2026-07-29
+
+### The docs viewer ships with the framework
+
+`_bower/viewer/` is a zero-dependency, read-only local web view of a project's `docs/`: module graph and dependency spine, plans and status, faceted ADRs, an inverse file → owning-feature index, success criteria with satisfaction derived rather than stored, and a drift report of ~two dozen mechanical checks comparing one document against another or against the files on disk. It sits inside `_bower/`, so the scaffold copies it and `/b-upgrade` refreshes it alongside the schemas it parses. Human-facing only — no `/b-*` command consumes it. Reasoning in `_bower/rationale.md`.
+
+**Changed:**
+
+- **`_bower/viewer/`** — new: `lib/md.cjs` (markdown structure), `lib/extract.cjs` (`docs/` → one graph), `serve.cjs` (static server + `fs.watch` + SSE live reload), `web/` (hash-routed client, vendored `marked`), `README.md`.
+- **`_bower/framework.md`** — new *Seeing the State* section: how to run it, and that it is for the human rather than an orientation source for agents.
+- **`README.md`** — new *Seeing the state* section covering the viewer and the drift report.
+- **`CLAUDE.md`** — new contributor section *Changing a document schema? Check the viewer*, naming the three same-commit obligations; repository layout gains `_bower/viewer/` and `tools/`.
+- **`_bower/rationale.md`** — new subsections on the viewer as a derived reading surface rather than a second source of truth, and on why schema-parsing tooling needs a tripwire.
+- **`_bower/roadmap.md`** — two new deferred items with revisit triggers: wiring the drift checks into `/b-review`, and a VS Code extension shell.
+
+### Brought up to current schemas
+
+The tool was prototyped against v0.22 shapes, so five versions of schema change had moved under it — most visibly v0.26, whose roster removal made one check fire on every feature of a real project.
+
+**Changed (all in `_bower/viewer/`):**
+
+- **v0.26** — `arch-feature-unlisted` and `arch-feature-orphan` are replaced by their inverse, `arch-feature-roster`: a surviving `**Features.**` list in `architecture.md` is now the finding. The roster comes from `## Build order` alone, which also brings a new `build-order-orphan` check.
+- **v0.27** — `narrows` / `narrowed-by` are read, shown as relations in the ADR list and labelled chains on the ADR page, and checked four ways: pair symmetry, dangling pointers, `narrows` and `supersedes` on one target, and a narrowed ADR whose `status` is not `accepted`.
+- **v0.24** — success criteria and their `Delivered by:` clauses are parsed and satisfaction derived as `/b-recap` derives it. New scope view; new `criterion-no-owner`, `criterion-stale-pointer` and `criterion-carries-status` checks.
+- **v0.23** — `constitution.md`'s `## Not yet in force` items are surfaced as a distinct panel above the document.
+- **v0.22** — pull-forward annotations are parsed, and the `Remaining:` clause displaces the plan's own summary on the module and feature views.
+- **v0.21** — the 🌱 banner is detected as the adoption-phase flag and `docs/adoption-ledger.md` gets a view; `missing-status` stands down during adoption, where features carry no `status.md` by design.
+- **framework-reference `status.md` spec** — a `Pending verification:` line or section is read; ✓ over outstanding checks is an error.
+- **`/b-review`** — an open `review-plan.md` surfaces as a banner with its unapplied count.
+
+### Keeping the viewer honest across framework changes
+
+A parser coupled to document schemas fails silently when they move, so the coupling is held by four mechanisms rather than guidance alone. Reasoning in `_bower/rationale.md`.
+
+- **`_bower/viewer/README.md`** — new **Schema contract** table: every convention the extractor parses, against the `framework-reference.md` section defining it.
+- **`_bower/viewer/lib/extract.cjs`** — declares `SCHEMA_VERSION`, compared with the target project's `_bower/VERSION` and reported as `schema-version-skew` on mismatch; and emits `check-may-be-obsolete` for any check that fires on every candidate.
+- **`tools/viewer-test/`** (not scaffolded) — new: `run.cjs` plus `fixture/` (one instance of every drift condition and a conformant module that must yield zero findings; the expected set of finding kinds is exact), `fixture-adoption/`, and `fixture-obsolete/`.
+- **`scripts/release.sh`** — gates on that test and on `SCHEMA_VERSION` matching `_bower/VERSION`; warns and skips if `node` is absent.
+- **`lib/extract.cjs`** — new `build-order-unparsed` check: a `## Build order` whose numbered entries all fail to parse is one named finding rather than an empty roster cascading into per-feature warnings.
+- **`serve.cjs` / `web/app.js`** — a failed re-extract pushes an `extract-error` event instead of a reload, so the client says the graph on screen is the last good one rather than toasting success over stale data.
+
+### Bower's documents separated from the project's own
+
+`docs/` holds both, and nothing distinguished them. Each document now carries an `origin`: Bower's set (the central five, `design/problem-space.md`, ADRs, module docs, the adoption ledger) against everything else a project keeps there.
+
+**Changed (all in `_bower/viewer/`):**
+
+- **`lib/extract.cjs`** — new `origin` field on every document.
+- **`web/app.js`** — the rail breaks after the Bower groups into a *Project docs* section, one collapsible fold per subdirectory with its state remembered; project documents carry a strap saying no Bower schema or convention applies to them.
+
+### Formatters stay off `docs/`, and an index points rather than summarises
+
+A markdown formatter aligns table columns by padding every cell to the widest, so a table costs *rows × widest cell* — and Prettier offers no way to disable it. That amplifier sits on the document classes Bower mandates, on the read-path of nearly every command. Separately, an index is read in full every session, and `/b-index`'s preserve-don't-flatten rule gives curated sections no writer and therefore no budget. The structural rework of `docs/index.md` is deferred with a trigger in `_bower/roadmap.md`.
+
+**Changed:**
+
+- **`_bower/framework-reference.md`** — new `## Code Formatters and docs/` section: exclude `docs/` from the project's markdown formatter, why the cost is unbounded, and the align→rewrite→realign churn on wholesale-rewritten docs. *Document Layers and Ownership* gains two rules for index files — point rather than summarise, and no narrative in a table cell, because prose in a cell has nothing to anchor a surgical edit to.
+
+### The index ratchet: status prose is derived, not curated
+
+Stating that an index points rather than summarises, and reporting an oversized cell, are both downstream of the growth. Neither touches the two things that cause it: `/b-index` still classified prose status as protected curated structure, and four commands still offered a free-text index edit as an alternative to running it. Observed on a real project — a `Stage` cell grew to ~15kB, 82% of a file that every entry point reads in full, and nothing in Bower ever read it. Because prose status is not mechanically reproducible it classified as curated, so regeneration was what made each append permanent. Reasoning in `_bower/rationale.md`.
+
+**Changed:**
+
+- **`.claude/commands/b-index.md`** — the regeneration contract gains **Status is never curated** (a section reporting project state is derived however it is worded; reduce it to markers or delete it — the one exception to "if you cannot tell, preserve it"), with two boundaries: never re-seed a status section a project has removed, and static orientation facts like `Stack` or `Deployment` are not status, the test being whether a completed feature would ever prompt an edit to the cell. Also **Curated does not mean unbounded** (report a curated section past its budget rather than rewriting it, extended to any `module-status.md` past ~250 words, which nothing else observed) and **Compress on completion** (per-feature detail in preserved narrative collapses to the module-level outcome when a module reaches ✓). New `## Run summary` section defines what a regeneration reports; the *Preserve, don't flatten* rule now names the exception.
+- **`.claude/commands/b-feature.md`, `.claude/commands/b-module.md`, `.claude/commands/b-review.md`** — the reconcile step's `/b-index` **or** hand-edit alternative is removed: run the command, or leave the index to the next regeneration. The markers already written are the durable record.
+- **`.claude/commands/b-design.md`** — the `/b-index`-unavailable fallback is narrowed to the module table (new rows and markers), with narrative excluded explicitly.
+- **`_bower/framework.md`** — the Document Authority row for the two index files gains a prose budget (~300 words excluding derived tables), which is what makes the overflow report actionable. It was the only agent-owned doc in the table with a style and no size.
+- **`_bower/rationale.md`** — *State Has One Home* gains the index case and two generalisations: an unbudgeted free-text field compounds rather than grows linearly, because its own content is the only exemplar of house style; and "curated" answers who may rewrite a section, not how large it may become, so preserve-don't-flatten needs a budget beside it or it is a ratchet.
+- **`_bower/roadmap.md`** — the index-rework item records what this version closed and restates what stays open.
+
+Two further corrections in the same area:
+
+- **`.claude/commands/b-design.md`** — Stage 5's *Linter / formatter config* item now excludes `docs/` from a markdown-capable formatter at the moment the config is written, and notes it in `constitution.md`. The `docs/` exclusion is stated as a rule but nothing established it, and project scaffolding is the only point at which it is cheap.
+- **`_bower/framework-reference.md`** — the *narrative in a table cell* rule no longer cites formatter padding as its evidence. Once `docs/` is excluded from the formatter there is no padding, so the padding argument told a reader who had followed the neighbouring rule that the cell was now fine. The cost that survives the exclusion is the one that matters: a 15kB cell in a file every command reads in full, which nothing reads back.
+
+### Document cost is now visible
+
+A table cell holding a paragraph is expensive in a way that does not look expensive: a markdown formatter aligns every sibling row out to the widest cell, so on a real project one ~15kB cell in `docs/index.md` became ~75kB of padding — in a file nearly every command reads to orient. New `oversized-table-cell` check reports the cell, since the cell is the defect and the padding is the symptom; ordinary column alignment costs a few kB, is what a formatter is for, and is not reported.
+
+**Changed (all in `_bower/viewer/`):**
+
+- **`lib/extract.cjs`** — new `oversized-table-cell` check over central docs, ADRs, `module-status.md`, `plan.md` and `status.md`, skipping vendored `docs/reference/`; the `docs/index.md` tagline is clamped, since it becomes a one-line page subtitle.
+
+### Interface corrections
+
+- **The feature page showed the Components table twice** — the structured panel (with on-disk checks and editor links) and the plan body's own `## Components` table. The panel is now the only rendering: table lines are stripped from the plan body, prose in the section is kept, and the `components` anchor moves to the panel when the heading goes too.
+- **In-page anchors were broken.** Table-of-contents links emitted a bare `#slug`, which replaced the route and landed on Not Found; `render()` now strips the fragment, `tocOf` prefixes the current route, and cross-document links keep their fragment instead of dropping it.
+- **The overview strip** is an equal-column grid with each tile's breakdown on its own lines; it was a flex row whose basis came from one long interpuncted string, so six tiles fitted no screen.
+- **`narrows` and `narrowed` are visually distinct** — they are opposite relations and read as one badge in a single colour.
+- **`#/health`** is *Documentation health* in the title and *health* in the rail; drift is what the checks look for, not what the page is.
+- **The constitution's not-yet-in-force notice** links to the section rather than restating its items unformatted.
+
+### Deployment choices revised for upstream use
+
+- **`--host` defaults to `127.0.0.1`**, not `0.0.0.0`; the graph embeds every document body, so subnet exposure is opt-in.
+- **`/open` and the static handler resolve and verify containment** rather than stripping leading `../`.
+- **`docs/` subdirectories and root-level `.md` files are discovered**, not matched against a hardcoded list of four names.
+
+### The scaffold prunes retired `_bower/` files
+
+The `_bower/` copy was additive — no deletion pass — so any file the framework stopped shipping persisted in every project indefinitely (`.claude/agents` and `.claude/commands` were already replaced wholesale). Observed on a real project as a v0.11 copy of the framework README, sixteen versions stale, in the directory an agent reads to learn what the framework is. `VERSION` and `SOURCE` are project-owned and never pruned. Directories are now replaced rather than merged into, so a file retired *inside* `_bower/viewer/` cannot orphan either.
+
+**Changed:**
+
+- **`scripts/scaffold.sh`** — prune pass after the `_bower/` copy; directories replaced wholesale; each removal printed as `removed (retired upstream)` in the summary.
+- **`scripts/scaffold.ps1`** — same, for parity.
+- **`.claude/commands/b-upgrade.md`** — Step 5 names the removal lines and carries them into the final report.
+
+### Migration
+
+Five parts, all mechanical. Parts A and B concern the viewer and touch nothing in `docs/`; Parts C, D and E edit `docs/index.md`, report on document size, and settle formatter configuration.
+
+**Part A — pick up the viewer.** Re-run the scaffold script over the project (`/b-upgrade` does this for you before walking these notes). It copies the new `_bower/viewer/` directory along with the rest of `_bower/`. Then confirm it works:
+
+1. Run `node _bower/viewer/serve.cjs --build /tmp/bower-graph.json` from the project root. It should print a one-line summary (modules, features, ADRs, indexed files, error/warn counts) and exit 0. If it exits non-zero, report the error and stop — do not attempt to fix the viewer from inside a project; it is framework code, refreshed by the scaffold.
+2. If the summary line reports a non-zero error count, that is genuine documentation drift the project can now see. **Do not fix it as part of this upgrade.** Note the count in the upgrade report and offer `node _bower/viewer/serve.cjs` as a next step so the operator can read the findings themselves. Reconciling drift is normal `/b-feature`, `/b-adr` or `/b-index` work, gated as usual — not something an upgrade does silently.
+3. Delete `/tmp/bower-graph.json`.
+
+The scaffold's output may also include `removed (retired upstream)` lines — files the framework no longer ships, now pruned (projects scaffolded before v0.12 will see `_bower/original-README.md` go, for example). No action needed; name them in the upgrade report.
+
+**Part B — stop ignoring it, if the project was ignoring it.** Some projects trialled this tool locally and added an ignore rule for it. It is framework code now and belongs in version control with the rest of `_bower/`.
+
+1. Check the project's `.gitignore` (and `.git/info/exclude`) for a rule matching `_bower/viewer`. A rule may appear as `_bower/viewer/`, `_bower/viewer`, or under a comment such as `# local tool, not yet upstreamed`.
+2. If such a rule exists, delete the rule and its comment line, then `git add _bower/viewer` so the directory is tracked.
+3. If no such rule exists, there is nothing to do — this is the expected outcome for almost every project.
+
+Do **not** add a new ignore rule for `_bower/viewer/`. Nothing in it is generated or machine-local: `graph.json` is held in memory and only written when `--build` is passed explicitly, to a path the caller names.
+
+**Part C — delete narrative status from `docs/index.md`.** Skip if the project has no `docs/index.md`.
+
+1. Read `docs/index.md`. Look for prose reporting project state: a table row whose cell holds a sentence or more (commonly labelled `Stage`, `Status`, `Current state`, `Progress`), a `## Status overview` / `## Current state` section containing paragraphs, or any narrative dashboard describing what has been built.
+2. Distinguish it from **static orientation facts**, which stay: `Project`, `Stack`, `Auth`, `Deployment`, `Repository` and similar are descriptions of what the project *is*, and have no marker that could replace them. The test is whether completing a feature would ever prompt an edit to that cell — if yes it is status, if no it is orientation.
+3. Delete the status prose. Do not attempt to condense or relocate it: the module and feature markers in `docs/index.md`'s module table, each module's `## Build order`, and each feature's `status.md` already carry that state, and `/b-recap` synthesises the narrative form on demand. Nothing is lost, and git holds the old text.
+4. If deleting it empties a section, delete the heading too. If the heading was `## Status overview` and static orientation rows remain under it, rename it to something that does not invite status back — `## At a glance` is the shape — so the next agent does not read the heading as an instruction.
+5. If the file has no such prose, there is nothing to do. Do not add a status section; its absence is a decision.
+
+**Part D — report anything over budget, do not fix it.**
+
+1. Run `/b-index`. Its run summary now names curated sections past the index's ~300-word prose budget and any `module-status.md` past ~250 words.
+2. Report those to the operator as findings and stop. Compacting an over-budget document is content work, gated as normal `/b-feature` or `/b-index` work — not something an upgrade does on its own.
+
+**Part E — exclude `docs/` from the project's markdown formatter.** Only if the project runs one.
+
+1. Look for formatter config at the repo root: `.prettierrc*`, a `prettier` key in `package.json`, `.prettierignore`, `dprint.json`, or an equivalent for the project's stack. If there is none, there is nothing to do.
+2. If the formatter handles markdown (Prettier does by default), add `docs/` to its ignore file — creating `.prettierignore` if absent — alongside any existing `_bower/` and `.claude/` entries.
+3. Note the exclusion in `docs/constitution.md` under its process conventions, so it survives someone re-running the formatter repo-wide.
+4. If the formatter had already been run over `docs/`, the tables there carry alignment padding. **Do not de-pad them as part of this upgrade** — it is a whole-tree rewrite with no content change, and it belongs in its own commit where the diff can be read as exactly that. Report the situation instead: name the largest affected files and offer the rewrite as a follow-up the operator can take or leave.
+
+Report to the operator: what was deleted from `docs/index.md` (with its approximate size), whether a heading was renamed, any budget overflows the regeneration surfaced, and whether a formatter exclusion was added.
+
+**A note on what did not change.** No document *schema* moved in this version — no frontmatter field, marker meaning or section name changed shape, so no project document needs restructuring beyond the index prose Part C removes. The viewer's drift report may nevertheless show findings on a conformant project — those are pre-existing inconsistencies that nothing previously surfaced, not regressions introduced here.
 
 ---
 

@@ -13,6 +13,12 @@
 #   - .claude/agents/         (Bower subagents)
 #   - .claude/commands/       (Bower /b-* slash commands)
 #
+# Prunes:
+#   - Anything in <target>/_bower/ that the framework no longer ships, except
+#     VERSION and SOURCE (project-owned). Directories are replaced wholesale,
+#     so files retired inside them (e.g. a renamed viewer/ asset) go too.
+#     Each removal is named in the closing summary.
+#
 # Conditionally creates:
 #   - <target>/CLAUDE.md             only if the target has no CLAUDE.md, seeded
 #                                    from _bower/project-CLAUDE.md.
@@ -74,7 +80,27 @@ for f in "$src"/_bower/*; do
     VERSION) continue ;;
     SOURCE)  continue ;;
   esac
+  # Replace directories wholesale rather than merging, so files retired
+  # inside them don't linger downstream.
+  if [[ -d "$f" && -d "$target/_bower/$name" ]]; then
+    rm -rf "$target/_bower/$name"
+  fi
   cp -R "$f" "$target/_bower/"
+done
+
+# 1b. Prune _bower/ entries the framework no longer ships. VERSION and SOURCE
+#     are project-owned and never pruned.
+pruned=()
+for f in "$target"/_bower/*; do
+  [[ -e "$f" ]] || continue
+  name="$(basename "$f")"
+  case "$name" in
+    VERSION|SOURCE) continue ;;
+  esac
+  if [[ ! -e "$src/_bower/$name" ]]; then
+    rm -rf "$f"
+    pruned+=("$name")
+  fi
 done
 
 # 2. .claude/agents and .claude/commands — refresh in place.
@@ -122,6 +148,11 @@ fi
 
 echo "Bower v$framework_version → $target"
 echo "  _bower/                  refreshed"
+if [[ ${#pruned[@]} -gt 0 ]]; then
+  for name in "${pruned[@]}"; do
+    echo "  _bower/$name  removed (retired upstream)"
+  done
+fi
 echo "  .claude/agents/          refreshed"
 echo "  .claude/commands/        refreshed"
 echo "  CLAUDE.md                $claude_action"

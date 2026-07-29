@@ -75,7 +75,7 @@ bash <clone>/scripts/scaffold.sh <project-root>
 
 (On Windows, run `scaffold.ps1` instead.)
 
-This refreshes `_bower/` (except `VERSION` and `SOURCE`, which the scaffold preserves) and `.claude/agents`/`.claude/commands`. The project's `_bower/VERSION` is still at the *old* value at this point — that's intentional. You own VERSION writes from here on.
+This refreshes `_bower/` (except `VERSION` and `SOURCE`, which the scaffold preserves) and `.claude/agents`/`.claude/commands`. It also prunes any `_bower/` files the framework no longer ships, printing a `removed (retired upstream)` line for each — note these for the Step 7 summary; they need no other action. The project's `_bower/VERSION` is still at the *old* value at this point — that's intentional. You own VERSION writes from here on.
 
 **Note:** The scaffold just rewrote `.claude/commands/b-upgrade.md` (this skill). The new version takes effect on the next `/b-upgrade` invocation; this run continues with the instructions already in your context.
 

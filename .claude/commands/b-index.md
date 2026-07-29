@@ -7,10 +7,21 @@ Regenerate `docs/index.md` and (if `docs/adr/` exists) `docs/adr/index.md` by sc
 `docs/index.md` and `docs/adr/index.md` are **derived-state files with preserved structure**. Both jobs matter, and they are not the same job:
 
 - **Derived state is authoritative.** Status markers, ADR table rows, and counts are recomputed from the current `status.md` / `module-status.md` / ADR frontmatter and overwrite whatever the file currently shows. This is the whole point of the command — never carry a stale marker forward.
-- **Curated structure is preserved.** If a file already exists, update its derived values *in place* and leave everything else untouched: section ordering, hand-written narrative (status dashboards, documentation maps, parallelism/rationale prose), a richer schema reference, legend tables. **Do not flatten an existing file to the templates below** — projects routinely grow a richer index than the seed template, and that curation is not yours to discard.
+- **Curated structure is preserved.** If a file already exists, update its derived values *in place* and leave everything else untouched: section ordering, hand-written narrative (documentation maps, parallelism/rationale prose), a richer schema reference, legend tables. **Do not flatten an existing file to the templates below** — projects routinely grow a richer index than the seed template, and that curation is not yours to discard.
 - **The templates below are first-generation seeds, not a ceiling.** Use them verbatim only when the file does **not yet exist**. When the file exists, the template tells you which derived values to refresh and where they live structurally; the project's own layout wins.
 
 Deciding derived vs. curated: a section is *derived* only if its content is mechanically reproducible from status markers or ADR frontmatter — the module table's status column, the ADR tables, the accepted/superseded counts. Everything else is curated; preserve it verbatim. If you cannot tell, preserve it.
+
+**Status is never curated.** A section reporting *what state the project is in* is derived by definition, however it is worded and wherever it sits — project state lives in the status markers, `status.md`, and `module-status.md`, and `/b-recap` synthesises the narrative form on demand. So if an existing index carries a **prose** status field — a `Stage` table row, a "current state" paragraph, a narrative dashboard — it is **not** protected curated structure. Reduce it to the derived markers, or delete it outright where the markers already say the same thing. This is the single exception to "if you cannot tell, preserve it", and it exists because preserve-don't-flatten would otherwise make every past append permanent: prose status is not mechanically reproducible, so it classifies as curated, so it is carried forward forever. Running this command must *fix* that, not perpetuate it.
+
+Two boundaries on that rule:
+
+- **Never re-seed a status section a project has removed.** Its absence is a decision, not a gap. If `docs/index.md` has no status prose, there is nothing to do here — do not add one, and do not restore one from the seed template below.
+- **Static orientation facts are not status.** A row like `Stack | TypeScript, Postgres` or `Deployment | Fly.io` describes what the project *is*, not what state it is *in*; it has no marker that could replace it and it does not grow per feature. Preserve those. The test is whether a completed feature would ever prompt an edit to the cell: if yes it is status, if no it is orientation.
+
+**Curated does not mean unbounded.** Preserved sections still carry the style budgets in `_bower/framework.md`'s Document Authority table. Where a curated section has grown past its budget, do not silently rewrite it — **report it in the run summary**: name the section, its size, and the derived source that already covers it. Preservation protects a project's structure, not its accretion. Extend the same report to any `module-status.md` you read that is past its ~250-word budget; you are already reading all of them, and nothing else in the framework observes that ceiling.
+
+**Compress on completion.** When a module reaches ✓, any preserved narrative that enumerates its features individually collapses to the module-level outcome — one clause for the module, not one per feature. This is the compaction that keeps a curated section flat over a project's life, and it is the *only* point at which non-status per-feature detail in an index legitimately disappears (status prose goes whenever *Status is never curated* says it goes).
 
 ## Process
 
@@ -113,7 +124,7 @@ While deriving the Relations column, verify the pairs are symmetric and live: ev
 
 ## Rules
 
-- **Preserve, don't flatten.** When an index file already exists, update derived values in place per the Regeneration contract; never replace a richer existing file with the seed template. The templates in this skill are minimums, not the required shape.
+- **Preserve, don't flatten.** When an index file already exists, update derived values in place per the Regeneration contract; never replace a richer existing file with the seed template. The templates in this skill are minimums, not the required shape. The one thing this rule does **not** protect is prose that reports project state — see *Status is never curated* in the contract above.
 - Order modules in `docs/index.md` by dependency sequence (build order), not alphabetically
 - Derive status markers from status.md files: ✓ 🚧 ⏸ 🟡 🔴 🔧
 - If a feature listed in a module's `## Build order` has **no** `status.md` (an adopted feature awaiting its first Bower touch — see the adoption banner), take its marker from the build-order line as-is. Do **not** treat a missing `status.md` as an error and do **not** synthesize `✓` from the feature merely existing in code — adoption marks as-built features `🚧`, and only verified work promotes them to `✓`.
@@ -126,3 +137,14 @@ While deriving the Relations column, verify the pairs are symmetric and live: ev
 - If an ADR is malformed (missing required field, unknown status), include it in a final `## Malformed` section with the file path and the issue, so it can be fixed manually. This is the only way schema violations surface.
 - Ignore any `docs/modules/*/review-plan.md` — it is a transient `/b-review` work list, not project state, and never appears in the index.
 - Preserve a `🌱 Adoption in progress` banner at the top of `docs/index.md` verbatim if present — it is the adoption-phase flag (curated structure), not derived state. It is removed only by hand when `docs/adoption-ledger.md` is emptied, never by regeneration.
+
+## Run summary
+
+Close with a short report — a few lines, not a narrative. It carries the things a regeneration noticed but is not allowed to fix silently:
+
+- Which files were written, and the module / feature / ADR counts.
+- **Status prose reduced or deleted**, per *Status is never curated*: name the section and what replaced it. This is an edit the operator did not ask for, so it is always reported.
+- **Curated sections over budget**, and any `module-status.md` over its ~250-word budget: name the section, its approximate size, and the derived source that already covers its content. Report only — the operator decides.
+- Modules with no `## Software architecture` entry (description omitted), unclassified ADRs, malformed ADRs, and any one-sided or dead `narrows` / `narrowed-by` pair.
+
+If none of these apply, one line is the right length.

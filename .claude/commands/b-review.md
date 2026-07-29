@@ -107,7 +107,7 @@ If implementation reveals the report was wrong about a finding (the drift doesn'
 
 After every reconciliation box is ticked (or honestly moved to Routed/Observations):
 
-1. If any status marker changed, run `/b-index` (or update `docs/index.md` and the module-level marker) so module status reflects reality.
+1. If any status marker changed, run `/b-index` so module status reflects reality. If `/b-index` is not invokable, correct the module-level marker in `module-status.md` and leave `docs/index.md` to the next regeneration — never hand-edit the index, whose status is derived from those markers (see *Status is never curated* in `b-index.md`).
 2. If a reconcile changed a feature's resumption picture, refresh that feature's `status.md` accordingly (≤150 words, current-state).
 3. **Delete `docs/modules/<module>/review-plan.md`.** Its job is done; leaving it would make it a record that rots.
 

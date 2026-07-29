@@ -40,9 +40,30 @@ Intended, but not true of the repo today. Agents: treat these as non-existent.
 
 This is a shape rule, not a full template: the constitution's headings are otherwise the project's own business. The split is *prevention* — it stops the false claim being written in the form that fools everyone — and it matters more than the detection backstop above, which only ever catches the subset a running agent trips over.
 
-**The two index files are derived-state-with-preserved-structure.** `docs/index.md` and `docs/adr/index.md` are agent-owned, but `/b-index` does not own their *prose*. On regeneration it recomputes only the derived state — status markers, ADR table rows, counts — and updates those in place, preserving any curated structure the project has grown around them (status dashboards, documentation maps, rationale narrative, an elaborated ADR schema reference). You may hand-author such narrative into these files; `/b-index` will refresh the numbers without flattening it.
+**The two index files are derived-state-with-preserved-structure.** `docs/index.md` and `docs/adr/index.md` are agent-owned, but `/b-index` does not own their *prose*. On regeneration it recomputes only the derived state — status markers, ADR table rows, counts — and updates those in place, preserving any curated structure the project has grown around them (documentation maps, rationale narrative, an elaborated ADR schema reference). You may hand-author such narrative into these files — anything except prose reporting project state, which regeneration treats as derived and reduces to markers (*Status is never curated*, in `b-index.md`) — and `/b-index` will refresh the numbers without flattening the rest.
+
+**But an index is read in full, so keep it navigational.** `docs/index.md` is the orientation entry point — it is loaded whole, every session, by every command, which makes its size a standing per-session tax rather than a cost paid only when someone opens it. Preserve-don't-flatten protects curated structure from `/b-index`; it does not give that structure a budget, and nothing else compacts it, so a curated section can only grow.
+
+Two rules follow, and the second is the one that bites:
+
+- **Point, don't summarise.** An index says what exists and where it lives, with derived markers. It does not restate what the documents it points at already say. A module's state lives in its `module-status.md`; a decision's substance lives in its ADR. A summary of either in the index is a second copy with no writer.
+- **Narrative does not go in a table cell.** A cell is a short value. Prose in a cell cannot be surgically edited — it has no heading to anchor to, no section for an agent to target, and no writer that rewrites it wholesale — so the only available edit is to rewrite the whole paragraph inside the pipes, which is why in practice it is appended to instead and never compacted. Observed on a real project: a `Stage` cell in a hand-grown `## Status overview` table had accumulated ~15kB of narrative covering every module — 82% of a file that every command reads in full, which nothing in Bower ever read back.
 
 **Documentation style:** design layer is narrative and explains *why*; operational layer is terse bullets and tables. Write for future-you in 6 months. Update docs as part of implementation, not after.
+
+## Code Formatters and `docs/`
+
+**Exclude `docs/` from the project's markdown formatter.** Record the exclusion wherever the project keeps formatter config (`.prettierignore` or equivalent), and note it in `docs/constitution.md` alongside the other process conventions, so it survives someone re-running the formatter repo-wide.
+
+The reason is specific rather than stylistic. Formatters align markdown table columns by padding every cell out to the widest one in its column, so the cost of a table is *rows × widest cell* — set by the worst cell, with no ceiling and no warning. Prettier offers no option to turn that off (there is `proseWrap` for prose and nothing for tables), so it is all-or-nothing per file.
+
+That amplifier is attached to exactly the documents Bower mandates. The operational layer is table-dense by design — `## Components`, `## Build order`, the two index files' tables — and these are the files on the orientation read-path of nearly every command. Padding is pure token cost, paid every session by every agent, carrying no information. Observed on a real project: 18% of the entire `docs/` tree was alignment padding, and `docs/index.md` had reached 111kB where its content was 34kB.
+
+There is a second reason that applies even where the padding is small. Agent-owned docs are **rewritten wholesale** — `/b-feature` rebuilds `status.md` from scratch on every reconcile — so a formatter produces a cycle of align → rewrite → realign, and every pass lands a diff with no content change. That undercuts *living documentation, git is the change log*: the log fills with churn that records nothing.
+
+What the exclusion costs is cosmetic and invisible to both audiences: trailing-whitespace normalisation, and consistent list markers and emphasis. GFM renders a misaligned table identically to an aligned one, and no agent reads a bullet character.
+
+A table cell is for a **short value**. Narrative belongs in a document body — see the note on index files under *Document Layers and Ownership*.
 
 ## scope.md — Boundary, Not Tracker
 

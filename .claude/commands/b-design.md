@@ -130,7 +130,7 @@ This is the stage that most often does real work on revisions. It covers four ki
 - **Package manifest** — `package.json`, `pyproject.toml`, `Cargo.toml`, etc. per Stage 2 decisions.
 - **README.md** — If a stock README exists (from `create-*` tooling, or from adopting Bower itself), move it to `_bower/original-README.md` and generate a project-specific README drawn from `scope.md` and `architecture.md`. The new README must include a short "Built with Bower" section linking to `_bower/original-README.md`.
 - **.gitignore** — Stack-appropriate.
-- **Linter / formatter config** — per Stage 2 decisions.
+- **Linter / formatter config** — per Stage 2 decisions. If the stack's formatter handles markdown (Prettier and most of its peers do), exclude `docs/` in the same step — `.prettierignore` or the equivalent — and note the exclusion in `constitution.md`. This is the only moment the exclusion is cheap to establish; retrofitting it means undoing the damage first. Reason: `_bower/framework-reference.md` § *Code Formatters and `docs/`*.
 - **Test runner setup** — per the testing approach in `constitution.md`.
 - **Directory skeleton** — empty module directories matching the Stage 4 breakdown (the `module-status.md` placeholders have already been written in Stage 4).
 
@@ -145,7 +145,7 @@ For each item, classify as *create* / *modify* / *archive* / *skip (already pres
 After Stage 5 completes (or is skipped), regenerate the index files so they reflect the new state:
 
 1. Run `/b-index` if available in this session — it regenerates both `docs/index.md` and `docs/adr/index.md`.
-2. If `/b-index` is not invokable, write `docs/adr/index.md` directly per the schema in `b-index.md`, and write/update `docs/index.md` to reflect any new modules and status markers.
+2. If `/b-index` is not invokable, write `docs/adr/index.md` directly per the schema in `b-index.md`, and update `docs/index.md`'s **module table only** — new module rows and their status markers. Add no narrative: index prose is subject to *Status is never curated* in `b-index.md`, and a design pass is exactly the moment an agent is holding the kind of news that accretes there.
 
 This is mechanical and does not gate.
 

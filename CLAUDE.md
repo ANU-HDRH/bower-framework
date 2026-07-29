@@ -52,6 +52,20 @@ How to archive:
 - **Update the boundary version in `.claude/commands/b-upgrade.md`.** Step 3.5 and Step 6a name the version at which entries move to the archive (currently v0.19/v0.20). A stale boundary sends the skill looking in the wrong file.
 - **Do not reuse `changes-archive.md`'s name for a second cut** without deciding whether older archives merge into it or get their own file. Merging into the one file is simpler and preferred; if you do that, `/b-upgrade` needs no new path, only the boundary version updated.
 
+## Changing a document schema? Check the viewer.
+
+`_bower/viewer/` is a local web view of a project's `docs/` tree. It **parses Bower's document schemas**, which makes it the one part of the framework that a schema change can break — and it breaks *silently*, emitting plausible-looking wrong findings rather than crashing. This is not hypothetical: v0.26 moved the feature roster out of `architecture.md`, nothing updated the viewer, and its drift report became 81% noise (48 spurious warnings) on a real project before anyone noticed.
+
+So: **whenever you change what a Bower document looks like** — a section name, a marker's meaning, a frontmatter field, a table's shape, where a fact lives — do three things in the same commit:
+
+1. **Read `_bower/viewer/README.md`'s "Schema contract" table.** It lists every convention the extractor depends on against the `framework-reference.md` section that defines it. Grep it for the section you are editing. If your change touches a row, it touches the viewer.
+2. **Update `_bower/viewer/lib/extract.cjs`** and bump its `SCHEMA_VERSION` to the version you are cutting. A check that tested the old shape is not merely stale — it will fire on every conformant project.
+3. **Run `node tools/viewer-test/run.cjs`.** Fixtures in `tools/viewer-test/` hold one instance of every drift condition plus a conformant module that must yield *zero* findings; the expected set of finding kinds is exact, so a check firing where it shouldn't fails the run. Adjust the fixtures only when a schema genuinely changed — never to make a red test green.
+
+`scripts/release.sh` runs that test and checks `SCHEMA_VERSION` against `_bower/VERSION`, so a release cannot be cut with the viewer misreading its own framework version. Before releasing a schema change, also point the viewer at a real project (`node _bower/viewer/serve.cjs --root ../some-project`) and read the drift page — the fixtures prove each check is correct, but only real data proves the parser survives a hundred-plus distinct plan section names and megabytes of doc body.
+
+The viewer is **human-facing only** by deliberate choice: no `/b-*` command consumes its output. Do not wire it into one without discussing it — that would make its output a contract. The deferral and its revisit trigger are in `_bower/roadmap.md`.
+
 ## Framework reference (read these before changing framework behaviour)
 
 - `_bower/rationale.md` — **Why Bower works the way it does.** Design principles, comparisons to alternatives, and the reasoning behind structural choices. Consult before changing framework behaviour so the change stays coherent with the design.
@@ -78,21 +92,33 @@ _bower/
 ├── roadmap.md             # Deferred work (above)
 ├── brief-schema.md        # Change-brief schema (above)
 ├── review-schema.md       # Review-report schema
-└── VERSION                # Canonical framework version (single line)
+├── VERSION                # Canonical framework version (single line)
+└── viewer/                # Local read-only web view of a project's docs/ (scaffolded)
+    ├── README.md          # Includes the Schema contract table — read before schema changes
+    ├── lib/extract.cjs    # docs/ → graph.json; carries SCHEMA_VERSION
+    ├── lib/md.cjs         # Markdown structure parsing
+    ├── serve.cjs          # Static server + SSE live reload
+    └── web/               # The client (index.html, style.css, app.js, vendored marked)
 .claude/
 ├── agents/                # Subagents (e.g. bower-analyst)
 └── commands/              # Slash-command skills (/b-design, /b-feature, …)
 scripts/
 ├── scaffold.sh            # Copies _bower/ + .claude/ into a target project (bash)
 ├── scaffold.ps1           # PowerShell equivalent for Windows
-└── release.sh             # Cuts a GitHub release from the current _bower/VERSION section
+└── release.sh             # Cuts a GitHub release; gates on the viewer acceptance test
+tools/                     # Framework-repo tooling; NOT scaffolded into projects
+└── viewer-test/
+    ├── run.cjs            # Viewer acceptance test — zero deps, exits non-zero
+    ├── fixture/           # One instance of every drift condition + a conformant module
+    ├── fixture-adoption/  # A project mid-adoption (🌱 banner + ledger)
+    └── fixture-obsolete/  # A check gone universal, to prove the tripwire fires
 docs/                      # Material for the README / external readers (not a Bower project's docs/)
 └── changes-archive.md     # Archived changelog entries v0.8–v0.19; not scaffolded
 ```
 
 ## Scaffolding a project from this repo
 
-`scripts/scaffold.sh <target-dir>` (or `scripts\scaffold.ps1 <target-dir>` on Windows) copies `_bower/` and the `.claude/` agents and commands into the target. If the target has no `CLAUDE.md`, the script seeds one from `_bower/project-CLAUDE.md`. If it already has one, the script leaves it alone — the assumption is that the project's CLAUDE.md already `@`-includes `_bower/framework.md`, so re-copying `_bower/` refreshes the framework files without touching project content. Note the script only copies files: it does not apply migration notes or bump the project's `_bower/VERSION` — the project-side upgrade path is `/b-upgrade`, which runs this script *and* walks each version's migration notes. Similarly, if the target has no `.claude/settings.json`, the script seeds one from `_bower/project-settings.json` with safe read-only Bash permission defaults; if it already has one, the script leaves it alone.
+`scripts/scaffold.sh <target-dir>` (or `scripts\scaffold.ps1 <target-dir>` on Windows) copies `_bower/` and the `.claude/` agents and commands into the target. If the target has no `CLAUDE.md`, the script seeds one from `_bower/project-CLAUDE.md`. If it already has one, the script leaves it alone — the assumption is that the project's CLAUDE.md already `@`-includes `_bower/framework.md`, so re-copying `_bower/` refreshes the framework files without touching project content. The `_bower/` refresh also *prunes*: anything in the target's `_bower/` that this repo no longer ships is removed (and named in the script's summary), except the project-owned `VERSION` and `SOURCE`; directories are replaced wholesale rather than merged, so files retired inside `_bower/viewer/` go too. Note the script only moves files: it does not apply migration notes or bump the project's `_bower/VERSION` — the project-side upgrade path is `/b-upgrade`, which runs this script *and* walks each version's migration notes. Similarly, if the target has no `.claude/settings.json`, the script seeds one from `_bower/project-settings.json` with safe read-only Bash permission defaults; if it already has one, the script leaves it alone.
 
 The script never touches the target's `docs/`, `.claude/settings.local.json`, or anything outside the framework footprint.
 

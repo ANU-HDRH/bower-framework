@@ -240,7 +240,7 @@ The exact set of documents to touch depends on the intent. Common to all intents
    ```
 
    Do this only when scope genuinely moved — not for every dependency touched — and keep it to one line, since `module-status.md`'s ~250-word budget is shared with the integration notes. Do not edit the downstream feature's `plan.md`: it does not exist yet for an unbuilt feature, and where it does, rewriting a plan outside its own gate is not this step's business. The build-order line is the durable place, because it is in the next pass's orientation set. If the absorption leaves nothing to build, write `Remaining: none — verify and close via /b-feature <name>` and leave the marker ⏸; do not promote it to ✓ on another feature's passing criteria.
-10. Run `/b-index` or update `docs/index.md` if module status markers changed.
+10. Run `/b-index` if module status markers changed. Do **not** hand-edit `docs/index.md` as an alternative — its status is derived from the markers you just wrote, and prose appended there has no writer that ever compacts it (see *Status is never curated* in `b-index.md`). If `/b-index` is not invokable, leave the index to the next regeneration; the markers you wrote in `module-status.md` are the durable record.
 
 <critical_constraints>
 ## What NOT To Do

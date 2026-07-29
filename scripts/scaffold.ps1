@@ -11,6 +11,12 @@
 #   - .claude\agents\         (Bower subagents)
 #   - .claude\commands\       (Bower /b-* slash commands)
 #
+# Prunes:
+#   - Anything in <target>\_bower\ that the framework no longer ships, except
+#     VERSION and SOURCE (project-owned). Directories are replaced wholesale,
+#     so files retired inside them (e.g. a renamed viewer\ asset) go too.
+#     Each removal is named in the closing summary.
+#
 # Conditionally creates:
 #   - <target>\CLAUDE.md             only if the target has no CLAUDE.md, seeded
 #                                    from _bower\project-CLAUDE.md.
@@ -71,7 +77,27 @@ if (-not (Test-Path -LiteralPath $bowerDst)) {
 Get-ChildItem -LiteralPath (Join-Path $src '_bower') -Force | Where-Object {
     $_.Name -notin @('project-CLAUDE.md', 'project-settings.json', 'VERSION', 'SOURCE')
 } | ForEach-Object {
+    # Replace directories wholesale rather than merging, so files retired
+    # inside them don't linger downstream.
+    if ($_.PSIsContainer) {
+        $dstSub = Join-Path $bowerDst $_.Name
+        if (Test-Path -LiteralPath $dstSub) {
+            Remove-Item -LiteralPath $dstSub -Recurse -Force
+        }
+    }
     Copy-Item -LiteralPath $_.FullName -Destination $bowerDst -Recurse -Force
+}
+
+# 1b. Prune _bower\ entries the framework no longer ships. VERSION and SOURCE
+#     are project-owned and never pruned.
+$pruned = @()
+Get-ChildItem -LiteralPath $bowerDst -Force | Where-Object {
+    $_.Name -notin @('VERSION', 'SOURCE')
+} | ForEach-Object {
+    if (-not (Test-Path -LiteralPath (Join-Path $src "_bower\$($_.Name)"))) {
+        Remove-Item -LiteralPath $_.FullName -Recurse -Force
+        $pruned += $_.Name
+    }
 }
 
 # 2. .claude\agents and .claude\commands — refresh in place.
@@ -137,6 +163,9 @@ if (Test-Path -LiteralPath $sourcePath) {
 
 Write-Host "Bower v$frameworkVersion -> $Target"
 Write-Host "  _bower\                  refreshed"
+foreach ($name in $pruned) {
+    Write-Host "  _bower\$name  removed (retired upstream)"
+}
 Write-Host "  .claude\agents\          refreshed"
 Write-Host "  .claude\commands\        refreshed"
 Write-Host "  CLAUDE.md                $claudeAction"

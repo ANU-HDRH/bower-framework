@@ -1,4 +1,4 @@
-# Bower Framework v0.27
+# Bower Framework v0.28
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -107,6 +107,20 @@ docs/
         │   └── status.md       # Resumption snapshot (~150 words)
         └── module-status.md    # Build order and integration state
 ```
+
+## Seeing the state
+
+Bower’s docs are designed to be read a page at a time by an agent, which makes them hard for a *human* to hold all at once. So the framework ships a local viewer:
+
+```bash
+node _bower/viewer/serve.cjs      # http://localhost:4173
+```
+
+Zero dependencies, runs on `node` or `bun`, read-only, loopback by default. It gives you the module graph and its dependency spine, every plan and status, faceted ADRs, an inverse file → owning-feature index the docs themselves can’t answer, and success criteria with satisfaction *derived* from module completion rather than stored anywhere.
+
+The part worth opening it twice for is the drift report: roughly two dozen checks that compare one document against another, or a document against the files on disk. A build-order marker that disagrees with the feature’s own `status.md`; a feature marked ✓ while deferred manual checks are still outstanding; a plan claiming a file that isn’t there; an ADR supersession recorded on only one of the two ADRs; a criterion delivered by a module that no longer exists. Errors are contradictions — two documents that can’t both be right. Warnings are things to look at, not verdicts.
+
+Edits under `docs/` re-extract and live-reload, so you can leave it open while an agent works. Detail, including the schema contract it depends on: [`_bower/viewer/README.md`](_bower/viewer/README.md).
 
 ## Testing
 
