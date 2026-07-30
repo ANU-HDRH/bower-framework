@@ -5,15 +5,27 @@
 # Usage:
 #   scripts/release.sh             # cut the release
 #   scripts/release.sh --dry-run   # show what would be released, no side effects
+#   scripts/release.sh --help      # show this usage and stop
 #
-# Aborts if the tag already exists, the changes.md section is missing, or the
-# docs viewer's acceptance test fails.
+# Aborts if the working tree is dirty, HEAD is not the published main commit,
+# the tag already exists, the changes.md section is missing, or the docs
+# viewer's acceptance test fails.
 set -euo pipefail
 
 DRY_RUN=0
-if [[ "${1:-}" == "--dry-run" || "${1:-}" == "-n" ]]; then
-  DRY_RUN=1
-fi
+case "${1:-}" in
+  '') ;;
+  --dry-run|-n) DRY_RUN=1 ;;
+  --help|-h)
+    sed -n '2,9p' "$0" | sed -E 's/^# ?//'
+    exit 0
+    ;;
+  *)
+    echo "error: unknown argument '$1' (use --dry-run or --help)" >&2
+    exit 2
+    ;;
+esac
+[[ "$#" -le 1 ]] || { echo "error: expected at most one argument" >&2; exit 2; }
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION_FILE="$REPO_ROOT/_bower/VERSION"
@@ -26,6 +38,28 @@ VIEWER_TEST="$REPO_ROOT/tools/viewer-test/run.cjs"
 VERSION="$(tr -d '[:space:]' < "$VERSION_FILE")"
 [[ -n "$VERSION" ]] || { echo "error: $VERSION_FILE is empty" >&2; exit 1; }
 TAG="v$VERSION"
+
+# A release is a statement about a commit, never about the caller's working
+# tree. Refuse to publish notes/version/tests read from uncommitted files, and
+# pin the tag to the exact commit those checks describe. Dry-run deliberately
+# remains available while preparing a release.
+HEAD_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+if [[ "$DRY_RUN" != "1" ]]; then
+  [[ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]] || {
+    echo "error: working tree is dirty — commit the release contents before publishing" >&2
+    exit 1
+  }
+  REMOTE_MAIN="$(git -C "$REPO_ROOT" ls-remote origin refs/heads/main | awk '{print $1}')"
+  [[ -n "$REMOTE_MAIN" ]] || { echo "error: could not resolve origin/main" >&2; exit 1; }
+  [[ "$HEAD_SHA" == "$REMOTE_MAIN" ]] || {
+    echo "error: HEAD ($HEAD_SHA) is not origin/main ($REMOTE_MAIN) — push the release commit first" >&2
+    exit 1
+  }
+fi
+TARGET_LABEL="$HEAD_SHA (current HEAD)"
+if [[ "$DRY_RUN" == "1" && -n "$(git -C "$REPO_ROOT" status --porcelain)" ]]; then
+  TARGET_LABEL="$HEAD_SHA (current HEAD; working tree dirty — a real release would refuse)"
+fi
 
 # The docs viewer parses the document schemas this release ships, and it fails
 # silently — wrong findings, not a crash. Gate the release on its fixtures so a
@@ -55,11 +89,11 @@ if [[ -f "$VIEWER_TEST" ]]; then
   fi
 fi
 
-if git rev-parse "$TAG" >/dev/null 2>&1; then
+if git -C "$REPO_ROOT" rev-parse "$TAG" >/dev/null 2>&1; then
   echo "error: tag $TAG already exists locally" >&2
   exit 1
 fi
-if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+if git -C "$REPO_ROOT" ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
   echo "error: tag $TAG already exists on origin" >&2
   exit 1
 fi
@@ -87,7 +121,7 @@ NOTES=$(sed -n "$((START_LINE + 1)),${END_LINE}p" "$CHANGES_FILE" | sed -E '/^--
 if [[ "$DRY_RUN" == "1" ]]; then
   echo "Tag:    $TAG"
   echo "Title:  $TITLE"
-  echo "Target: origin/main (current HEAD)"
+  echo "Target: $TARGET_LABEL"
   echo "---- Notes ----"
   printf '%s\n' "$NOTES"
   echo "---- End ----"
@@ -99,7 +133,7 @@ trap 'rm -f "$TMPFILE"' EXIT
 printf '%s\n' "$NOTES" > "$TMPFILE"
 
 gh release create "$TAG" \
-  --target main \
+  --target "$HEAD_SHA" \
   --title "$TITLE" \
   --notes-file "$TMPFILE"
 

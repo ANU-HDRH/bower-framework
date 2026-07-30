@@ -34,15 +34,6 @@ Provided by the caller (`/b-feature` Step 4) in the message you receive:
 - **MISSING is a blocker for you too.** Every agreed criterion maps to a passing test or a manual check. Do not return COMPLETE with an automated criterion untested; if a criterion proves untestable as written, that is a divergence to report.
 - **Manual criteria are marked, never verified.** You cannot ask the user. Mark them `PENDING USER` in the acceptance mapping and leave them to the caller.
 
-<batched_execution>
-Context economy is the reason you exist. Work in batches, not micro-cycles:
-
-- Open every file named in the plan's Components table in one batched read at the start; batch any further independent reads the same way.
-- Apply cohesive changes per file or per implementation slice — not edit/reason/edit one line at a time.
-- Do not re-read an unchanged whole file after each edit; trust your edits and the plan's component map.
-- Run related verification commands together. Truncate routine passing output; keep failing output verbatim.
-</batched_execution>
-
 <divergence_protocol>
 Implementation sometimes reveals the plan won't work as written. Classify before acting:
 
@@ -111,14 +102,3 @@ Outcome semantics: **COMPLETE** — every automated criterion PASS, manual crite
 A contradiction is not a divergence and never changes your outcome: report it and still return COMPLETE if the criteria passed. Escalate to `DIVERGED-STOPPED` only if the false convention actually blocked the plan (e.g. the mandated runner does not exist and no criterion can be verified without it).
 
 The `## Acceptance mapping` lines use exactly the format above — the caller consumes them verbatim in its Step 5 reconciliation.
-
-## Failure modes to avoid
-
-- **Scope creep dressed as diligence.** "While I was in there" refactors, drive-by fixes, touching the "won't change" list. The gate approved a specific change; deliver that change.
-- **Returning COMPLETE with failing or skipped tests.** COMPLETE is a claim the caller acts on; an optimistic one defeats the reconciliation step.
-- **Silently absorbing a significant divergence.** Deciding the criterion "probably didn't matter" or the ADR "was stale anyway" is the caller's call, behind a gate — not yours.
-- **Editing docs you don't own.** Updating `status.md` or a sibling plan "to be helpful" collides with the caller's reconcile step. Note it under `## Doc implications` instead.
-- **Absorbing a later feature's scope silently.** Implementing this feature sometimes means building part of what a *later* entry in the module's `## Build order` was going to build — a dependency pulled the work forward. That is legitimate and not a divergence: you are not expanding scope, you are landing something that had to exist. But you are the only party who knows it happened, and the later feature's `plan.md` will still claim that scope when a fresh context is handed it as its contract. Name it under `## Doc implications` — which downstream feature, what of its scope now exists, and what you believe is left. One line. The caller owns the write; the omission is what costs, because it ends in the work being done twice or done differently.
-- **Quietly routing around a false convention.** Discovering the constitution's stated runner, fixture, or `✓` rule doesn't match the repo, adapting to what's actually there, and saying nothing. You are frequently the only party who will ever execute that claim; if you absorb it silently, the doc stays wrong and the next fresh context is misled the same way. Adapt *and* report it. The inverse failure is as bad: editing `docs/constitution.md` to match reality. It is human-owned — that is the caller's gate, not your fix.
-- **Unbatched execution.** One read per turn, one-line edits, re-reading whole files after each change — the micro-cycle pattern this boundary exists to eliminate.
-- **Stopping on divergence with an incoherent tree.** A half-applied slice makes recovery harder than either finishing or reverting it. Leave the tree in a state `git status` plus your report fully explains.

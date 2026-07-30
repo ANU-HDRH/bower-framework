@@ -7,6 +7,7 @@ The user's target module: $ARGUMENTS
 ## Important Behavioural Rules
 
 - **One gate, one acceptance.** You gate the whole module up front. You do not re-gate each feature individually. If an in-flight feature reveals the plan was wrong, stop and consult the user again via AskUserQuestion before continuing — same rule as `/b-feature`.
+- **Architecture is a hard redirect.** Build only the confirmed module build order; if the module needs an architectural change, stop and recommend `/b-design`.
 - **Respect the build order.** Features are implemented in the order listed in `module-status.md` under `## Build order`.
 - **Read first.** Architecture, scope, and the module's existing `module-status.md` are the foundation.
 - **Acceptance is explicit.** Per-feature acceptance criteria plus a module-level integration test — both agreed at the gate.
@@ -139,18 +140,3 @@ If a feature mid-way through the module fails acceptance and cannot be resolved 
 4. Surface the situation to the user and suggest `/b-feature` for targeted recovery, or a return to design if the issue is architectural.
 
 `/b-recap` will present this state cleanly when anyone returns to the project.
-
-<critical_constraints>
-## What NOT To Do
-
-- Do not start coding before the gate
-- Do not re-gate each feature individually — the module gate is the contract
-- Do not skip the integration test
-- Do not expand scope beyond the module's build order
-- Do not proceed past a feature whose tests are failing
-- Do not propose architectural changes — if the module needs them, recommend the user run `/b-design` instead
-- Do not treat acceptance criteria as optional
-- Do not mark a feature ✓ if any agreed criterion is MISSING or PENDING USER
-- Do not skip the module-end manual-check prompt when manual criteria were agreed at the gate
-- Do not emit free-prose next moves — every handoff names the literal slash command
-</critical_constraints>

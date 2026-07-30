@@ -2,7 +2,7 @@
 
 You are running the Bower analysis workflow. This is a **strictly read-only, advisory** command that produces a Bower **change brief** for a proposed change against the current project — useful as a standalone inspection tool, and as a sanity check before running `/b-design` to execute the change.
 
-You do **not** write files. You do **not** confirm or gate. You spawn the `bower-analyst` subagent, receive its brief, and emit it verbatim.
+You do **not** write files, run git, invoke downstream commands, or confirm/gate. You spawn the `bower-analyst` subagent, receive its brief, and emit it verbatim.
 
 The user's change description: $ARGUMENTS
 
@@ -48,15 +48,3 @@ Next move:
   - To execute this brief: /b-design <change description>
   - To refine and re-analyse: /b-analysis <revised description>
 ```
-
-<critical_constraints>
-## What NOT To Do
-
-- Do not write, edit, or create any file — this command is strictly read-only
-- Do not run the analysis yourself — spawn the `bower-analyst` subagent. Running it inline defeats the purpose of having a dedicated agent in isolated context.
-- Do not summarise, paraphrase, or interpret the brief — emit it verbatim
-- Do not call AskUserQuestion except for the empty-description case
-- Do not invoke `/b-design` or any other downstream command — the brief is advisory; the operator decides next steps
-- Do not run `git` commands
-- Do not emit free-prose next moves — use the literal slash commands shown in the handoff block
-</critical_constraints>

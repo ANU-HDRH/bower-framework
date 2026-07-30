@@ -110,15 +110,3 @@ Skip only if Step 2 listed Decision impact as `none`.
 - `(none — UI change complete)` — when there's no follow-up.
 
 If during implementation you discover the approach needs to change significantly, stop and consult the user via AskUserQuestion before continuing.
-
-<critical_constraints>
-## What NOT To Do
-
-- Do not start coding before the gate
-- Do not propose architectural changes — recommend `/b-design` instead
-- Do not skip the `docs/ui.md` update
-- Do not invoke this skill for visual-only or tightly-specified changes — surface the lighter path
-- Do not present only one option when the change has genuine branching choices — at least two alternatives
-- Do not record pixel-level detail in `docs/ui.md` — invariants only; code is the truth at the pixel level
-- Do not emit free-prose next moves — always a literal slash command or the explicit `(none — ...)` form
-</critical_constraints>

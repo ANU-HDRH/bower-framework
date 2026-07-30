@@ -186,21 +186,3 @@ Next move:
 
 Run /b-recap any time to re-orient.
 ```
-
-<critical_constraints>
-## What NOT To Do
-
-- Do not bypass the brief. Stages 1–5 execute against Stage 0's confirmed brief. If you find work mid-stage that isn't in the brief, surface it to the user — do not silently expand scope.
-- Do not run the analysis inline in the main agent. Stage 0 spawns the `bower-analyst` subagent; isolated context is the point.
-- Do not re-spawn the analyst within Stages 1–5. Amendments at the Stage 0 gate are incorporated in working memory, not by re-running the analyst.
-- Do not implement features — Stage 5 is scaffolding only. Feature code belongs to `/b-feature` or `/b-module`.
-- Do not create feature `plan.md` or `status.md` files — those come during implementation.
-- Do not skip a stage's content gate when the brief has non-nil delta for that stage.
-- Do not gate on applicability inside Stages 1–5 — applicability is Stage 0's gate, not a per-stage question.
-- Do not proceed past a content gate without explicit user confirmation.
-- Do not modify the body of an existing ADR — bodies are immutable. Only frontmatter changes on supersession.
-- Do not run `git commit` — the commit point is advisory. Print the suggested message; let the user commit.
-- Do not overwrite a user-authored `README.md` or `package.json` — only stock/boilerplate artefacts are candidates for replacement, and only after the Stage 5 gate.
-- Do not emit free-prose next moves — the post-design handoff names literal slash commands.
-- Do not call `/b-design` recursively.
-</critical_constraints>

@@ -23,7 +23,7 @@ Every finding belongs to exactly one of these dimensions:
 3. **Cross-feature consistency.** Sequentially-built features drift: feature 1 returns 404 for a non-owner, feature 3 returns 403; naming, error-handling shapes, and return conventions diverge. No single-feature pass can see this; a whole-module pass can.
 4. **Status honesty.** Are the markers truthful? Anything ✓ that still has a `Pending verification:` line? Is the floor-not-sum rule observed (a module is the worst of its feature markers and its integration marker)? Is each ✓ feature's `status.md` in its **terminal form** — marker, `## Verification`, `Next move: (none — complete)` — rather than still carrying a live resumption snapshot or a `Next move:` pointing at other work? A forward-pointing next move on a finished feature is `status-fix`, and the file compresses as part of the fix.
 5. **ADR drift.** Accepted ADRs that touch this module but now contradict the code. This is "code is truth, ADR is hypothesis" turned from a passive posture into an active check. **Drift only** — the reviewer does not flag ADRs for being verbose or over-scoped: bodies are immutable, and prose length is not a supersede-worthy reason. If a bundled ADR's commitments were hard to recover because the index shows only titles, that is a legitimate finding (it is the failure signal the deferred ADR-index improvement waits on), but it is reported as an observation, not as an actionable plan item.
-6. **Boundary integrity.** Does the module still integration-test cleanly in isolation, or have back-channels to other modules crept in? This is the DAG-in-positive-form test from `rationale.md`. Boundary erosion is **architectural** — it is always routed to `/b-design` and never enters the plan.
+6. **Boundary integrity.** Does the module still integration-test cleanly in isolation, or have back-channels to other modules crept in? This is the DAG-in-positive-form test from `rationale.md`. Boundary erosion is **architectural** — it enters the plan as tracked work, but is always routed to `/b-design` and never actioned by `/b-review`.
 
 ## Resolution class
 
@@ -122,7 +122,7 @@ If there are none, the section reads `None.`
 
 ### `## Observations (not actionable)`
 
-Findings worth surfacing that have no owned or routed resolution — most commonly an ADR whose commitments were hard to recover from a title-only index row (the deferred ADR-index-summary signal), or a smell that doesn't yet rise to a boundary-erosion finding. These are printed in the handoff but never enter the plan. If there are none, the section reads `None.`
+Findings worth surfacing that have no owned or routed resolution — most commonly an ADR whose commitments were hard to recover from a title-only index row (the deferred ADR-index-summary signal), or a smell that doesn't yet rise to a boundary-erosion finding. These are copied into the plan's non-blocking `## Observations` section so an interrupted review retains the report's context, and printed in the handoff; they never become checklist items or hold the review open. If there are none, the section reads `None.`
 
 ## Schema rules
 

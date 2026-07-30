@@ -1,4 +1,4 @@
-# Bower Framework v0.30
+# Bower Framework v0.31
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -117,7 +117,8 @@ docs/
         │   ├── plan.md         # How it works, components, testing
         │   └── status.md       # Resumption snapshot while building; at ✓ it
         │                       #   compresses to the verification evidence
-        └── module-status.md    # Build order, integration state, review state
+        ├── module-status.md    # Build order, integration state, review state
+        └── review-plan.md     # Open-review findings; transient, absent when closed
 ```
 
 ## Seeing the state
@@ -128,7 +129,7 @@ Bower’s docs are designed to be read a page at a time by an agent, which makes
 node _bower/viewer/serve.cjs      # http://localhost:4173
 ```
 
-Zero dependencies, runs on `node` or `bun`, read-only, loopback by default. It gives you the module graph and its dependency spine, every plan and status, faceted ADRs, an inverse file → owning-feature index the docs themselves can’t answer, and success criteria with satisfaction *derived* from module completion rather than stored anywhere.
+Zero dependencies, runs on `node` or `bun`, read-only, loopback by default. It gives you the module graph and its dependency spine, every plan and status, the actionable findings behind an open module review, faceted ADRs, an inverse file → owning-feature index the docs themselves can’t answer, and success criteria with satisfaction *derived* from module completion rather than stored anywhere.
 
 The part worth opening it twice for is the drift report: forty-odd checks that compare one document against another, or a document against the files on disk. A build-order marker that disagrees with the feature’s own `status.md`; a feature marked ✓ while deferred manual checks are still outstanding; a plan claiming a file that isn’t there; an ADR supersession recorded on only one of the two ADRs; a criterion delivered by a module that no longer exists; a review left open with its findings gone. Errors are contradictions — two documents that can’t both be right. Warnings are things to look at, not verdicts.
 

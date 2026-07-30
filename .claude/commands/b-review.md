@@ -14,7 +14,7 @@ The target module: $ARGUMENTS
 - **The plan is also the recovery anchor.** It is written *before* any reconciliation is applied, so a mid-apply crash leaves that file plus `git status` as the resumption material — same discipline as `/b-feature`'s post-gate `plan.md` write. It is transient: deleted at closeout, when the `Review: ✓` marker replaces it as the durable record.
 - **One gate to start, one to close.** The triage gate authorises the work; the closeout gate confirms the review is finished. You do not re-gate each item in between, except that `adr-supersede` items run through `/b-adr`, whose own gate fires.
 - **No findings log survives closeout.** What was fixed is in the commits; what was not was an operator decision. Do not write a findings history anywhere. The record is `Review: ✓ <date> (<N> of <N> features)` and nothing more.
-- **Out-of-band volume is safe here by construction.** A review fix pass batches only changes that are *individually* ad-hoc-safe under existing framework rules: doc↔code reconciles (gate-free living-doc maintenance), test backfill for already-agreed behaviour, status-marker corrections, and ADR supersessions (gated by `/b-adr`). The one unsafe category — boundary erosion — is always routed to `/b-design` and never enters the plan. The hard-redirect rule still holds.
+- **Out-of-band volume is safe here by construction.** A review fix pass batches only changes that are *individually* ad-hoc-safe under existing framework rules: doc↔code reconciles (gate-free living-doc maintenance), test backfill for already-agreed behaviour, status-marker corrections, and ADR supersessions (gated by `/b-adr`). The one unsafe category — boundary erosion — is tracked in the plan but always routed to `/b-design` and never actioned here. The hard-redirect rule still holds.
 - **Literal-command handoff.** Every routed finding and every "next move" names the exact slash command to type next, never free prose.
 
 ## Step 0: State Check
@@ -88,7 +88,7 @@ After confirmation, if there is at least one accepted finding **of any class**, 
 ```markdown
 # Review plan: <module>
 
-Open review, diagnosed YYYY-MM-DD against 5 features. **Not living documentation** — this file is deleted at closeout, when `module-status.md`'s `Review: ✓` becomes the record. While it exists the module is in review (`Review: 🚧`) and `/b-recap` surfaces it as outstanding work. Do not consult it except when running `/b-review <module>`.
+Open review, diagnosed YYYY-MM-DD against 5 features. **Not living documentation** — this file is deleted at closeout, when `module-status.md`'s `Review: ✓` becomes the record. While it exists the module is in review (`Review: 🚧`): `/b-recap` summarises it, the docs viewer makes its findings readable, and `/b-review <module>` is the only workflow that edits or disposes of them.
 
 Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision, with date).
 
@@ -116,7 +116,7 @@ Shape rules:
 
 Then set the marker: write `Review: 🚧` in `module-status.md`'s `## Module review` section. Plan and marker go together — if you wrote one, write the other, in the same pass.
 
-If there are **no** accepted findings (the module is clean, or the operator dropped everything), do not write a plan. Instead go straight to closeout: write `Review: ✓ <today> (<N> of <N> features)` and skip to Step 6. A clean review is still a completed review, and it is the case where recording the fact matters most — there is no other evidence it happened.
+If there are **no** accepted findings (the module is clean, or the operator dropped everything), do not write a plan or marker yet. Retain the diagnosis-time roster count and go straight to the closeout gate with zero findings. A clean review is still a completed review, and it is the case where recording the fact matters most — there is no other evidence it happened.
 
 ## Step 4: (reserved — numbering aligns Apply with the rest of the family)
 
@@ -145,16 +145,18 @@ When every item in `## Findings` carries a disposition (`[x]` or `[~]`), the rev
 
 Offer: *Close the review* / *Keep it open — more to do* / *Show me the plan first*. Closing is the operator's call, not yours: they may know of related work still landing.
 
+**A clean review (zero accepted findings, arriving here straight from Step 3) has no plan and no marker.** Phrase the gate as: "The review of `<module>` found nothing to act on. Record it? I'll write `Review: ✓ <today> (<N> of <N> features)`." Offer *Record it* / *Don't record — treat as never reviewed*. On confirmation, run only step 3 below with the roster count retained from Step 3 — steps 1, 2, and 4 have nothing to do (no markers changed, no plan exists to delete).
+
 **If any item is still open, do not present this gate.** Report progress instead (`3 of 7 findings disposed`), leave `Review: 🚧` and the plan in place, and emit the Step 6 handoff naming what remains. An unfinished review is a perfectly good place to stop — that is the whole point of the state.
 
 On confirmation:
 
 1. If any status marker changed, run `/b-index` so module status reflects reality. If `/b-index` is not invokable, correct the module-level marker in `module-status.md` and leave `docs/index.md` to the next regeneration — never hand-edit the index, whose status is derived from those markers (see *Status is never curated* in `b-index.md`).
 2. If a reconcile changed a feature's resumption picture, refresh that feature's `status.md` accordingly (≤150 words, current-state).
-3. Write `Review: ✓ YYYY-MM-DD (<N> of <N> features)` in `module-status.md`'s `## Module review`, using today's date and the roster count recorded in the plan's preamble — **not** a recount of `## Build order` now. The snapshot answers *what was reviewed*, and if routed `/b-feature` work added features during mediation, those features were not part of this review. The review will therefore sometimes read as slightly stale the moment it closes; that is honest.
+3. Write `Review: ✓ YYYY-MM-DD (<N> of <N> features)` in `module-status.md`'s `## Module review`, using today's date and the diagnosis-time roster count — from the plan's preamble when a plan exists, or the count retained from Step 3 for a clean review — **not** a recount of `## Build order` now. The snapshot answers *what was reviewed*, and if routed `/b-feature` work added features during mediation, those features were not part of this review. The review will therefore sometimes read as slightly stale the moment it closes; that is honest.
 4. **Delete `docs/modules/<module>/review-plan.md`.** Its job is done, and `Review: ✓` is now the record. Leaving it would both rot and put the module in a broken state (`✓` with a plan on disk).
 
-Steps 3 and 4 are one unit — never do one without the other.
+Steps 3 and 4 are one unit — never do one without the other. (A clean review is not an exception: it has no plan, so step 4 is vacuously done, not skipped.)
 
 ## Step 6: Handoff
 
@@ -195,28 +197,3 @@ Pick exactly one recommended next move. A `route:/b-design` finding (boundary er
 When Step 0 found `Review: 🚧` with a plan on disk, you skipped diagnosis. Read the plan, then run Step 5 against its open `## Findings` items exactly as above — including the routed ones, which you tick as the operator confirms the commands landed — then the closeout gate if everything is disposed of, then the Step 6 handoff.
 
 Do **not** re-spawn the reviewer. The findings were already gated when the plan was written, and re-diagnosing would replace triaged work with a fresh derivation the operator never agreed to. If the operator wants a *fresh* review rather than a resume, the current review has to close first (or they delete the plan and reset the marker themselves); say so rather than running both. Re-diagnosis is also how the routed items get lost — the exact failure the plan exists to prevent.
-
-<critical_constraints>
-## What NOT To Do
-
-- Do not skip the subagent and review inline — the fresh-eyes isolation is the point
-- Do not apply anything before the triage gate
-- Do not write the plan after starting to apply — the plan is the recovery anchor, written first
-- Do not write the plan without setting `Review: 🚧`, or set the marker without writing the plan — they are two sides of one fact, and a mismatch is a state the viewer reports as broken
-- Do not omit the plan for a routed-only review — routed findings are tracked work, and dropping them to console-only is the failure this shape exists to fix
-- Do not close a review with any finding still open — report progress and stop; an open review is a legitimate resting state
-- Do not re-diagnose while a review is open — `/b-review <module>` on a 🚧 module resumes mediation
-- Do not tick a routed item because the tree looks like the work landed — ask
-- Do not mark an item won't-fix unprompted — propose it; the operator decides
-- Do not recount `## Build order` at closeout — write the roster count recorded in the plan's preamble, so the snapshot describes what was actually reviewed. (A clean review has no plan: it writes ✓ at Step 3 and counts the roster there, which *is* its diagnosis-time count.)
-- Do not write a findings log, a review history, or a record of won't-fixes anywhere — the commits hold what was fixed and `Review: ✓` holds the fact of the review; nothing else survives closeout
-- Do not touch `Review:` outside the triage gate and closeout — and no other command touches it at all
-- Do not action a `route:/b-feature` or `route:/b-design` finding yourself — route it; boundary erosion is a hard-redirect to `/b-design`
-- Do not silently fix a behavioural defect a `test-backfill` uncovers — re-classify it to `route:/b-feature` and leave it open
-- Do not put a constitution contradiction in `review-plan.md` or apply it as a reconciliation — `docs/constitution.md` is human-owned; it gets its own consent gate, quoted verbatim with its line number, and is edited only on an explicit instruction
-- Do not flag or "fix" ADRs for verbose or over-scoped prose — bodies are immutable; only drift from code is an ADR finding
-- Do not leave `review-plan.md` on disk after closeout — delete it in the same pass that writes `Review: ✓`
-- Do not let the plan accumulate (no dated variants, no second open plan) — one plan per module, closed out before the next review
-- Do not manufacture findings — a clean module produces a clean report, no plan, and a straight-to-`✓` close
-- Do not emit free-prose next moves — every routed item and the Next move is a literal slash command
-</critical_constraints>

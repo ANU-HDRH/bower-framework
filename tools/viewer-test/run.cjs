@@ -243,9 +243,99 @@ for (const [kind, want] of [
 // open, `[x]` resolved and `[~]` won't-fix both discharge it. Won't-fix is an
 // operator decision recorded here and deliberately left no other trace.
 const bp = g.reviewPlans.find((p) => p.module === 'boldorder');
-assert(bp && bp.total === 3, 'every finding in the plan is tracked, routed included', `got ${bp && bp.total}`);
-assert(bp && bp.open === 1, 'only `[ ]` items hold the review open', `got ${bp && bp.open}`);
+assert(bp && bp.total === 4, 'every finding in the plan is tracked, routed included', `got ${bp && bp.total}`);
+assert(bp && bp.open === 2, 'only `[ ]` items hold the review open', `got ${bp && bp.open}`);
 assert(bp && bp.wontFix === 1, "`[~]` is counted as won't-fix", `got ${bp && bp.wontFix}`);
+
+// v0.31: the plan is readable, not just countable. A finding line splits into
+// id, gist, class and pointer so the review page can show what was found and
+// where — and a line that does not fit the shape survives as written, because
+// the plan is operator prose first.
+assert(bp && bp.route === '#/review/boldorder', 'the plan gets its own route', bp && bp.route);
+assert(
+  bp && g.docRoutes[bp.rel] === '#/review/boldorder',
+  'and links to review-plan.md resolve there, not to the module',
+  bp && g.docRoutes[bp.rel],
+);
+assert(bp && bp.diagnosed === '2026-07-28', 'the diagnosis date is read from the preamble', bp && bp.diagnosed);
+assert(bp && bp.featureCount === 2, 'as is the roster snapshot', `got ${bp && bp.featureCount}`);
+const f1 = bp && bp.items[0];
+assert(f1 && f1.id === 'F1' && f1.class === 'inline-reconcile' && !f1.routed, 'an owned finding parses its class', JSON.stringify(f1));
+assert(
+  f1 && f1.pointerKind === 'path' && f1.pointerFile === 'docs/modules/boldorder/plan.md' && f1.pointerLine === 12,
+  'a file pointer keeps its line number and stays openable',
+  JSON.stringify(f1),
+);
+assert(f1 && f1.gist === 'plan.md stale on the parser entry point', 'the gist excludes id, class and pointer', f1 && f1.gist);
+const f2 = bp && bp.items[1];
+assert(f2 && f2.routed && /^won't fix/.test(f2.note) && !f2.pointer, "a won't-fix note is not mistaken for a pointer", JSON.stringify(f2));
+const f3 = bp && bp.items[2];
+assert(f3 && f3.routed && f3.pointerKind === 'command', 'a routed finding points at the command that discharges it', JSON.stringify(f3));
+const f4 = bp && bp.items[3];
+assert(
+  f4 && f4.class === null && f4.gist === 'a finding written as free prose, with no class and no pointer',
+  'an unparseable line keeps its text rather than being dropped',
+  JSON.stringify(f4),
+);
+assert(bp && bp.observations.length === 1, 'observations ride along with the plan', `got ${bp && bp.observations.length}`);
+
+// Exercise the actual review renderer, not just the graph it consumes. This
+// tiny DOM is deliberately only the interface app.js's `el()` helper needs;
+// keeping it here preserves the viewer's zero-dependency acceptance test.
+class TestNode {
+  constructor(tag, text = '') {
+    this.nodeType = tag === '#text' ? 3 : 1;
+    this.tagName = tag;
+    this.attrs = {};
+    this.children = [];
+    this._text = text;
+    this.className = '';
+    this.innerHTML = '';
+  }
+  setAttribute(name, value) {
+    this.attrs[name] = String(value);
+  }
+  addEventListener() {}
+  append(...nodes) {
+    this.children.push(...nodes);
+  }
+  get textContent() {
+    return this.nodeType === 3
+      ? this._text
+      : this.children.map((child) => child.textContent).join('');
+  }
+  set textContent(value) {
+    this._text = String(value);
+    this.children = [];
+  }
+}
+const priorDocument = global.document;
+global.document = {
+  createElement: (tag) => new TestNode(tag),
+  createTextNode: (value) => new TestNode('#text', String(value)),
+};
+const reviewApp = require('../../_bower/viewer/web/app.js');
+reviewApp.setGraphForTest(g);
+const renderedReview = reviewApp.viewReview('boldorder');
+const descendants = (node) => [node, ...node.children.flatMap(descendants)];
+const renderedNodes = descendants(renderedReview);
+const renderedText = renderedReview.textContent;
+assert(renderedText.includes('Review · boldorder'), 'the review page renders its module heading');
+assert(renderedText.includes('2 of 4 disposed'), 'the review page renders disposition progress');
+assert(renderedText.includes('ADR-0002'), 'the review page renders observations');
+assert(
+  renderedNodes.some((node) => node.tagName === 'a' && node.attrs.href === '/open?path=docs%2Fmodules%2Fboldorder%2Fplan.md&line=12'),
+  'a finding link opens its exact file line',
+);
+assert(
+  renderedNodes.some((node) => node.tagName === 'code' && node.textContent.includes('/b-feature modify boldorder owner-response')),
+  'the review page renders routed commands literally',
+);
+assert(
+  renderedNodes.some((node) => node.className === 'strap' && node.textContent.includes('Marker disagrees with the plan')),
+  'the review page exposes marker/plan disagreement',
+);
+global.document = priorDocument;
 
 // v0.24 derived success criteria.
 assert(g.scope.total === 5, 'five success criteria parsed', `got ${g.scope.total}`);

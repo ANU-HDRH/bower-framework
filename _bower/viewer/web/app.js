@@ -4,12 +4,17 @@
    can swap the implementation without touching any view code. */
 
 const HOST = {
-  openFile: (p) => window.open(`/open?path=${encodeURIComponent(p)}`, '_blank'),
+  openFile: (p, line) => window.open(openHref(p, line), '_blank'),
   graphUrl: '/graph.json',
   eventsUrl: '/events',
 };
 
 let G = null;
+
+function openHref(path, line = null) {
+  const at = Number.isInteger(line) && line > 0 ? `&line=${line}` : '';
+  return `/open?path=${encodeURIComponent(path)}${at}`;
+}
 
 // ─────────────────────────────────────────────────────────── utilities
 
@@ -881,6 +886,153 @@ function viewAdoption() {
   );
 }
 
+/**
+ * An open review is the one lifecycle state whose substance lives outside the
+ * module's own documents: `review-plan.md` is transient and agent-owned, deleted
+ * at closeout when `Review: ✓` becomes the record. It gets a page of its own
+ * because "3 of 7 disposed" is not something an operator can act on — the
+ * findings, their classes, and where each one points are.
+ */
+function viewReview(name) {
+  const rp = (G.reviewPlans || []).find((p) => p.module === name);
+  if (!rp)
+    return notFound(
+      `No open review for “${name}” — review-plan.md exists only while a review is open (Review: 🚧).`,
+    );
+  const m = modByName(name);
+  const rv = m && m.review;
+  const disposed = rp.total - rp.open;
+
+  const disposition = (it) =>
+    it.wontFix
+      ? el('span', { class: 'tag wontfix' }, 'won’t fix')
+      : it.done
+        ? el('span', { class: 'tag done' }, 'resolved')
+        : el('span', { class: 'tag pend' }, 'open');
+
+  // A pointer is either a place in the tree or the literal command that
+  // discharges the finding. Only the first is openable, and conflating them
+  // would offer a link that goes nowhere.
+  const pointerOf = (it) => {
+    if (it.note) return el('span', { class: 'muted', style: 'font-size:12.5px' }, it.note);
+    if (!it.pointer) return null;
+    if (it.pointerKind === 'path')
+      return el(
+        'a',
+        {
+          class: 'ident',
+          style: 'font-size:12px',
+          href: openHref(it.pointerFile, it.pointerLine),
+          target: '_blank',
+          title: it.pointer,
+        },
+        it.pointer,
+      );
+    return el('code', { style: 'font-size:12px' }, it.pointer.replace(/^Run\s+/, ''));
+  };
+
+  return el(
+    'div',
+    {},
+    pageHead(
+      [
+        el('a', { href: '#/' }, 'Overview'),
+        el('span', {}, '·'),
+        el('a', { href: '#/modules' }, 'Modules'),
+        el('span', {}, '·'),
+        el('a', { href: rp.moduleRoute }, name),
+        el('span', {}, '·'),
+        el('span', {}, 'Review'),
+      ],
+      `Review · ${name}`,
+      (rp.diagnosed ? `Diagnosed ${rp.diagnosed}` : 'Open review') +
+        (rp.featureCount !== null ? ` against ${rp.featureCount} feature${rp.featureCount === 1 ? '' : 's'}` : '') +
+        `. \`/b-review ${name}\` resumes mediation — it does not re-diagnose. The plan is transient: ` +
+        'it is deleted at closeout, when `Review: ✓` becomes the record.',
+    ),
+    // Plan and marker are two sides of one fact, written together. A page that
+    // showed the findings without saying the pair disagrees would hide the more
+    // urgent problem behind the less urgent one.
+    !rv || rv.marker !== '🚧'
+      ? el(
+          'a',
+          { class: 'strap', href: '#/health' },
+          el('b', {}, 'Marker disagrees with the plan.'),
+          ` This plan is on disk but the module's Review: marker is ${rv && rv.marker ? rv.marker : 'unset'}, not 🚧 — ` +
+            'the marker was never set, or the review closed without deleting the plan. See Health →',
+        )
+      : null,
+    el(
+      'div',
+      { class: 'panel' },
+      el(
+        'div',
+        { class: 'panel-head' },
+        el('span', { class: 'eyebrow' }, 'Findings'),
+        el(
+          'span',
+          { class: 'eyebrow' },
+          `${disposed} of ${rp.total} disposed${rp.wontFix ? ` · ${rp.wontFix} won’t fix` : ''}`,
+        ),
+      ),
+      rp.total
+        ? el(
+            'div',
+            { class: 'rows findings' },
+            // Plan order is meaningful — /b-review writes owned findings first,
+            // because those are the ones it actions in the pass — so it is kept.
+            // Every row emits all five cells: `.rows.findings` is a grid whose
+            // rows share column tracks, so a skipped cell would shift the rest.
+            rp.items.map((it, i) =>
+              el(
+                'div',
+                { class: 'row' },
+                el('span', { class: 'idx' }, it.id || String(i + 1)),
+                disposition(it),
+                el(
+                  'span',
+                  { style: 'font-size:13px;color:var(--ink-2);min-width:0' },
+                  plain(it.gist),
+                ),
+                it.class
+                  ? el('span', { class: it.routed ? 'tag routed' : 'tag', title: it.routed ? 'Routed — another command owns this' : 'Owned — /b-review reconciles this itself' }, it.class)
+                  : el('span'),
+                pointerOf(it) || el('span'),
+              ),
+            ),
+          )
+        : el(
+            'div',
+            { class: 'panel-body' },
+            el('p', { class: 'muted', style: 'margin:0' }, 'The plan has no `## Findings` checklist.'),
+          ),
+    ),
+    rp.observations.length
+      ? el(
+          'section',
+          { class: 'block', style: 'margin-top:24px' },
+          el('h2', {}, `Observations · ${rp.observations.length}`),
+          el(
+            'div',
+            { class: 'panel' },
+            el(
+              'div',
+              { class: 'rows' },
+              rp.observations.map((o) =>
+                el('div', { class: 'row' }, el('span', { class: 'grow', style: 'font-size:13px;color:var(--ink-3)' }, plain(o))),
+              ),
+            ),
+          ),
+        )
+      : null,
+    el(
+      'a',
+      { class: 'eyebrow', style: 'display:inline-block;margin-top:18px', href: `/open?path=${encodeURIComponent(rp.rel)}`, target: '_blank' },
+      'Open review-plan.md →',
+    ),
+  );
+}
+
 function viewDoc(id) {
   const d = G.docs.find((x) => x.id === id);
   if (!d) return notFound(`No document “${id}”`);
@@ -1056,13 +1208,16 @@ function lifecycle(m) {
       (stale ? ` · stale — ${stale}` : '');
   else reviewDetail = 'Never reviewed. /b-review is optional, and offered once the module is complete.';
 
-  const stage = (label, mk, detail, warn) =>
+  // The review stage is clickable while a plan is on disk: an open review has
+  // findings behind it, and a count of them is not something to act on.
+  const stage = (label, mk, detail, warn, href) =>
     el(
-      'div',
-      { class: 'panel-head', style: 'gap:10px' },
+      href ? 'a' : 'div',
+      { class: 'panel-head', style: 'gap:10px', href: href || null },
       badge(mk),
-      el('span', { class: 'eyebrow', style: 'min-width:74px' }, label),
+      el('span', { class: 'eyebrow' }, label),
       el('span', { class: warn ? 'shrunk' : 'muted', style: 'font-size:12.5px' }, detail),
+      href ? el('span', { class: 'eyebrow' }, 'findings →') : null,
     );
 
   return el(
@@ -1071,7 +1226,7 @@ function lifecycle(m) {
     el('h2', {}, 'Lifecycle'),
     el(
       'div',
-      { class: 'panel' },
+      { class: 'panel lifecycle' },
       stage(
         'Build',
         buildMk,
@@ -1082,7 +1237,13 @@ function lifecycle(m) {
         m.integration ? m.integration.marker : null,
         m.integration ? m.integration.test || 'Test not yet defined.' : 'No module-integration section.',
       ),
-      stage('Review', reviewMk, reviewDetail, !!stale || (rv && rv.marker === '🚧' && !rp)),
+      stage(
+        'Review',
+        reviewMk,
+        reviewDetail,
+        !!stale || (rv && rv.marker === '🚧' && !rp),
+        rp ? rp.route : null,
+      ),
     ),
   );
 }
@@ -1911,6 +2072,7 @@ function render() {
   else if (parts[0] === 'adrs') node = viewAdrs();
   else if (parts[0] === 'adr' && parts[1]) node = viewAdr(parts[1]);
   else if (parts[0] === 'doc' && parts[1]) node = viewDoc(parts.slice(1).join('/'));
+  else if (parts[0] === 'review' && parts[1]) node = viewReview(parts[1]);
   else if (parts[0] === 'module' && parts[2]) node = viewFeature(parts[1], parts[2]);
   else if (parts[0] === 'module' && parts[1]) node = viewModule(parts[1]);
   else if (parts[0] === 'search') node = viewSearch(parts.slice(1).join('/'));
@@ -2010,25 +2172,38 @@ function wireLive() {
   }
 }
 
-window.addEventListener('hashchange', () => {
-  render();
-  const frag = location.hash.split('#')[2];
-  window.scrollTo(0, 0);
-  if (frag) {
-    const target = document.getElementById(frag);
-    if (target) target.scrollIntoView();
-  }
-});
-
-wireTheme();
-wireSearch();
-load(true)
-  .then(wireLive)
-  .catch((err) => {
-    $('#view').textContent = '';
-    $('#view').append(
-      el('div', { class: 'panel' }, el('div', { class: 'panel-body' },
-        el('p', {}, 'Could not load the graph.'),
-        el('pre', { class: 'pre-plain' }, String(err)))),
-    );
+// Expose the real view functions to the zero-dependency acceptance harness.
+// Browser execution has no CommonJS `module`, so this branch costs the shell
+// nothing and keeps renderer tests from becoming source-text assertions.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    openHref,
+    setGraphForTest: (graph) => {
+      G = graph;
+    },
+    viewReview,
+  };
+} else {
+  window.addEventListener('hashchange', () => {
+    render();
+    const frag = location.hash.split('#')[2];
+    window.scrollTo(0, 0);
+    if (frag) {
+      const target = document.getElementById(frag);
+      if (target) target.scrollIntoView();
+    }
   });
+
+  wireTheme();
+  wireSearch();
+  load(true)
+    .then(wireLive)
+    .catch((err) => {
+      $('#view').textContent = '';
+      $('#view').append(
+        el('div', { class: 'panel' }, el('div', { class: 'panel-body' },
+          el('p', {}, 'Could not load the graph.'),
+          el('pre', { class: 'pre-plain' }, String(err)))),
+      );
+    });
+}

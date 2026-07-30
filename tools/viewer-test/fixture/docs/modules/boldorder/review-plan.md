@@ -11,3 +11,8 @@ Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision
 - [x] F1 — plan.md stale on the parser entry point — inline-reconcile — docs/modules/boldorder/plan.md:12
 - [~] F2 — consolidate the two bold helpers — route:/b-feature — won't fix (operator, 2026-07-29)
 - [ ] F3 — non-owner 404 vs 403 — route:/b-feature — Run /b-feature modify boldorder owner-response
+- [ ] a finding written as free prose, with no class and no pointer
+
+## Observations (not actionable)
+
+- ADR-0002's commitments were not visible from the ADR index.

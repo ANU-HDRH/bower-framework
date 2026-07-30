@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.31 | 2026-07-31 | Open-review findings become readable in the viewer; review contracts and release guards are aligned around the same lifecycle | none |
 | v0.30 | 2026-07-30 | A stored `Next move:` is feature-scoped and dies at ✓, where `status.md` compresses to a terminal form carrying `## Verification`; the project-scoped next move is printed and derived, never stored | mechanical |
 | v0.29 | 2026-07-30 | Module review becomes a recorded three-state lifecycle: a `Review:` marker in `module-status.md`, routed findings tracked in one checklist across sessions, staleness derived | judgement |
 | v0.28 | 2026-07-29 | The docs viewer ships in `_bower/viewer/`; index status prose becomes derived rather than curated, with a budget and four closed escapes; the scaffold prunes retired `_bower/` files | mechanical |
@@ -25,6 +26,29 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
 
 ---
+
+## v0.31 — 2026-07-31
+
+### An open review is readable, not just countable
+
+The viewer read `review-plan.md` only for metrics — an in-review banner and a "3 of 7 findings disposed" line on the module's lifecycle panel — so the one artifact that says *what a review actually found* was reachable only by opening the file. Findings now have a page (`#/review/<module>`), which the banner and the review lane both link to: per finding, its disposition, gist, class, and pointer — the file (openable, line number kept) or the literal command that discharges it. The page lives exactly as long as the plan does, which matches the plan's own transience: at closeout it is deleted and `Review: ✓` is the whole record.
+
+The lifecycle text is aligned with that shape: routed boundary findings remain tracked while `/b-design` owns the change, observations remain visible without becoming blocking work, and clean reviews pass through the same closeout gate. The release script now rejects unknown arguments and refuses to publish uncommitted or unpushed contents.
+
+**Changed:**
+
+- **`_bower/viewer/lib/extract.cjs`** — finding lines parse into id / gist / class / pointer against `/b-review`'s closed class vocabulary, with the preamble's diagnosis date and roster count and the plan's `## Observations`; an unparseable line keeps its raw text; `review-plan.md` now resolves to the review route rather than the module; `SCHEMA_VERSION` → `0.31`.
+- **`_bower/viewer/web/`** — the review page; the module lifecycle's review lane becomes a link while a plan is on disk; file pointers open at their recorded line; disposition, routed-class and clickable-panel-head styles.
+- **`_bower/viewer/README.md`** — schema-contract row for the finding-line shape; the rollup section describes the page.
+- **`.claude/commands/b-review.md`, `_bower/review-schema.md`, `_bower/rationale.md`** — one lifecycle contract for routed findings, observations, clean-review closeout, and the viewer's read-only access.
+- **`.claude/commands/`, `.claude/agents/bower-implementer.md`** — echo-only constraint blocks are removed from the main build/review pathways; unique guards remain at their operative step.
+- **`scripts/release.sh`** — unknown arguments stop; a real release requires a clean HEAD equal to `origin/main` and pins the tag to that exact commit.
+- **`README.md`** — the maintained-document tree and viewer summary include the transient open-review surface.
+- **`tools/viewer-test/`** — the plan fixture gains an observation and an unparseable finding; extraction assertions plus direct rendering coverage for the page, exact-line link, routed command, and broken-state warning.
+
+### Migration
+
+None — no project-side changes required. The viewer ships in `_bower/`, which the scaffold step of `/b-upgrade` refreshes.
 
 ## v0.30 — 2026-07-30
 

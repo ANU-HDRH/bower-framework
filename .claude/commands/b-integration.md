@@ -6,7 +6,7 @@ The user's target module: $ARGUMENTS
 
 ## Important Behavioural Rules
 
-- **One deliverable.** This command produces exactly one thing: a runnable integration test for the named module. Do not modify feature code, fix unrelated bugs, or expand scope.
+- **One deliverable.** This command produces exactly one thing: a runnable integration test for the named module. Do not modify feature code, fix unrelated bugs, or expand scope; an architectural issue routes to `/b-design`.
 - **Consult before building.** Use AskUserQuestion to present your proposal and get confirmation before writing any code.
 - **Read first.** The module's `module-status.md` integration prose, every feature's `plan.md`, and `constitution.md`'s testing section are the foundation.
 - **Acceptance is explicit.** What the test asserts is the contract. Manual checks (e.g. inspecting a generated artifact) are agreed at the gate too.
@@ -99,14 +99,3 @@ Next move:
 ```
 
 Pick exactly one recommended next command based on the project state you just observed. Mention at most one alternative on a second line.
-
-<critical_constraints>
-## What NOT To Do
-
-- Do not start coding before the gate
-- Do not modify feature code in this command — if a feature is broken at the boundary, surface it and recommend `/b-feature <name>`
-- Do not skip the manual-check prompt when manual criteria were agreed at the gate
-- Do not mark the module-integration marker ✓ if any agreed criterion is MISSING or PENDING USER
-- Do not emit free-prose next moves — always name the literal slash command
-- Do not propose architectural changes — recommend `/b-design` if the test reveals an architectural issue
-</critical_constraints>

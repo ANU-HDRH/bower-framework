@@ -168,12 +168,14 @@ const server = http.createServer((req, res) => {
   // because `a/../../etc/passwd` has none to strip.
   if (pathname === '/open') {
     const target = url.searchParams.get('path') || '';
+    const lineRaw = url.searchParams.get('line');
+    const line = lineRaw && /^\d+$/.test(lineRaw) && Number(lineRaw) > 0 ? Number(lineRaw) : null;
     const abs = path.resolve(ROOT, target.replace(/^\/+/, ''));
     if (abs !== ROOT && !abs.startsWith(ROOT + path.sep)) {
       res.writeHead(403).end('outside the project root');
       return;
     }
-    res.writeHead(302, { location: `vscode://file/${abs}` });
+    res.writeHead(302, { location: `vscode://file/${abs}${line ? `:${line}` : ''}` });
     res.end();
     return;
   }

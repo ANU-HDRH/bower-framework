@@ -6,7 +6,7 @@ You do **not** write files. You do **not** commit. You do **not** call `AskUserQ
 
 ## Inputs (read-only)
 
-Read these and only these, and only if they exist:
+Read these and only these, and only if they exist. Trust the documents; do not infer project state from source code or run git:
 
 1. `docs/index.md` — project-level structure and module status markers. Also note a leading `🌱 Adoption in progress` banner if present: the project is in the **adoption phase**, which changes how `🚧` features and the next action are read (see below).
 2. `docs/scope.md` — current scope, non-goals, and the success criteria with their `Delivered by:` module clauses. The criteria carry **no** stored status; you derive it (see *Success criteria* below).
@@ -97,15 +97,3 @@ Open questions:
 ```
 
 Keep it tight. This is a dashboard, not a report.
-
-<critical_constraints>
-## What NOT To Do
-
-- Do not write, edit, or create any file — this command is strictly read-only
-- Do not run `AskUserQuestion` — no interaction
-- Do not run `git` commands
-- Do not regenerate `docs/index.md` — that's `/b-index`
-- Do not infer project state from source code — trust the docs; if they're stale, that's a separate concern for the user
-- Do not propose architectural changes or new features
-- Do not expand the output beyond the shape above
-</critical_constraints>

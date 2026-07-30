@@ -152,22 +152,3 @@ ADR-NNNN recorded: <title> [<status>]
 Next move:
   - <literal slash command, or "(none — ADR recorded; resume your next task)">
 ```
-
-<critical_constraints>
-## What NOT To Do
-
-- Do not modify the body of an existing ADR — bodies are immutable
-- Do not write the ADR before the gate
-- Do not skip the supersession or narrowing frontmatter update on the older ADR — both sides of the relationship are written in the same step
-- Do not set `status: superseded` on a narrowed ADR, or add `superseded-by` to it — a narrowed decision stays `accepted` and in force
-- Do not record a narrowing as a supersession because it is simpler — if the new ADR's body says the earlier decision still holds, the frontmatter must say `narrows`
-- Do not leave `narrows` or `narrowed-by` pointing at a superseded ADR — prune or transfer the pointers in the same supersession write
-- Do not invent sentinels in `modules:` — omit the field when no specific module is implicated
-- Do not default `scope` to `universal` — it is the rare, every-feature-pays-for-it classification; pick the narrowest true value
-- Do not bundle decisions the title can't honestly cover — that's two ADRs (but bundling related commitments under a coherent umbrella title is fine)
-- Do not pad sections to hit a length — ~150 words is the target, not a floor
-- Do not restate framing docs in `## Context` — point to them in one or two sentences
-- Do not write a `## Consequences` section when the consequences are already implied by the Decision sentence — omit the heading
-- Do not write code, modify plans, or update status files — this command is ADR-only
-- Do not emit free-prose next moves — use a literal slash command or the `(none — ...)` form
-</critical_constraints>

@@ -267,21 +267,3 @@ Next move:
 ```
 
 Pick exactly one. When it is `/b-review <module>`, frame the review as optional — a small project may reasonably skip it — but name the command so it is one keystroke away, and add one clause that it is resumable: a review opens a state (`Review: 🚧`) and re-running `/b-review <module>` picks up mediation rather than re-diagnosing, so the findings need not be dealt with in one sitting.
-
-<critical_constraints>
-## What NOT To Do
-
-- Do not start coding before the gate
-- Do not start coding before `plan.md` is written (Step 3) — the plan is the recovery anchor; writing it only at completion defeats the point
-- Do not implement inline when the Agent tool is available — the implementer's fresh context is the point; when falling back, say so explicitly
-- Do not let the implementer's report substitute for the Step 5 PENDING USER prompt — manual checks are always confirmed with the user by this command
-- Do not treat a DIVERGED-STOPPED report as failure — it is the divergence gate working; re-gate, amend the plan, re-spawn
-- Do not edit `docs/constitution.md` as part of Step 6 reconciliation — it is human-owned; a reported contradiction goes through the Step 5 consent gate, quoted verbatim with its line number, or not at all
-- Do not expand scope beyond what was confirmed
-- Do not skip documentation updates
-- Do not propose architectural changes — if the change requires them, recommend the user runs `/b-design` instead
-- Do not treat acceptance criteria as optional — they're the contract
-- Do not mark a feature ✓ if any agreed criterion is MISSING or PENDING USER
-- Do not skip the manual-check prompt when manual criteria were agreed at the gate
-- Do not emit free-prose next moves — `Next move:` is always a literal slash command (or the explicit `(none — ...)` form)
-</critical_constraints>

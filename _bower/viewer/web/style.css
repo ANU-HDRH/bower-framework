@@ -568,6 +568,43 @@ main {
   align-items: center;
   gap: 10px;
 }
+a.panel-head {
+  text-decoration: none;
+  color: inherit;
+}
+a.panel-head:hover {
+  background: var(--surface-2);
+}
+/* Pseudo-tables: rows of independent flex boxes can't align their columns, so
+   the lifecycle panel and the review findings list are grids whose rows share
+   the parent's column tracks. Column count lives here; the rows must emit a
+   cell (an empty span if need be) for every track. */
+.panel.lifecycle {
+  display: grid;
+  grid-template-columns: max-content max-content 1fr max-content;
+}
+.panel.lifecycle > .panel-head {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: center;
+}
+.rows.findings {
+  display: grid;
+  grid-template-columns: max-content max-content 1fr max-content max-content;
+}
+.rows.findings > .row {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: baseline;
+}
+/* Grid cells stretch to their track by default, which turns a bordered pill
+   into a column-wide box. Pills keep their content width. */
+.panel.lifecycle > .panel-head > .mk,
+.rows.findings > .row > .tag {
+  justify-self: start;
+}
 .panel > .panel-body {
   padding: 12px 14px;
 }
@@ -956,6 +993,22 @@ html[data-theme='dark'] .tag.narrowed {
   :root:not([data-theme='light']) .tag.narrowed {
     color: #0e1a1f;
   }
+}
+/* Review-plan dispositions. `open` reuses .tag.pend — it is the same fact, work
+   still owed. Resolved and won't-fix are both discharged, but only one of them
+   was fixed, so they must not read alike. */
+.tag.done {
+  color: var(--euc);
+  border-color: var(--euc);
+}
+.tag.wontfix {
+  color: var(--ink-3);
+  border-style: dashed;
+}
+/* A routed finding is tracked here but actioned by another command. */
+.tag.routed {
+  color: var(--violet);
+  border-color: var(--violet);
 }
 .tag.narrows {
   color: var(--bower);

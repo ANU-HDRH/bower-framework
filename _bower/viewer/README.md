@@ -73,6 +73,7 @@ defines it. Changing a row means changing `lib/extract.cjs` and
 | `docs/index.md` 🌱 banner + `docs/adoption-ledger.md` | `framework-reference.md` → *Adoption phase* | phase detection; suppresses per-feature status warnings |
 | `## Module review` `Review:` line — marker, date, `(N of N features)` snapshot | `framework-reference.md` → *module-status.md — Integration and Build Order* | review state, derived staleness, the lifecycle panel |
 | `docs/modules/<m>/review-plan.md` `## Findings` checklist — `[ ]` / `[x]` / `[~]` | `framework-reference.md` → *Module Review* | in-review banner, disposed/total counts, marker↔plan agreement |
+| `review-plan.md` finding line — `F<n> — <gist> — <class> — <pointer>`, the closed class vocabulary, the preamble's date and roster count, `## Observations` | `/b-review` Step 3 (the plan shape) | the review page: what each finding is, who owns it, where it points |
 | `docs/index.md` Modules table markers | `/b-index` | each module's *declared* status, compared with the derived one |
 | Repo-root-based doc links (`/docs/…`) | `framework.md` Working Conventions | backlinks; broken- and relative-link checks |
 | `git log -- docs` | — | recency (optional; degrades if absent) |
@@ -162,6 +163,14 @@ module can be ✓ and never reviewed, or mid-build with a review open, and both 
 honest. Review staleness is derived the same way `/b-recap` derives it — the
 `(N of N features)` snapshot against the current build order — so it catches
 features *added* since the review, not features modified in place.
+
+**An open review has a page.** While `review-plan.md` is on disk the review lane
+is a link (`#/review/<module>`, also where the in-review banner goes), and that
+page shows the `## Findings` checklist itself: each finding's disposition, its
+gist, its class, and where it points — a file, openable, or the literal command
+that discharges it. A count of disposed findings is not something an operator can
+act on; the findings are. The page exists only as long as the plan does, which is
+correct — at closeout the plan is deleted and `Review: ✓` is the whole record.
 
 ## Keeping it honest when the framework changes
 

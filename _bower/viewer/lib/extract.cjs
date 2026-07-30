@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.30';
+const SCHEMA_VERSION = '0.31';
 
 // ---------------------------------------------------------------- helpers
 
@@ -55,6 +55,61 @@ function ownershipOf(rel) {
   if (rel.startsWith('docs/adr/')) return 'body immutable once accepted';
   if (rel.startsWith('docs/reference/')) return 'vendored (read-only)';
   return 'unclassified';
+}
+
+// A `review-plan.md` finding line, per /b-review's plan shape:
+//   `- [ ] F3 — <gist> — <class> — <pointer>`
+// The class vocabulary is closed (see b-review.md), which is what makes the rest
+// unambiguous: whatever precedes the class is the gist, whatever follows it is
+// where the work is. Parsing is best-effort by design — a line that does not fit
+// keeps its raw text and is shown as written, because the plan is operator prose
+// first and a machine-readable checklist second.
+const REVIEW_OWNED = ['inline-reconcile', 'test-backfill', 'status-fix', 'adr-supersede'];
+const isReviewClass = (s) => REVIEW_OWNED.includes(s) || /^route:\/b-[a-z-]+$/.test(s);
+
+function parseFinding(text) {
+  const out = {
+    text,
+    id: null,
+    gist: text,
+    class: null,
+    routed: false,
+    pointer: null,
+    pointerKind: null,
+    pointerFile: null,
+    pointerLine: null,
+    note: null,
+  };
+  const parts = text.split(/\s+[—–]\s+/).map((s) => s.trim());
+  let i = 0;
+  if (/^F\d+$/i.test(parts[0])) {
+    out.id = parts[0].toUpperCase();
+    i = 1;
+  }
+  const ci = parts.findIndex((p, n) => n >= i && isReviewClass(p));
+  if (ci === -1) {
+    out.gist = parts.slice(i).join(' — ') || text;
+    return out;
+  }
+  out.class = parts[ci];
+  out.routed = out.class.startsWith('route:');
+  out.gist = parts.slice(i, ci).join(' — ') || text;
+  const tail = parts.slice(ci + 1).join(' — ');
+  if (!tail) return out;
+  // A won't-fix disposition is recorded where a pointer would otherwise sit.
+  if (/^won'?t fix\b/i.test(tail)) {
+    out.note = tail;
+    return out;
+  }
+  out.pointer = tail;
+  if (/^(Run\s+)?\//.test(tail) && /\/b-/.test(tail)) out.pointerKind = 'command';
+  else if (/^[\w./@-]+(:\d+)?$/.test(tail) && /[/.]/.test(tail)) {
+    out.pointerKind = 'path';
+    const m = /^(.*?)(?::(\d+))?$/.exec(tail);
+    out.pointerFile = m[1];
+    out.pointerLine = m[2] ? Number(m[2]) : null;
+  } else out.pointerKind = 'text';
+  return out;
 }
 
 // The five central docs, in reading order. Anything else at the root of docs/
@@ -540,19 +595,38 @@ function extract(root) {
     if (planPresent) {
       const rpRel = `docs/modules/${name}/review-plan.md`;
       const body = read(rpAbs);
-      docRoutes.set(rpRel, route);
+      // The plan gets its own page rather than resolving to the module: it is
+      // the substance of an open review, and a link that lands on a lifecycle
+      // badge instead of the findings answers a different question.
+      const rpRoute = `#/review/${encodeURIComponent(name)}`;
+      docRoutes.set(rpRel, rpRoute);
+      const rpSecs = M.sections(body);
       // `[x]` resolved and `[~]` won't-fix both count as disposed of; only `[ ]`
       // holds the review open. Won't-fix is an operator decision recorded in the
       // plan and deliberately left no other trace.
-      const items = [...body.matchAll(/^\s*[-*]\s+\[( |x|X|~)\]\s+(.*)$/gm)].map((m) => ({
+      const items = [...(rpSecs['Findings'] || body).matchAll(/^\s*[-*]\s+\[( |x|X|~)\]\s+(.*)$/gm)].map((m) => ({
         done: m[1] !== ' ',
         wontFix: m[1] === '~',
-        text: m[2].trim(),
+        ...parseFinding(m[2].trim()),
       }));
+      // The preamble carries the diagnosis date and the roster count the closeout
+      // will write into `Review: ✓` — both are the review's provenance, so they
+      // belong on the page rather than only in the file.
+      const preamble = body.replace(/^#[^\n]*\n/, '').split(/^##\s/m)[0];
+      const obsKey = Object.keys(rpSecs).find((k) => /^Observations/.test(k));
+      const observations = (obsKey ? rpSecs[obsKey] : '')
+        .split('\n')
+        .map((l) => (/^\s*[-*]\s+(.*)$/.exec(l) || [])[1])
+        .filter((t) => t && !/^none\.?$/i.test(t.trim()))
+        .map((t) => t.trim());
       reviewPlans.push({
         module: name,
         rel: rpRel,
-        route,
+        route: rpRoute,
+        moduleRoute: route,
+        diagnosed: (/(\d{4}-\d{2}-\d{2})/.exec(preamble) || [])[1] || null,
+        featureCount: Number((/against\s+(\d+)\s+features?/i.exec(preamble) || [])[1]) || null,
+        observations,
         items,
         open: items.filter((i) => !i.done).length,
         wontFix: items.filter((i) => i.wontFix).length,
