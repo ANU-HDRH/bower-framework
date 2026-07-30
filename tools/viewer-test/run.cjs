@@ -28,6 +28,7 @@
 
 const path = require('path');
 const { extract, SCHEMA_VERSION } = require('../../_bower/viewer/lib/extract.cjs');
+const M = require('../../_bower/viewer/lib/md.cjs');
 
 const FIXTURES = path.join(__dirname);
 let failures = 0;
@@ -73,6 +74,7 @@ const EXPECTED = [
   // status and marker honesty
   'marker-disagreement',
   'pending-verification-complete',
+  'next-move-on-complete',
   'status-no-marker',
   'missing-plan',
   'missing-status',
@@ -271,6 +273,45 @@ assert(g.constitution.items.length === 1, 'the Not-yet-in-force section is extra
 // framework-reference.md status.md spec.
 const pending = g.features.filter((f) => f.pendingVerification);
 assert(pending.length === 1, 'one feature has pending verification', `got ${pending.length}`);
+
+// v0.30 next-move scoping. Both spellings must be read, and a decorated
+// `(none — …)` must not be mistaken for live work: on a real project the bold
+// form leaked its closing `**` into the value, which turned a properly closed
+// next move into a spurious finding.
+const featOf = (mod, name) => g.features.find((f) => f.module === mod && f.name === name);
+const stale = featOf('drifted', 'stale-pointer');
+assert(
+  stale.status.nextMove === '`Run /b-feature ghost-feature`',
+  'an inline **Next move:** line is read, emphasis stripped',
+  `got ${JSON.stringify(stale && stale.status.nextMove)}`,
+);
+const closed = featOf('drifted', 'done-but-pending');
+assert(closed.status.nextMove === null, 'a closed next move is not outstanding work', `got ${JSON.stringify(closed.status.nextMove)}`);
+assert(
+  M.labelled('**Next move:** (none — complete)', 'Next move') === '(none — complete)',
+  'a bold label does not leak its closing emphasis into the value',
+  `got ${JSON.stringify(M.labelled('**Next move:** (none — complete)', 'Next move'))}`,
+);
+assert(
+  M.labelled('Notes: *none yet*', 'Notes') === '*none yet*',
+  'a value that legitimately opens with emphasis keeps it',
+  `got ${JSON.stringify(M.labelled('Notes: *none yet*', 'Notes'))}`,
+);
+assert(
+  M.labelled('prose about the `Next move:` convention\n**Next move:** real', 'Next move', { anchored: true }) === 'real',
+  'an anchored label ignores a mid-sentence mention of itself',
+  `got ${JSON.stringify(M.labelled('prose about the `Next move:` convention\n**Next move:** real', 'Next move', { anchored: true }))}`,
+);
+assert(
+  !g.nextMoves.some((n) => n.marker === '✓'),
+  'the outstanding-next-moves list excludes ✓ features',
+  JSON.stringify(g.nextMoves.filter((n) => n.marker === '✓')),
+);
+assert(
+  !g.ladder.some((l) => l.command.startsWith('/b-review')),
+  'the derived ladder does not nag about optional review',
+  JSON.stringify(g.ladder),
+);
 
 // An oversized table cell, and the formatter padding it multiplies. Measured on
 // a real project: one 15,229-character cell became 75kB of alignment padding in

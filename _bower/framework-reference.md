@@ -90,9 +90,34 @@ The `Delivered by:` pointer stops at the **module**. It does not name features o
 
 ## status.md — Resumption Framing
 
-`status.md` answers one question: *if I picked this up tomorrow, what's the state and what's the next move?* Current state in a short paragraph or bullets; next move explicit (a literal slash command); open issues only if they affect resumption. No history, no changelog, no solved-issue residue. Bug backlog belongs in the external tracker, not here. Budget ~150 words — over budget is a signal to compress, not to split.
+`status.md` answers one question: *if I picked this up tomorrow, what's the state and what's the next move?* That question has an answer only while the feature is unfinished, so the file has **two forms** and a lifecycle between them.
+
+**Live form** — the feature is ⏸ 🚧 🟡 🔴. Current state in a short paragraph or bullets; `## Next move` explicit (a literal slash command); open issues only if they affect resumption. No history, no changelog, no solved-issue residue. Bug backlog belongs in the external tracker, not here. Budget ~150 words — over budget is a signal to compress, not to split.
 
 If any acceptance criterion agreed at a gate has not yet been verified (typically manual checks the user deferred), include a `Pending verification:` line listing those checks. Empty or omitted means fully verified. A feature with pending verification is marked 🚧 in `module-status.md`, not ✓.
+
+**Terminal form** — the feature is ✓. The resumption job is discharged, and `plan.md` is the durable record of how the thing works, so the file compresses to the marker, the evidence, and a closed next move. Budget ~50 words.
+
+```markdown
+# <feature> — ✓
+
+## Verification
+
+<date> — <what was run, what passed>
+Qualification: <a standing caveat on that evidence, if any>
+
+## Next move
+
+(none — complete)
+```
+
+A stored next move is written as a `## Next move` section, as above. An inline `Next move:` (or `**Next move:**`) line in the body means the same thing and is read as such — it is the form the commands' printed handoffs use, so projects carry a mix — but new writes use the section.
+
+Whatever command marks the feature ✓ compresses the file in the same pass. **Compress, never delete:** `## Verification` is the only durable record that the agreed criteria were actually exercised, and under what conditions.
+
+**`Qualification:` is not `Pending verification:`.** A qualification bounds evidence that *was* gathered ("fake-LLM evidence only; real inference is owned by the test-harness feature"); pending verification names evidence that was *not*. The distinction is load-bearing rather than stylistic — a ✓ feature carrying `Pending verification:` is a false-completeness claim, so labelling a qualification that way manufactures one.
+
+**A stored `Next move:` may only name work on its own feature** — `Run /b-feature <self>` to close a deferred check, or `(none — complete)`. It may not point at the next feature in the build order, at `/b-integration`, at `/b-review`, or at the next module. Those are *project-scoped* facts: they change whenever anything anywhere lands, and no command rewrites every feature's `status.md`, so storing one there breaks the one-home rule above and the line can only accrue — a long-finished module's features still calling for work that landed weeks ago. The project-scoped handoff is **printed** by the command that ran, and derived at read time by `/b-recap` and the docs viewer from the build-order, integration, and review markers. It is never written into a feature file.
 
 ## module-status.md — Integration and Build Order
 

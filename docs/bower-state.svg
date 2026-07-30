@@ -1,18 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 470" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 760 470" role="img" aria-labelledby="title desc">
 <title id="title">Bower SDD state flow</title>
-<desc id="desc">Start leads to Designed via /b-design, then Building via /b-feature or /b-module, then Complete via /b-integration, then done when all modules pass. Building loops on each feature; Complete loops on optional /b-review. Complete returns to Building for the next module. Building can redirect back to Designed on an architectural change.</desc>
+<desc id="desc">Start leads to Designed via /b-design, then Building via /b-feature or /b-module, then Complete via /b-integration, then done when all modules pass. Building loops on each feature. Complete returns to Building for the next module, and can redirect back to Designed on an architectural change. Optionally, a Complete module makes a round trip through In review via /b-review, mediating findings until all are disposed of and returning Reviewed; review never gates completion.</desc>
 <style>
 text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .t{font-size:14px;font-weight:500}
 .s{font-size:12px;font-weight:400}
 .n{fill:#84837c}
 .box{fill:#eeedfe;stroke:#534ab7;stroke-width:1}
+.opt{fill:none;stroke:#534ab7;stroke-width:1;stroke-dasharray:5 4}
 .bt{fill:#3c3489}
 .bs{fill:#534ab7}
 .arr{stroke:#84837c;stroke-width:1.5;fill:none}
+.arro{stroke:#84837c;stroke-width:1.5;fill:none;stroke-dasharray:5 4}
 .coral{stroke:#d85a30;stroke-width:1.5;fill:none}
 @media (prefers-color-scheme:dark){
 .box{fill:#3c3489;stroke:#afa9ec}
+.opt{stroke:#afa9ec}
 .bt{fill:#cecbf6}
 .bs{fill:#afa9ec}
 }
@@ -43,8 +46,8 @@ text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Robot
 <text class="s n" x="332" y="258" text-anchor="start" dominant-baseline="central">/b-integration</text>
 
 <rect class="box" x="210" y="280" width="220" height="56" rx="8"/>
-<text class="t bt" x="320" y="302" text-anchor="middle" dominant-baseline="central">Complete</text>
-<text class="s bs" x="320" y="321" text-anchor="middle" dominant-baseline="central">↻ /b-review (optional)</text>
+<text class="t bt" x="320" y="300" text-anchor="middle" dominant-baseline="central">Complete</text>
+<text class="s bs" x="320" y="319" text-anchor="middle" dominant-baseline="central">features ✓ · integration ✓</text>
 
 <line x1="320" y1="338" x2="320" y2="385" class="arr" marker-end="url(#arrow)"/>
 <text class="s n" x="332" y="362" text-anchor="start" dominant-baseline="central">all modules ✓</text>
@@ -53,13 +56,26 @@ text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Robot
 <circle cx="320" cy="400" r="6" fill="#84837c"/>
 <text class="s n" x="340" y="400" text-anchor="start" dominant-baseline="central">done</text>
 
-<path d="M430 308 C 494 308, 494 208, 430 208" class="arr" marker-end="url(#arrow)"/>
-<text class="s n" x="500" y="258" text-anchor="start" dominant-baseline="central">next module</text>
+<path d="M430 288 C 476 288, 476 208, 430 208" class="arr" marker-end="url(#arrow)"/>
+<text class="s n" x="484" y="238" text-anchor="start" dominant-baseline="central">next module</text>
 
 <path d="M210 208 C 160 208, 160 108, 210 108" class="coral" stroke-dasharray="5 4" marker-end="url(#arrowC)"/>
 <text class="s n" x="86" y="150" text-anchor="middle" dominant-baseline="central">architectural</text>
 <text class="s n" x="86" y="166" text-anchor="middle" dominant-baseline="central">change</text>
 
+<line x1="430" y1="306" x2="517" y2="306" class="arro" marker-end="url(#arrow)"/>
+<text class="s n" x="472" y="294" text-anchor="middle" dominant-baseline="central">/b-review</text>
+
+<line x1="520" y1="330" x2="433" y2="330" class="arro" marker-end="url(#arrow)"/>
+<text class="s n" x="474" y="344" text-anchor="middle" dominant-baseline="central">reviewed ✓</text>
+
+<rect class="opt" x="520" y="290" width="200" height="56" rx="8"/>
+<text class="t bt" x="620" y="310" text-anchor="middle" dominant-baseline="central">In review</text>
+<text class="s bs" x="620" y="329" text-anchor="middle" dominant-baseline="central">↻ mediate findings</text>
+
 <line x1="210" y1="440" x2="242" y2="440" class="coral" stroke-dasharray="5 4"/>
 <text class="s n" x="250" y="440" text-anchor="start" dominant-baseline="central">hard redirect — back through /b-design</text>
+
+<rect class="opt" x="500" y="432" width="26" height="16" rx="4"/>
+<text class="s n" x="534" y="440" text-anchor="start" dominant-baseline="central">optional — never gates completion</text>
 </svg>

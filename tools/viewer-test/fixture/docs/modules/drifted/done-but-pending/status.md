@@ -6,4 +6,4 @@ Pending verification: the operator has not yet confirmed the rendered output by 
 
 ## Next move
 
-`Run /b-feature done-but-pending`
+(none — complete)

@@ -10,7 +10,7 @@ The user's target module: $ARGUMENTS
 - **Respect the build order.** Features are implemented in the order listed in `module-status.md` under `## Build order`.
 - **Read first.** Architecture, scope, and the module's existing `module-status.md` are the foundation.
 - **Acceptance is explicit.** Per-feature acceptance criteria plus a module-level integration test — both agreed at the gate.
-- **Literal-command handoff.** Every "next move" you emit (in any feature `status.md`, in the final handoff) names the exact slash command to type next, never free prose.
+- **Literal-command handoff.** Every "next move" you emit (in any feature `status.md`, in the final handoff) names the exact slash command to type next, never free prose. A `status.md` next move is **feature-scoped** — work on that feature or `(none — complete)`; the project-scoped one (next module, integration, review) is printed in the Step 6 handoff and never stored.
 
 ## Step 0: Fit Check
 
@@ -79,7 +79,9 @@ After confirmation, for each feature in build order:
    ```
 
    MISSING is a blocker — write the test or renegotiate via AskUserQuestion before continuing. Any manual criteria for this feature are deferred to Step 4 and surfaced in a single batch at the end of the module; create `status.md` with a `Pending verification:` line and mark the feature 🚧 (not ✓) for now.
-7. Create `docs/modules/<module>/<feature>/status.md` as a resumption snapshot (≤150 words). If any manual criteria remain, include `Pending verification:`.
+7. Create `docs/modules/<module>/<feature>/status.md` in the form the feature's marker calls for (schema: `_bower/framework-reference.md`, "status.md — Resumption Framing"). If manual criteria remain, that is the **live form** — resumption snapshot, ≤150 words, `Pending verification:` listing the deferred checks, and a `Next move:` of `Run /b-feature <this feature>`. If nothing remains and the feature lands ✓, write the **terminal form** instead: the marker, a `## Verification` section (date, what was run, what passed, plus `Qualification:` if the evidence carries a standing caveat), and `## Next move` → `(none — complete)`. ~50 words.
+
+   Either way the stored `Next move:` names work on *this* feature only — never the next feature in the build order, never `/b-integration` or `/b-review`. This pass will build those next features itself; a stored pointer to them is stale the moment it is written and nothing ever comes back to fix it. The project-scoped next move belongs in the Step 6 handoff.
 8. If no manual criteria remain for this feature, mark it ✓ in `module-status.md` `## Build order`. Otherwise leave it 🚧 pending Step 4. **If building this feature landed part of a later entry's scope** — a dependency pulled the work forward — append one clause to that later entry: who absorbed what, then `Remaining:` and what is left. You will reach that entry yourself later in this same pass, so the note costs little here; it earns its keep afterwards, when a reader (or a `/b-feature` follow-up) wonders why that feature's plan claims more than it built. If nothing remains, write `Remaining: none` and leave the marker ⏸ until you reach it in the build order and verify it against its own criteria. Schema: `_bower/framework-reference.md`, "Pull-forward annotation."
 
 After all features are complete:
@@ -94,7 +96,7 @@ Collect every manual acceptance check agreed at the gate — both per-feature ma
 
 For each check:
 
-- **PASS** — flip the relevant feature from 🚧 to ✓ in `module-status.md`; remove the item from that feature's `status.md` `Pending verification:` line (delete the line if now empty).
+- **PASS** — flip the relevant feature from 🚧 to ✓ in `module-status.md`; remove the item from that feature's `status.md` `Pending verification:` line (delete the line if now empty). If that clears the last item and the feature is now ✓, compress `status.md` to its terminal form — marker, `## Verification` (fold in what this manual check confirmed, dated), `## Next move` → `(none — complete)`. Record a caveat on the evidence as `Qualification:`, never as `Pending verification:`; a ✓ feature carrying the latter reads as a false-completeness error.
 - **FAIL** — treat as a bug; if fixable in scope, fix and re-verify. If not, leave the feature 🟡 or 🔴 with the failure noted in its `status.md`.
 - **Deferred** — leave the feature 🚧 with `Pending verification:` intact. `/b-recap` will surface it later.
 

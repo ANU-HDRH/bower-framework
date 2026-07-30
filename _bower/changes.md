@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.30 | 2026-07-30 | A stored `Next move:` is feature-scoped and dies at ✓, where `status.md` compresses to a terminal form carrying `## Verification`; the project-scoped next move is printed and derived, never stored | mechanical |
 | v0.29 | 2026-07-30 | Module review becomes a recorded three-state lifecycle: a `Review:` marker in `module-status.md`, routed findings tracked in one checklist across sessions, staleness derived | judgement |
 | v0.28 | 2026-07-29 | The docs viewer ships in `_bower/viewer/`; index status prose becomes derived rather than curated, with a budget and four closed escapes; the scaffold prunes retired `_bower/` files | mechanical |
 | v0.27 | 2026-07-29 | ADR narrowing gets frontmatter: `narrows` / `narrowed-by`, replacing body-only partial supersession | judgement |
@@ -24,6 +25,67 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
 
 ---
+
+## v0.30 — 2026-07-30
+
+### A stored next move is feature-scoped; the project-scoped one is derived
+
+`/b-feature` chose a feature's `Next move:` from a menu that was mostly about other things — the next feature in the build order, the module's integration test, the next module. Each such line is true when written and decays immediately, because the work it names is completed by a *different* feature's pass and nothing rewrites this feature's file again. Observed on a real project: a long-finished module's features still calling for the first feature of the module after it. A stored `Next move:` may now only name work on its own feature, or `(none — complete)`; the project-scoped answer is printed in a handoff and derived at read time from markers by `/b-recap` and the viewer. `/b-recap` already did this and needed no change. Reasoning in `_bower/rationale.md`, "State Has One Home."
+
+**Changed:**
+
+- **`_bower/framework-reference.md`** — *status.md — Resumption Framing* gains the feature-scoped rule and its rationale.
+- **`_bower/framework.md`** — Working Conventions gains the stored-vs-printed distinction; the `/b-review` resume clause, absent in v0.29, is added to Status Markers.
+- **`.claude/commands/b-feature.md`** — Step 6.7 restricted to feature-scoped next moves; the project-scoped menu moves to a new **Step 7: Handoff**, printed and transient; behavioural rules extended.
+- **`.claude/commands/b-module.md`** — Step 3.7 and the literal-command rule carry the same restriction.
+- **`_bower/viewer/`** — the next-moves panel excludes ✓ features (it is labelled *outstanding*, which was false for them) and gains a derived project ladder — the next non-✓ build-order entry per module, or integration where features are all ✓ — as a new `ladder` graph field. Review is deliberately not in the ladder: `Review: ⏸` is not outstanding work, and listing it made an optional command look owed once per finished module.
+
+### `status.md` has a terminal form at ✓
+
+The resumption question a `status.md` answers has no answer once the feature is done, but the file kept its live shape forever. At ✓ it now compresses to the marker, a `## Verification` section (dated evidence, plus `Qualification:` for a standing caveat on it), and `Next move: (none — complete)`. ~50 words. Compress, never delete — `## Verification` is the only durable record that the agreed criteria were exercised and under what conditions. Deleting the file at ✓ was considered and ruled out for that reason. `## Verification` is newly specified, though the viewer already parsed it where projects had grown it.
+
+`Qualification:` and `Pending verification:` are not interchangeable: the first bounds evidence that *was* gathered, the second names evidence that was not, and a ✓ feature carrying the second is an error-severity honesty finding.
+
+**Changed:**
+
+- **`_bower/framework-reference.md`** — the section gains live and terminal forms, the terminal template, `## Verification` as spec, and the qualification-vs-pending rule.
+- **`_bower/framework.md`** — the terminal form summarised in Working Conventions; `status.md`'s budget row notes both forms.
+- **`.claude/commands/b-feature.md`** (Step 6.7), **`b-module.md`** (Step 3.7 and the manual-verification PASS branch), **`.claude/commands/b-review.md`** (`status-fix`) — write the terminal form whenever a feature ends a pass at ✓.
+- **`_bower/review-schema.md`** — the status-honesty dimension checks for the terminal form; a forward-pointing next move on a finished feature is `status-fix`.
+- **`_bower/viewer/`** — new `next-move-on-complete` warn check, judged against the status file's own marker so it does not double-report `marker-disagreement`; `SCHEMA_VERSION` → `0.30`; README schema-contract row added.
+- **`_bower/viewer/lib/`** — the extractor read only a `## Next move` *section*, so the inline `Next move:` / `**Next move:**` line every command's handoff prints — and hand-written status files copy — was invisible: on a real project 20 stale forward-pointers, none of them parsed. Both spellings are now read. Two parser defects fixed alongside, both of which turned conformant docs into findings: `md.cjs`'s `labelled()` leaked a bold label's closing `**` into the value (so a properly closed `(none — …)` read as live work), and it matched a label named in surrounding prose — labels prone to being discussed can now require their own line.
+- **`tools/viewer-test/`** — the conformant module's two ✓ features move to terminal form (one carrying a `Qualification:`); new `stale-pointer` fixture feature owns the new condition and is written in the inline bold form; seven assertions covering both spellings, the emphasis leak, the prose-mention trap, and the two exclusions.
+
+### Migration
+
+Two mechanical passes over `docs/`. Neither requires reading code.
+
+**1. Compress every ✓ feature's `status.md` to the terminal form.** For each module under `docs/modules/`, read `module-status.md`'s `## Build order`. For every entry marked ✓, open `docs/modules/<module>/<feature>/status.md` (skip features that have none — adopted features legitimately lack one) and rewrite it as:
+
+```markdown
+# <feature> — ✓
+
+## Verification
+
+<date> — <what was run, what passed>
+Qualification: <standing caveat on that evidence, if any>
+
+## Next move
+
+(none — complete)
+```
+
+Sourcing the `## Verification` body: use whatever verification evidence the existing `status.md` already states (test names, counts, commands run, dates). If it states none, take what `plan.md`'s Testing section records. If neither gives a date, use the file's last git commit date (`git log -1 --format=%ad --date=short -- <path>`) and say what was run without inventing a count. Do **not** run tests, and do **not** infer evidence from code — an unsupported `## Verification` line is worse than a thin one.
+
+Preserve any standing caveat the old file carried — a note that evidence came from a stub, a fake, or a partial environment — as a `Qualification:` line. **Never** write such a caveat as `Pending verification:`. That label means an agreed acceptance criterion has not been checked, and on a ✓ feature it is a false-completeness error; a qualification is a bound on evidence that *was* gathered. Conversely, if a ✓ feature's `status.md` genuinely carries a `Pending verification:` line, that feature is mismarked: leave the file in its live form, leave the line intact, and flip the build-order entry to 🚧 — do not compress it, and report it in the upgrade summary as a marker corrected.
+
+Drop the rest of the old body. `plan.md` is the durable record of how the feature works; the resumption snapshot is discharged.
+
+**2. Fix forward-pointing next moves on unfinished features.** For every non-✓ feature with a `status.md`, find its next move and check what it names. If it names a *different* feature, `/b-integration`, `/b-review`, `/b-module`, or `/b-recap`, replace it with `Run /b-feature <this feature>` (or, for 🟡/🔴, whatever command resumes *this* feature's work). A stored next move may only name work on its own feature; the project-level suggestion it used to carry is now printed by commands and derived by `/b-recap`.
+
+Look for **both spellings** — a `## Next move` section and an inline `Next move:` or `**Next move:**` line in the body (`grep -rn "Next move" docs/modules --include=status.md` finds both). Projects carry a mix. Keep whichever form the file already uses; only the target changes. Step 1 rewrites ✓ files wholesale, so those end up in the section form regardless.
+
+Report in the upgrade summary: how many files were compressed, how many next moves rewritten, any `## Verification` sections written without a dated source, and any features whose markers you corrected under the `Pending verification:` rule above. The dates and evidence strings are the judgement-bearing part of an otherwise mechanical pass — name them so the operator can spot-check.
 
 ## v0.29 — 2026-07-30
 

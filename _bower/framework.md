@@ -1,4 +1,4 @@
-# Bower Framework v0.29
+# Bower Framework v0.30
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
@@ -29,7 +29,7 @@ This project uses the Bower AI-assisted development pattern. Bower optimises for
 | `problem-space.md`, `constitution.md` | human-owned — never rewrite unprompted | narrative |
 | `adr/NNNN-*.md` | body immutable once accepted; frontmatter mutable | structured, ~150 words |
 | `modules/**/plan.md` | co-authored | terse bullets / tables |
-| `modules/**/status.md` | agent-owned | ~150 words |
+| `modules/**/status.md` | agent-owned | ~150 words live; ~50 in terminal form at ✓ |
 | `modules/**/module-status.md` | agent-owned | ~250 words |
 | `docs/index.md`, `adr/index.md` | agent-owned, derived state recomputed by `/b-index`, curated structure preserved | tables; ~300 words of prose, excluding derived tables |
 
@@ -43,7 +43,7 @@ Full ownership semantics, the `constitution.md` normative shape, document schema
 
 Only `/b-integration` (or `/b-module`'s integration pass) flips a module's `## Module integration` marker; `/b-feature` updates build-order markers only. Module-level status is the *worst* across feature and integration markers.
 
-Only `/b-review` writes a module's `## Module review` `Review:` marker (⏸ never reviewed · 🚧 in review, a `review-plan.md` is open · ✓ reviewed, with date and roster snapshot). Review is an orthogonal axis: it is reported alongside module status, never folded into it, because review is optional. Staleness is derived by comparing the snapshot count to the current `## Build order` length — no command invalidates a review.
+Only `/b-review` writes a module's `## Module review` `Review:` marker (⏸ never reviewed · 🚧 in review, a `review-plan.md` is open · ✓ reviewed, with date and roster snapshot). Review is an orthogonal axis: it is reported alongside module status, never folded into it, because review is optional. Staleness is derived by comparing the snapshot count to the current `## Build order` length — no command invalidates a review. A review at 🚧 is **resumed** by re-invoking `/b-review <module>`, which picks up mediation against the open `review-plan.md` and does not re-diagnose — so a review can span as many sessions as its findings take.
 
 ## ADRs — the Short Form
 
@@ -70,6 +70,8 @@ ADRs record **cross-cutting commitments** — decisions that constrain more than
 - **The architectural guard is hard.** Changes to architecture, module structure, or scope — including UI work that swaps frameworks, navigation patterns, or state management — are never made ad-hoc, even on user instruction. Name what makes the change architectural and redirect to `/b-design`. This gate is the reason a project adopts Bower; honouring it is the framework's job. (Rationale: `_bower/rationale.md`, "Holding the Line on Architecture.")
 - **Testing:** e2e for pipelines, integration at module boundaries, unit for complex logic; generate tests alongside implementation. Project-specific runner, fixtures, and verified-for-✓ rules live in `docs/constitution.md`.
 - **Literal-command handoffs.** Every "next move" names the exact slash command to type (`Run /b-integration foundation`), never free prose. If there is genuinely none: `(none — <reason>)`.
+- **A next move written into a file is feature-scoped; a next move printed to the operator is project-scoped.** A feature's `status.md` may only name work on *that* feature, or `(none — complete)`. What to do next given the whole project — the next feature, integration, review, the next module — is printed by the command that ran and derived at read time by `/b-recap` from the markers. Nothing rewrites every feature's `status.md`, so a project-scoped line stored in one can only go stale.
+- **A ✓ feature's `status.md` compresses to its terminal form** — the marker, a `## Verification` section (dated evidence, plus `Qualification:` for a standing caveat on it), and `Next move: (none — complete)`. Resumption state dies with the feature; the evidence record survives. Schema: `_bower/framework-reference.md`, "status.md — Resumption Framing."
 - **Doc links are repo-root-based.** Write `[ADR-xxxx](/docs/adr/xxxx-yyy.md)`, never `../../../adr/…`. Targets must start with `/`, `#` or a URL scheme.
 
 ## UI Changes — Paths and the Gate

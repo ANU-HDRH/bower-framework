@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.29';
+const SCHEMA_VERSION = '0.30';
 
 // ---------------------------------------------------------------- helpers
 
@@ -746,9 +746,18 @@ function extract(root) {
         docRoutes.set(statusRel, fRoute);
         const secs = M.sections(body);
         const marker = M.leadingMarker(body);
+        // Two spellings in the wild: a `## Next move` section (canonical, and
+        // what the terminal-form template writes) and an inline `Next move:` /
+        // `**Next move:**` line in the body — the form every command's printed
+        // handoff uses, so it is what a hand-written status.md tends to copy.
+        // Reading only the section made the whole class invisible: a real
+        // project had 20 stale forward-pointers none of which parsed.
         const nmBlock = secs['Next move'] || '';
-        const nmLine = M.firstParagraph(nmBlock);
-        const isNone = /^\(?\s*none\b/i.test(nmLine);
+        const nmLine = M.firstParagraph(nmBlock) || M.labelled(body, 'Next move', { anchored: true }) || '';
+        // "Closed" is written `(none — <reason>)`, but projects reach it wrapped
+        // in emphasis, backticks or bold, and a next move misread as live is
+        // reported as drift — so strip decoration before asking.
+        const isNone = /^\(?\s*none\b/i.test(nmLine.replace(/^[`*_\s]+/, ''));
         // framework-reference.md, "status.md — Resumption Framing": a
         // `Pending verification:` line lists acceptance criteria the operator
         // deferred. Specified as a line; projects also grow it as a section.
@@ -810,6 +819,31 @@ function extract(root) {
 
       // "A feature with pending verification is marked 🚧 in module-status.md,
       // not ✓" — framework-reference.md, "status.md — Resumption Framing".
+      // v0.30 terminal form: a ✓ feature's status.md compresses to marker +
+      // `## Verification` + `Next move: (none — complete)`. A live next move on
+      // a finished feature is the accrual this version removed — most often a
+      // forward pointer at the *next* feature, written when this one completed
+      // and never revisited, since no command rewrites another feature's file.
+      // Judged against the status file's *own* marker, falling back to the
+      // effective one: the question is whether this file matches the form its
+      // own claim implies. A file that says 🚧 while the build order says ✓ is
+      // internally consistent and already reported as `marker-disagreement` —
+      // firing here too would double-report one lie, which is how a drift page
+      // turns into noise.
+      const fwd = feat.status && feat.status.nextMove;
+      const selfMarker = (feat.status && feat.status.marker) || feat.effectiveMarker;
+      candidate('next-move-on-complete', !!fwd && selfMarker === '✓');
+      if (fwd && selfMarker === '✓')
+        flag(
+          'warn',
+          'next-move-on-complete',
+          `${name}/${fname} is ✓ but its status.md still carries a next move ("${fwd.slice(0, 90)}"). ` +
+            `Since v0.30 a finished feature's status.md compresses to its terminal form — marker, ` +
+            `\`## Verification\`, \`Next move: (none — complete)\`; a stored next move may only name work on its own feature.`,
+          feat.status.rel,
+          { feature: fname, module: name },
+        );
+
       if (feat.pendingVerification && feat.effectiveMarker === '✓')
         flag(
           'error',
@@ -1152,8 +1186,14 @@ function extract(root) {
     return t;
   };
 
+  // v0.30: a stored next move is *feature-scoped* — work on that feature, or
+  // `(none — complete)`. So only an unfinished feature can have one outstanding,
+  // and a ✓ feature's line is stale by construction rather than a work item
+  // (flagged as `next-move-on-complete` above). Aggregating ✓ rows here is what
+  // let a finished module's features keep calling for work that landed weeks
+  // ago — the panel is labelled "outstanding", and for ✓ that was simply false.
   const nextMoves = features
-    .filter((f) => f.status && f.status.nextMove)
+    .filter((f) => f.status && f.status.nextMove && f.effectiveMarker !== '✓')
     .map((f) => ({
       module: f.module,
       feature: f.name,
@@ -1162,6 +1202,36 @@ function extract(root) {
       command: (/`([^`]*\/b-[^`]*)`/.exec(f.status.nextMove) || [])[1] || null,
       marker: f.effectiveMarker,
     }));
+
+  // The *project-scoped* next move, derived from markers rather than read out of
+  // any file: no document owns "what should I do next overall", because every
+  // landing changes it and nothing rewrites the per-feature files that used to
+  // carry it. Same reasoning as index status prose being derived (v0.28).
+  // Advisory and human-facing — /b-recap remains the authority an operator asks.
+  // Build work only. Review is deliberately absent: `Review: ⏸` is *not*
+  // outstanding work (framework-reference.md, "The review state is orthogonal
+  // to completion"), so listing it here would quietly make an optional command
+  // look owed — on a project with six finished modules it was six rows of nag.
+  // An open review (`🚧`) is genuinely owed and already has its own banner.
+  const ladder = [];
+  for (const m of modules) {
+    const nextFeature = (m.buildOrder || []).find((b) => b.marker !== '✓');
+    if (nextFeature) {
+      ladder.push({
+        command: `/b-feature ${nextFeature.name}`,
+        why: `next ${nextFeature.marker || 'unmarked'} entry in ${m.name}'s build order`,
+        route: m.route,
+      });
+    } else if (!(m.integration && m.integration.marker === '✓')) {
+      // A missing `## Module integration` section is the same owed work as a
+      // non-✓ marker — all features done, boundary test not: /b-integration.
+      ladder.push({
+        command: `/b-integration ${m.name}`,
+        why: `${m.name}'s features are all ✓ but its boundary test is ${(m.integration && m.integration.marker) || 'unmarked'}`,
+        route: m.route,
+      });
+    }
+  }
 
   return {
     generatedAt: new Date().toISOString(),
@@ -1180,6 +1250,7 @@ function extract(root) {
     adoption,
     reviewPlans,
     nextMoves,
+    ladder,
     backlinks: Object.fromEntries(backlinks),
     docRoutes: Object.fromEntries(docRoutes),
     fileIndex: Object.fromEntries([...fileIndex.entries()].sort((a, b) => a[0].localeCompare(b[0]))),

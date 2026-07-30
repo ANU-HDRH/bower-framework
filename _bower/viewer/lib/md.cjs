@@ -180,10 +180,22 @@ function trailingMarker(line) {
  * matched at any non-word boundary rather than anchored to the line start.
  * Returns null when the label is absent, '' when present but empty.
  */
-function labelled(block, label) {
-  const re = new RegExp(`(?:^|[^\\w])(?:\\*\\*|_|\\*)?${label}(?:\\*\\*|_|\\*)?\\s*:\\s*(.*)$`, 'im');
+function labelled(block, label, opts = {}) {
+  // `anchored` requires the label to open its own line (emphasis allowed). Use it
+  // for labels whose *name* is likely to appear in surrounding prose — the
+  // mid-line default would happily match a sentence discussing the convention
+  // and return the rest of that sentence as the value.
+  const lead = opts.anchored ? '^\\s*' : '(?:^|[^\\w])';
+  const re = new RegExp(`${lead}(\\*\\*|__|\\*|_)?${label}(?:\\*\\*|__|\\*|_)?\\s*:\\s*(.*)$`, 'im');
   const m = re.exec(block || '');
-  return m ? m[1].trim() : null;
+  if (!m) return null;
+  let rest = m[2].trim();
+  // `**Label:** value` closes its emphasis *after* the colon, so the run lands
+  // at the head of the value. Strip it only when the label itself was emphasised
+  // with the same marker — that way a value that legitimately opens with
+  // emphasis (`Notes: *none yet*`) is left alone.
+  if (m[1] && rest.startsWith(m[1])) rest = rest.slice(m[1].length).trim();
+  return rest;
 }
 
 /**

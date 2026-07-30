@@ -1,17 +1,19 @@
-# Bower Framework v0.29
+# Bower Framework v0.30
 
 A lightweight AI-assisted development pattern for research software engineering.
 
-> **⚠️ Draft, feedback actively sought.** Bower is in active development, but it has already been used to build real tools. If you try it, please share what worked and what didn’t: open an issue on this repo, or email **matthew.bettinson@anu.edu.au**.
+> **Beta.** Bower is in active development and already building real tools. Feedback is welcome: open an issue on this repo, or email **matthew.bettinson@anu.edu.au**.
 
 ## What is Bower?
 
 Bower is a set of files you drop into a project that uses [Claude Code](https://claude.com/claude-code). It installs nothing, runs no server, and needs no account beyond your existing Claude Code setup. What it adds is structure for planning, documenting and implementing software where an AI agent does much of the work:
 
-- **Planning before building.** Design and document before implementing.
-- **Living documentation.** Documents describe current state, not history.
-- **Modules.** Logical groupings that persist as system boundaries.
-- **AI-readable context.** The docs are structured so agents can find what they need without reading everything.
+- **Planning before building.** Design and document before implementing, with a confirmation gate before code.
+- **Living documentation.** Documents describe current state, not history; git is the change log.
+- **Docs that don’t rot.** Every document has one writer, a word budget, and an end state. A fact lives in exactly one place, anything derivable is recomputed instead of stored, and a finished feature’s notes compress to the evidence that it passed. Documents that only ever grow stop being read — by agents first.
+- **Modules.** Logical groupings that persist as system boundaries. Changing them is gated, never ad-hoc.
+- **Agent-efficient context.** One small always-loaded router; specs, schemas and ADRs are pulled in only when a command needs them, and ADRs are selected by facet rather than read wholesale.
+- **A project state viewer.** A zero-dependency local viewer renders the whole project and reports drift: forty-odd checks that compare documents against each other and against the files on disk.
 
 The pattern borrows planning discipline from [SpecKit](https://github.com/github/spec-kit) and living documentation from [OpenSpec](https://github.com/Fission-AI/OpenSpec), tuned for small research teams and the full prototype-to-infrastructure lifecycle. Claude Code is the only supported runtime today; adapters for other coding agents (including OpenAI Codex) are tracked on the roadmap.
 
@@ -21,11 +23,12 @@ You describe a change. The agent reads the project’s design docs, proposes a p
 
 ![Bower SDD state flow](docs/bower-state.svg)
 
-States are where a project (or module) sits; each arrow is labelled with the command that moves it.
+States are where a project (or module) sits; each arrow is labelled with the command that moves it. The dashed round trip is optional: a complete module can go through review and come back reviewed, but nothing about completion waits on it.
 
 - **`/b-design`** is the entry point for new projects, and for any change that shifts architecture, decisions, scope or module structure. Six stages: a read-only analyst subagent produces a change brief, then problem framing, decisions (recorded as ADRs), architecture, module and feature plans, and scaffolding, each behind a confirmation gate. Stages with nothing to do say so in one line and move on, so the ceremony only fires where there is actual work.
 - **`/b-feature`** is the everyday command: add, modify or remove within existing architecture. One gate before code, then a fresh subagent implements against the approved plan and reports back for reconciliation. If the change turns out to be architectural, it redirects to `/b-design`. That redirect is the one arrow in the diagram that runs backwards, and it is a hard rule: structural change never happens on the fly.
 - **`/b-module`** builds a small, well-specified module in one gated pass; **`/b-integration`** writes the module-boundary test that flips a module to complete.
+- **`/b-review`** is the optional side branch: a fresh-eyes review of a finished module, which becomes a state the module carries rather than a pass that happens and is forgotten (see *Reviewing a module*).
 - **`/b-recap`** re-orients you in a fresh session without changing anything; **`/b-analysis`** previews what `/b-design` would do, read-only.
 
 ## Getting started
@@ -68,6 +71,14 @@ One preparation step improves the result more than anything else: before running
 
 Cross-cutting choices it can’t explain go into an adoption ledger, which you drain in the course of normal work: capture the intent behind a choice you’re keeping (`/b-adr`), remediate a mistaken one (`/b-feature`, or `/b-design` when architectural), or dismiss it. Adopted features start at 🚧, meaning present in the code but not yet verified against agreed criteria; each earns its ✓ as it is next touched.
 
+## Reviewing a module
+
+A feature-at-a-time build cannot see the things that only exist once a module is whole: whether the tests cover the *interactions* between features, whether features built weeks apart answer the same question the same way, whether an accepted ADR has quietly drifted from the code. `/b-review` is where those become visible. It is optional and it never gates completion — it runs beside the build spine, not in it.
+
+Diagnosis goes to a read-only subagent, because the agent that wrote the code holds every rationalisation for it; one handed only the docs, criteria, ADRs and code goes looking for where they disagree. It reports on six dimensions — test coverage, spec↔code drift, cross-feature consistency, status honesty, ADR drift, boundary integrity — and is deliberately not a linter or a security audit. What it can reconcile itself (stale doc lines, missing tests for behaviour already agreed, dishonest markers, drifted ADRs) it fixes behind a single triage gate. Behavioural fixes route to `/b-feature`; boundary erosion always routes to `/b-design`, because that is architectural and architecture is never repaired in place.
+
+Review is a state, not a pass. Every accepted finding — including the ones routed elsewhere — goes in one checklist that holds the review open until each item is resolved or explicitly won’t-fixed, so re-running `/b-review <module>` picks up where you left off instead of re-analysing, over as many sessions as the work takes. When it closes, the durable record is one line: reviewed, with a date and how many features existed at the time. Staleness is then derived by comparing that count against the module today. There is no findings log — what got fixed is in the commits, and what didn’t was your decision at a gate.
+
 ## Commands
 
 | Command | Purpose |
@@ -104,8 +115,9 @@ docs/
     └── <module>/
         ├── <feature>/
         │   ├── plan.md         # How it works, components, testing
-        │   └── status.md       # Resumption snapshot (~150 words)
-        └── module-status.md    # Build order and integration state
+        │   └── status.md       # Resumption snapshot while building; at ✓ it
+        │                       #   compresses to the verification evidence
+        └── module-status.md    # Build order, integration state, review state
 ```
 
 ## Seeing the state
@@ -118,7 +130,7 @@ node _bower/viewer/serve.cjs      # http://localhost:4173
 
 Zero dependencies, runs on `node` or `bun`, read-only, loopback by default. It gives you the module graph and its dependency spine, every plan and status, faceted ADRs, an inverse file → owning-feature index the docs themselves can’t answer, and success criteria with satisfaction *derived* from module completion rather than stored anywhere.
 
-The part worth opening it twice for is the drift report: roughly two dozen checks that compare one document against another, or a document against the files on disk. A build-order marker that disagrees with the feature’s own `status.md`; a feature marked ✓ while deferred manual checks are still outstanding; a plan claiming a file that isn’t there; an ADR supersession recorded on only one of the two ADRs; a criterion delivered by a module that no longer exists. Errors are contradictions — two documents that can’t both be right. Warnings are things to look at, not verdicts.
+The part worth opening it twice for is the drift report: forty-odd checks that compare one document against another, or a document against the files on disk. A build-order marker that disagrees with the feature’s own `status.md`; a feature marked ✓ while deferred manual checks are still outstanding; a plan claiming a file that isn’t there; an ADR supersession recorded on only one of the two ADRs; a criterion delivered by a module that no longer exists; a review left open with its findings gone. Errors are contradictions — two documents that can’t both be right. Warnings are things to look at, not verdicts.
 
 Edits under `docs/` re-extract and live-reload, so you can leave it open while an agent works. Detail, including the schema contract it depends on: [`_bower/viewer/README.md`](_bower/viewer/README.md).
 

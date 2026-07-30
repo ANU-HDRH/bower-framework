@@ -30,6 +30,7 @@ The user's description of what they want to change: $ARGUMENTS
 - **Plan is the recovery anchor.** Write `plan.md` immediately after the gate, before any code is touched (Step 3). The plan is intent on disk — if the session crashes mid-implementation, this file plus `git status` is what makes recovery possible. The completion stamp and any implementation footnotes are appended at Step 6, not written from scratch there.
 - **Implementation is delegated.** After the gate and the plan write, a fresh `bower-implementer` subagent implements and tests against the approved plan and returns an implementation report; you retain the gate, acceptance and decision reconciliation, and doc updates. Fall back to inline implementation only if the Agent tool is unavailable — and say so explicitly when you do.
 - **Literal-command handoff.** Every "next move" you emit (in `status.md`, in any handoff line) names the exact slash command to type next, never free prose. "Run `/b-integration foundation`" — yes. "Write the integration test next" — no.
+- **Stored next moves are feature-scoped; printed ones are project-scoped.** The `Next move:` written into a feature's `status.md` may only name work on *that* feature (Step 6.7). What to do next given the whole project — the next feature, integration, review, the next module — is printed in the Step 7 handoff and never stored, because nothing rewrites every feature's `status.md` to keep such a line true.
 
 ## Step 1: Understand Context
 
@@ -216,17 +217,18 @@ The exact set of documents to touch depends on the intent. Common to all intents
    - If `docs/ui.md` exists, update affected sections to reflect the new state (current-state doc, not history).
    - If it does not exist *and* this change introduced UI (the project's first interface scaffolding), create `docs/ui.md` with only the sections this change requires. Stay at invariant-level: navigation map, screen inventory, layout grammar, interaction patterns, visual-language pointers. Pixel-level detail belongs in code, not the doc.
    - If Step 2 listed UI impact as `none`, skip.
-7. Rewrite this feature's `status.md` from scratch as a **resumption snapshot** — current state, next move. ≤150 words. Do not append to the previous contents. If any criteria are still PENDING USER, include a `Pending verification:` line listing them. (Skip this for remove — the file is gone; resumption guidance lives in the next-move handoff below.)
+7. Rewrite this feature's `status.md` from scratch — never append to the previous contents. Which form you write depends on the marker this feature is about to carry in Step 9 (schema: `_bower/framework-reference.md`, "status.md — Resumption Framing"). (Skip this for remove — the file is gone; resumption guidance lives in the next-move handoff below.)
 
-   The `Next move:` line is **a literal slash command, not prose**. Pick exactly one of:
+   **If the feature lands ✓** — every agreed criterion PASS, nothing PENDING USER — write the **terminal form**: the marker, a `## Verification` section (date, what was run, what passed, plus a `Qualification:` line if the evidence carries a standing caveat), and `## Next move` → `(none — complete)`. ~50 words. Compress, don't delete — `## Verification` is the only durable record that the criteria were exercised. A `Qualification:` is **not** a `Pending verification:` line: the first bounds evidence that *was* gathered, the second names evidence that wasn't, and a ✓ feature carrying the second is a false-completeness error.
 
-   - `Run /b-feature <name>` — for the next ⏸ feature in the module's build order, or for follow-up work on this feature if PENDING USER items will need a new gate.
-   - `Run /b-integration <module>` — if (a) this change shifted what the module's integration test must assert and the test now needs updating, **or** (b) this was the last non-✓ entry in the module's build order and the `## Module integration` marker is still ⏸ or 🚧.
-   - `Run /b-review <module>` *(optional)* — if this change just brought the module to completion (every feature ✓ **and** the `## Module integration` marker ✓), offer a fresh-eyes review of the whole module: test coverage, spec↔code drift, cross-feature consistency, ADR drift. This is the moment those module-level properties first become reviewable. Frame it as optional — on a small project the operator may reasonably skip it — but name the command so it's one keystroke away. Add one clause that it is resumable: a review opens a state (`Review: 🚧`) and re-running `/b-review <module>` picks up mediation rather than re-analysing, so the findings do not have to be dealt with in one sitting.
-   - `Run /b-module <name>` — if the next module is small and well-specified.
-   - `Run /b-design` — if the change revealed an architectural shift that needs design treatment (rare; usually surfaced earlier).
-   - `Run /b-recap` — if next steps depend on user judgement and you want them to orient.
-   - `(none — change complete and no further action required)` — only when the project is genuinely done.
+   **If the feature lands anything else** — 🚧 with PENDING USER items, or 🟡/🔴 — write the **live form**: current state, next move, `Pending verification:` listing the deferred checks. ≤150 words.
+
+   The stored `Next move:` is **a literal slash command, not prose**, and it may only name work on *this* feature. Exactly one of:
+
+   - `Run /b-feature <this feature>` — the deferred checks or the broken thing need another pass on this feature.
+   - `(none — complete)` — the feature is ✓.
+
+   It does **not** point at the next feature in the build order, at `/b-integration`, at `/b-review`, or at the next module. Those are project-scoped, they go stale the moment anything else lands, and nothing rewrites every feature's `status.md` to correct them. They belong in the printed handoff below, which is transient by construction.
 
 8. Update `scope.md` only if the change shifted the scope boundary, changed a non-goal, or added/removed/reworded a success criterion. Do **not** record that a criterion is now met — criteria have no status field, and achievement is derived from module completion by `/b-recap`. If a criterion is deleted, delete it outright; scope carries no history.
 9. Update `module-status.md`: update the `## Build order` marker for this feature. Use ✓ only if all criteria are PASS; use 🚧 if manual checks remain PENDING USER; use 🟡 or 🔴 if something is broken. Do **not** flip the `## Module integration` marker here — that belongs to `/b-integration`.
@@ -241,6 +243,30 @@ The exact set of documents to touch depends on the intent. Common to all intents
 
    Do this only when scope genuinely moved — not for every dependency touched — and keep it to one line, since `module-status.md`'s ~250-word budget is shared with the integration notes. Do not edit the downstream feature's `plan.md`: it does not exist yet for an unbuilt feature, and where it does, rewriting a plan outside its own gate is not this step's business. The build-order line is the durable place, because it is in the next pass's orientation set. If the absorption leaves nothing to build, write `Remaining: none — verify and close via /b-feature <name>` and leave the marker ⏸; do not promote it to ✓ on another feature's passing criteria.
 10. Run `/b-index` if module status markers changed. Do **not** hand-edit `docs/index.md` as an alternative — its status is derived from the markers you just wrote, and prose appended there has no writer that ever compacts it (see *Status is never curated* in `b-index.md`). If `/b-index` is not invokable, leave the index to the next regeneration; the markers you wrote in `module-status.md` are the durable record.
+
+## Step 7: Handoff
+
+Emit a single handoff block. This is where the **project-scoped** next move lives — what the operator should do next given everything that is now true, not just what is true of this feature. It is printed and transient by design: it goes stale as soon as anything else lands, which is exactly why it is not written into a file.
+
+```
+<feature> in <module>: <✓ | 🚧 pending verification | 🟡/🔴>
+
+Next move:
+  - <one of:>
+    Run /b-feature <name>                      (next ⏸ feature in the module's build order)
+    Run /b-feature <this feature>              (this feature's PENDING USER checks or a 🟡/🔴 fix)
+    Run /b-integration <module>                (the test's assertions shifted, or this was the
+                                                last non-✓ entry and integration is still ⏸/🚧)
+    Run /b-review <module>          (optional)  (this change completed the module — every feature ✓
+                                                and integration ✓; see the note below)
+    Run /b-module <name>                       (next module, if small and well-specified)
+    Run /b-design                              (the change revealed an architectural shift; rare,
+                                                usually surfaced earlier)
+    Run /b-recap                               (next steps depend on user judgement)
+    (none — project genuinely done)
+```
+
+Pick exactly one. When it is `/b-review <module>`, frame the review as optional — a small project may reasonably skip it — but name the command so it is one keystroke away, and add one clause that it is resumable: a review opens a state (`Review: 🚧`) and re-running `/b-review <module>` picks up mediation rather than re-diagnosing, so the findings need not be dealt with in one sitting.
 
 <critical_constraints>
 ## What NOT To Do

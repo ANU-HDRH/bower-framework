@@ -545,19 +545,30 @@ function viewOverview() {
     }),
   ]);
 
-  const moves = G.nextMoves.length
-    ? el(
-        'div',
-        { class: 'rows' },
-        G.nextMoves.map((n) =>
-          el(
-            'a',
-            { class: 'row', href: n.route },
-            el('span', { class: 'ident' }, plain(n.command || n.text)),
-            el('span', { class: 'note grow' }, `${n.module}/${n.feature}`),
-          ),
-        ),
-      )
+  // Two kinds of next move, and they are not interchangeable. The stored ones
+  // are feature-scoped and only exist while a feature is unfinished; the ladder
+  // is project-scoped and *derived* from markers, because no file owns it (see
+  // framework-reference.md, "status.md — Resumption Framing").
+  const moveRows = [
+    ...G.nextMoves.map((n) =>
+      el(
+        'a',
+        { class: 'row', href: n.route },
+        el('span', { class: 'ident' }, plain(n.command || n.text)),
+        el('span', { class: 'note grow' }, `${n.module}/${n.feature}`),
+      ),
+    ),
+    ...(G.ladder || []).map((l) =>
+      el(
+        'a',
+        { class: 'row', href: l.route },
+        el('span', { class: 'ident' }, l.command),
+        el('span', { class: 'note grow' }, l.why),
+      ),
+    ),
+  ];
+  const moves = moveRows.length
+    ? el('div', { class: 'rows' }, moveRows)
     : el('div', { class: 'panel-body' }, el('p', { class: 'muted' }, 'Nothing outstanding.'));
 
   const recent = G.recent.slice(0, 9);
@@ -603,7 +614,7 @@ function viewOverview() {
           'div',
           { class: 'panel-head' },
           el('span', { class: 'eyebrow' }, 'Outstanding next moves'),
-          el('span', { class: 'eyebrow' }, G.nextMoves.length),
+          el('span', { class: 'eyebrow' }, moveRows.length),
         ),
         moves,
       ),

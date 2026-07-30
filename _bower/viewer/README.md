@@ -63,6 +63,7 @@ defines it. Changing a row means changing `lib/extract.cjs` and
 | `## Module integration` `Test:` / `Notes:` lines | same section | integration marker and test path |
 | Module status rollup — worst across features **and** integration | same section, *Module-level status is a floor* | derived module status |
 | `status.md` leading marker, `## Next move`, `Pending verification:` | `framework-reference.md` → *status.md — Resumption Framing* | feature state, next moves, honesty checks |
+| `status.md` terminal form at ✓ — `## Verification` (+ `Qualification:`), `Next move: (none — complete)`; a stored next move is feature-scoped | same section, *Terminal form* | `next-move-on-complete`; the next-moves panel excludes ✓ features |
 | `## Success criteria` bullets + `Delivered by:` clauses, **no status field** | `framework-reference.md` → *scope.md — Boundary, Not Tracker* | derived criteria satisfaction |
 | `plan.md` `## Components` table | `/b-feature` Step 6 | the file → feature index |
 | ADR frontmatter: `status`, `scope`, `modules`, `topics` | `framework-reference.md` → *ADRs* | facets, applicability |
