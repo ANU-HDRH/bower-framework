@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.31';
+const SCHEMA_VERSION = '0.32';
 
 // ---------------------------------------------------------------- helpers
 
@@ -65,6 +65,9 @@ function ownershipOf(rel) {
 // keeps its raw text and is shown as written, because the plan is operator prose
 // first and a machine-readable checklist second.
 const REVIEW_OWNED = ['inline-reconcile', 'test-backfill', 'status-fix', 'adr-supersede'];
+// A routed finding's brief, per /b-review Step 3. All three are required — see
+// the check in the module loop for why a partial brief is worse than none.
+const BRIEF_FIELDS = ['location', 'drift', 'resolution'];
 const isReviewClass = (s) => REVIEW_OWNED.includes(s) || /^route:\/b-[a-z-]+$/.test(s);
 
 function parseFinding(text) {
@@ -74,6 +77,8 @@ function parseFinding(text) {
     gist: text,
     class: null,
     routed: false,
+    brief: null,
+    annotations: null,
     pointer: null,
     pointerKind: null,
     pointerFile: null,
@@ -210,6 +215,13 @@ function extract(root) {
     projectVersion,
     match: projectVersion === null ? null : projectVersion === SCHEMA_VERSION,
   };
+  // Routed-finding briefs arrived in v0.32; a plan written before that is not
+  // drifted for lacking them. Unknown version → assume current, since the
+  // scaffold always writes VERSION and its absence is already reported.
+  // Segments, not parseFloat — "0.100" would otherwise read as 0.1 and turn
+  // the gate off again ninety versions from now.
+  const [vMaj, vMin] = (projectVersion || '').split('.').map(Number);
+  const briefsExpected = projectVersion === null || vMaj > 0 || (vMaj === 0 && vMin >= 32);
   if (schema.match === false)
     flag(
       'info',
@@ -604,11 +616,82 @@ function extract(root) {
       // `[x]` resolved and `[~]` won't-fix both count as disposed of; only `[ ]`
       // holds the review open. Won't-fix is an operator decision recorded in the
       // plan and deliberately left no other trace.
-      const items = [...(rpSecs['Findings'] || body).matchAll(/^\s*[-*]\s+\[( |x|X|~)\]\s+(.*)$/gm)].map((m) => ({
-        done: m[1] !== ' ',
-        wontFix: m[1] === '~',
-        ...parseFinding(m[2].trim()),
-      }));
+      // Checkbox lines are the findings; indented label sub-bullets beneath one
+      // are its brief (v0.32) and are attached to it rather than counted. Only
+      // checkboxes dispose of anything, so a brief line that looked like an item
+      // would inflate both the total and the "still open" count.
+      const items = [];
+      for (const line of (rpSecs['Findings'] || body).split('\n')) {
+        const box = /^\s*[-*]\s+\[( |x|X|~)\]\s+(.*)$/.exec(line);
+        if (box) {
+          items.push({
+            done: box[1] !== ' ',
+            wontFix: box[1] === '~',
+            ...parseFinding(box[2].trim()),
+          });
+          continue;
+        }
+        const sub = /^\s+[-*]\s+(Location|Drift|Resolution):\s*(.*)$/.exec(line);
+        if (sub && items.length) {
+          const it = items[items.length - 1];
+          (it.brief || (it.brief = {}))[sub[1].toLowerCase()] = sub[2].trim();
+          continue;
+        }
+        // Any other indented content under an item is operator prose — a
+        // re-opened note, a caveat — and this page is the plan's only rendering
+        // (links to it resolve here, not to a raw file view), so dropping it
+        // would make the page a lossier read than the file. Kept verbatim and
+        // shown under the finding. Indentation-gated so a malformed plan with
+        // no ## Findings heading doesn't swallow its other sections into the
+        // last item.
+        if (/^\s+\S/.test(line) && items.length) {
+          const it = items[items.length - 1];
+          (it.annotations || (it.annotations = [])).push(line.trim().replace(/^[-*]\s+/, ''));
+        }
+      }
+      // A label with nothing after it is not a field. Collapsing an all-empty
+      // brief back to null keeps `brief` meaning "there is something here",
+      // which is what the renderer and the check below both assume.
+      for (const it of items)
+        if (it.brief && !BRIEF_FIELDS.some((k) => it.brief[k])) it.brief = null;
+      // A routed finding is deferred into a fresh session, so its Location/Drift/
+      // Resolution brief is the whole handoff — without it the receiving command
+      // re-derives the finding from code and may fail to reproduce it at all.
+      // Version-gated rather than tripwire-guarded: on a pre-v0.32 project every
+      // routed item is briefless by construction, which is history, not drift.
+      // Exempt from the obsolescence tripwire, on the same grounds as
+      // review-section-missing: a project that upgrades mid-review has a plan
+      // where *every* routed finding is briefless, and universality there is the
+      // signal rather than evidence this check has decayed.
+      //
+      // All three fields are required, not just the presence of a brief. They do
+      // different jobs and none substitutes for another: `Location:` says where
+      // to look, `Drift:` says what disagrees with what, `Resolution:` says what
+      // to do about it. A location-only brief points a fresh session at a file
+      // and leaves it to infer why — which is the re-derivation this exists to
+      // prevent, only now wearing the appearance of a complete handoff.
+      if (briefsExpected)
+        for (const it of items) {
+          if (!it.routed || it.done) continue;
+          const absent = BRIEF_FIELDS.filter((k) => !(it.brief && it.brief[k]));
+          if (!absent.length) continue;
+          const which = it.brief
+            ? `is missing ${absent.map((k) => `\`${k}\``).join(' and ')} from its brief`
+            : 'carries no Location/Drift/Resolution brief';
+          // Deliberately not "run /b-review to fix it": resuming a review does not
+          // re-diagnose, so it cannot produce a brief, and hand-writing one is
+          // the re-derivation the brief exists to prevent. The honest options are
+          // to live with it or to discard the plan and diagnose afresh.
+          flag(
+            'info',
+            'review-routed-no-brief',
+            `${name}'s review finding ${it.id || 'in review-plan.md'} is routed to ${it.class.replace('route:', '')} ` +
+              `but ${which}, so the command that discharges it has to re-derive that much from code. ` +
+              `Resuming /b-review will not fill it in — a resume does not re-diagnose. Either accept it, ` +
+              `or delete the plan, set Review: ⏸ and run /b-review ${name} for a fresh diagnosis.`,
+            rpRel,
+          );
+        }
       // The preamble carries the diagnosis date and the roster count the closeout
       // will write into `Review: ✓` — both are the review's provenance, so they
       // belong on the page rather than only in the file.
@@ -619,6 +702,20 @@ function extract(root) {
         .map((l) => (/^\s*[-*]\s+(.*)$/.exec(l) || [])[1])
         .filter((t) => t && !/^none\.?$/i.test(t.trim()))
         .map((t) => t.trim());
+      // Sections beyond the two the schema names (a real review has written a
+      // `## Constitution` consent record, for instance) are carried through and
+      // rendered as-is. Same fidelity rule as the annotations above: the page
+      // shows everything the file holds, or it is the poorer way to read it.
+      const sections = Object.keys(rpSecs)
+        .filter((k) => k !== 'Findings' && k !== obsKey)
+        .map((k) => ({
+          title: k,
+          lines: rpSecs[k]
+            .split('\n')
+            .map((l) => l.trim().replace(/^[-*]\s+/, ''))
+            .filter(Boolean),
+        }))
+        .filter((s) => s.lines.length);
       reviewPlans.push({
         module: name,
         rel: rpRel,
@@ -627,6 +724,7 @@ function extract(root) {
         diagnosed: (/(\d{4}-\d{2}-\d{2})/.exec(preamble) || [])[1] || null,
         featureCount: Number((/against\s+(\d+)\s+features?/i.exec(preamble) || [])[1]) || null,
         observations,
+        sections,
         items,
         open: items.filter((i) => !i.done).length,
         wontFix: items.filter((i) => i.wontFix).length,

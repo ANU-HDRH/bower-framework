@@ -591,13 +591,55 @@ a.panel-head:hover {
 }
 .rows.findings {
   display: grid;
-  grid-template-columns: max-content max-content 1fr max-content max-content;
+  /* The rows share these tracks (subgrid below), so one oversized cell taxes
+     every row. The gist (col 3) is each row's substance and gets a floor; the
+     pointer (col 5) is capped and wraps (.ptr) — an unbreakable 90-character
+     path in a max-content track would otherwise starve every gist on the page
+     down to one word per line. */
+  grid-template-columns: max-content max-content minmax(24ch, 1fr) max-content fit-content(40ch);
 }
 .rows.findings > .row {
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
   align-items: baseline;
+}
+/* A finding's sub-rows: the command that discharges it, and the reviewer's
+   Location/Drift/Resolution brief. Both break out of the subgrid entirely —
+   the columns are sized for a gist and a class pill, while a routed command
+   now carries its own plan reference and the brief is prose. Only the last row
+   in the group draws a separator, so a finding and its sub-rows read as one
+   entry. */
+.rows.findings > .row.sub {
+  display: block;
+  grid-column: 1 / -1;
+  padding: 0 14px 6px 44px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+.rows.findings > .row.grouped,
+.rows.findings > .row.sub {
+  border-bottom: 0;
+  padding-bottom: 4px;
+}
+.rows.findings > .row.sub.last {
+  border-bottom: 1px solid var(--line-2);
+  padding-bottom: 10px;
+}
+.rows.findings > .row.sub.cmd {
+  overflow-wrap: anywhere;
+}
+.rows.findings > .row.sub b {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+/* The inline pointer cell. `anywhere` gives an unbreakable path its break
+   opportunities, which is also what lets the fit-content() track above
+   actually compress it. */
+.rows.findings > .row > .ptr {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 /* Grid cells stretch to their track by default, which turns a bordered pill
    into a column-wide box. Pills keep their content width. */

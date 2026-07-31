@@ -1,4 +1,4 @@
-# Bower Framework v0.31
+# Bower Framework v0.32
 
 A lightweight AI-assisted development pattern for research software engineering.
 

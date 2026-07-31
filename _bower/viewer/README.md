@@ -74,6 +74,8 @@ defines it. Changing a row means changing `lib/extract.cjs` and
 | `## Module review` `Review:` line — marker, date, `(N of N features)` snapshot | `framework-reference.md` → *module-status.md — Integration and Build Order* | review state, derived staleness, the lifecycle panel |
 | `docs/modules/<m>/review-plan.md` `## Findings` checklist — `[ ]` / `[x]` / `[~]` | `framework-reference.md` → *Module Review* | in-review banner, disposed/total counts, marker↔plan agreement |
 | `review-plan.md` finding line — `F<n> — <gist> — <class> — <pointer>`, the closed class vocabulary, the preamble's date and roster count, `## Observations` | `/b-review` Step 3 (the plan shape) | the review page: what each finding is, who owns it, where it points |
+| `review-plan.md` routed-finding brief — indented, checkbox-free `- Location:` / `- Drift:` / `- Resolution:` sub-bullets under a `route:*` item, all three required and non-empty | `/b-review` Step 3 (shape rules) | the brief shown under its finding; the incomplete-brief check. Indentation is load-bearing: a brief line matching the checkbox pattern would inflate the disposed/total counts |
+| `review-plan.md` anything else — indented prose under a finding, sections beyond `## Findings` / `## Observations` | — (operator material, not schema) | carried through and rendered: links to the plan resolve to the review page rather than a raw view, so the page must never show less than the file |
 | `docs/index.md` Modules table markers | `/b-index` | each module's *declared* status, compared with the derived one |
 | Repo-root-based doc links (`/docs/…`) | `framework.md` Working Conventions | backlinks; broken- and relative-link checks |
 | `git log -- docs` | — | recency (optional; degrades if absent) |
@@ -125,7 +127,17 @@ document against the filesystem.
   75kB of padding in `docs/index.md`, on the orientation read-path of nearly
   every command. Ordinary column alignment costs a few kB and is not reported.
 
-**Info — a convention note.** Two concern review state: a closed review whose
+**Info — a convention note.** Three concern review state. An open routed finding
+whose `Location`/`Drift`/`Resolution` brief is absent **or incomplete**: the
+command that eventually discharges it — `/b-feature` or `/b-design`, in a session
+that never saw the review report — would start from the one-line gist alone,
+which is the gap v0.32 closed. All three fields are required and must be
+non-empty, because they do different jobs: where to look, what disagrees with
+what, and what to do about it. A location-only brief is the worse case, not a
+lesser one — it looks like a handoff while still forcing the re-derivation the
+brief exists to prevent. It is version-gated rather than tripwire-guarded, since on a pre-v0.32
+project every routed finding is briefless by construction and that is history,
+not drift. The other two: a closed review whose
 roster snapshot is smaller than the build order is now (features exist that the
 review never saw — derived, since nothing invalidates a review), and a
 `module-status.md` with no `## Module review` section at all. The second fires on

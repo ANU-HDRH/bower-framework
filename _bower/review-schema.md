@@ -12,6 +12,8 @@ A review is **module-scoped**. The reviewer surveys one module's features, its p
 
 There is no read-only "print the report and stop" entry point, the way `/b-analysis` is for the change brief. A review that surfaced findings and did nothing with them would be a report that rots — exactly the artifact Bower avoids. The findings are consumed immediately into a plan or a routed handoff; they are not preserved as a standalone document.
 
+Because the report is discarded, **the `Location` / `Drift` / `Resolution` lines of any `route:*` finding are copied verbatim into `review-plan.md`** beneath that finding's checklist line. Write those three fields knowing they may be read months later, in a fresh context, by `/b-feature` or `/b-design` rather than by the operator: locate both sides exactly, and make `Resolution:` say what to do, not that something should be done. Owned findings are actioned in the same pass and are not copied.
+
 ## The six dimensions
 
 The reviewer is deliberately scoped to what a sequential, feature-at-a-time implementation **systematically cannot see** — properties that only become visible once the module is whole. It is not a linter, a style checker, a security audit, or a performance profiler; those are owned by tools and by `/security-review`, and adding them would cost the lightweight axis without buying anything the implementer couldn't already get.
@@ -40,7 +42,7 @@ Every finding carries a **class** that determines what `/b-review` does with it.
 
 **Owned** classes (`inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`) are the ones `/b-review` can resolve itself, because each is individually ad-hoc-safe under existing framework rules. **Routed** classes (`route:/b-feature`, `route:/b-design`) require another command's gate.
 
-The distinction governs **who acts**, not what is tracked: every accepted finding of either kind goes in the one `## Findings` checklist in `review-plan.md`, and holds the review open (`Review: 🚧` in `module-status.md`) until it is resolved or explicitly won't-fixed. A routed item is ticked when the operator has *run* the command it names. A report whose findings are entirely routed is a normal outcome and still opens a review — it does not mean there is nothing to track.
+The distinction governs **who acts**, not what is tracked: every accepted finding of either kind goes in the one `## Findings` checklist in `review-plan.md`, and holds the review open (`Review: 🚧` in `module-status.md`) until it is resolved or explicitly won't-fixed. A routed item is ticked when **the drift it names is gone**, verified against the code — not when the command it names has run. Those coincide for `/b-feature`, which implements, and come apart for `/b-design`, which only decides. A report whose findings are entirely routed is a normal outcome and still opens a review — it does not mean there is nothing to track.
 
 ## Schema
 

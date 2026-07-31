@@ -914,13 +914,13 @@ function viewReview(name) {
   // discharges the finding. Only the first is openable, and conflating them
   // would offer a link that goes nowhere.
   const pointerOf = (it) => {
-    if (it.note) return el('span', { class: 'muted', style: 'font-size:12.5px' }, it.note);
+    if (it.note) return el('span', { class: 'muted ptr', style: 'font-size:12.5px' }, it.note);
     if (!it.pointer) return null;
     if (it.pointerKind === 'path')
       return el(
         'a',
         {
-          class: 'ident',
+          class: 'ident ptr',
           style: 'font-size:12px',
           href: openHref(it.pointerFile, it.pointerLine),
           target: '_blank',
@@ -983,23 +983,62 @@ function viewReview(name) {
             // because those are the ones it actions in the pass — so it is kept.
             // Every row emits all five cells: `.rows.findings` is a grid whose
             // rows share column tracks, so a skipped cell would shift the rest.
-            rp.items.map((it, i) =>
-              el(
-                'div',
-                { class: 'row' },
-                el('span', { class: 'idx' }, it.id || String(i + 1)),
-                disposition(it),
+            rp.items.flatMap((it, i) => {
+              // A routed command carries its own `according to F<n> in <plan>`
+              // reference so the operator can paste one line, which makes it far
+              // too long for a `max-content` column — it would starve the gist
+              // track. Commands drop to their own full-width row; a path pointer
+              // is short and stays inline, where it reads as the finding's
+              // location rather than as an instruction.
+              const ptr = pointerOf(it);
+              const inline = it.pointerKind === 'command' ? null : ptr;
+              const subs = [];
+              if (it.pointerKind === 'command' && ptr) subs.push(el('div', { class: 'row sub cmd' }, ptr));
+              // The brief is the reviewer's Location/Drift/Resolution verbatim,
+              // and after closeout deletes the report it is the only copy. It is
+              // shown in full rather than folded away: a reader on this page is
+              // deciding whether to act on the finding, which is the question the
+              // brief answers.
+              if (it.brief)
+                subs.push(
+                  el(
+                    'div',
+                    { class: 'row sub brief' },
+                    // Same three fields as the extractor's BRIEF_FIELDS, in the
+                    // order /b-review writes them. Renders what is present; a
+                    // missing one is the health check's business, not a blank row.
+                    ...['location', 'drift', 'resolution']
+                      .filter((k) => it.brief[k])
+                      .map((k) =>
+                        el('div', {}, el('b', {}, `${k[0].toUpperCase()}${k.slice(1)}: `), plain(it.brief[k])),
+                      ),
+                  ),
+                );
+              // Free prose the operator (or an earlier /b-review) wrote under the
+              // finding — a re-opened note, a caveat. This page is the plan's only
+              // rendering, so what the file carries, the page shows.
+              if (it.annotations)
+                subs.push(
+                  el('div', { class: 'row sub ann' }, ...it.annotations.map((n) => el('div', {}, plain(n)))),
+                );
+              // Only the group's last row draws the separator, so a finding and
+              // its sub-rows read as one entry rather than three.
+              if (subs.length) subs[subs.length - 1].className += ' last';
+              return [
                 el(
-                  'span',
-                  { style: 'font-size:13px;color:var(--ink-2);min-width:0' },
-                  plain(it.gist),
+                  'div',
+                  { class: subs.length ? 'row grouped' : 'row' },
+                  el('span', { class: 'idx' }, it.id || String(i + 1)),
+                  disposition(it),
+                  el('span', { style: 'font-size:13px;color:var(--ink-2);min-width:0' }, plain(it.gist)),
+                  it.class
+                    ? el('span', { class: it.routed ? 'tag routed' : 'tag', title: it.routed ? 'Routed — another command owns this' : 'Owned — /b-review reconciles this itself' }, it.class)
+                    : el('span'),
+                  inline || el('span'),
                 ),
-                it.class
-                  ? el('span', { class: it.routed ? 'tag routed' : 'tag', title: it.routed ? 'Routed — another command owns this' : 'Owned — /b-review reconciles this itself' }, it.class)
-                  : el('span'),
-                pointerOf(it) || el('span'),
-              ),
-            ),
+                ...subs,
+              ];
+            }),
           )
         : el(
             'div',
@@ -1025,6 +1064,27 @@ function viewReview(name) {
           ),
         )
       : null,
+    // Sections the schema doesn't name (a `## Constitution` consent record,
+    // say) render the same way Observations do. Everything in the file appears
+    // on this page — links to review-plan.md land here, not on a raw view.
+    ...(rp.sections || []).map((s) =>
+      el(
+        'section',
+        { class: 'block', style: 'margin-top:24px' },
+        el('h2', {}, s.title),
+        el(
+          'div',
+          { class: 'panel' },
+          el(
+            'div',
+            { class: 'rows' },
+            s.lines.map((t) =>
+              el('div', { class: 'row' }, el('span', { class: 'grow', style: 'font-size:13px;color:var(--ink-3)' }, plain(t))),
+            ),
+          ),
+        ),
+      ),
+    ),
     el(
       'a',
       { class: 'eyebrow', style: 'display:inline-block;margin-top:18px', href: `/open?path=${encodeURIComponent(rp.rel)}`, target: '_blank' },

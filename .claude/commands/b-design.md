@@ -24,9 +24,20 @@ The user's description of the change: $ARGUMENTS
 
 **Process:**
 
+0. **Check for a routed review finding first** — before spawning anything. Glob `docs/modules/*/review-plan.md` and scan each for open `route:/b-design` items. Boundary erosion is *always* routed here and never actioned by `/b-review`, so a design run is frequently the discharge of one, and the operator may well have typed `/b-design` bare because the plan told them to.
+
+   - **No open items:** proceed with `$ARGUMENTS` as-is.
+   - **One matches** — in priority order: `$ARGUMENTS` names the finding explicitly, which always wins; or its slug matches; or `$ARGUMENTS` is empty; or it is topically the same concern. `/b-review` writes its routed commands to end `according to F<n> in docs/modules/<m>/review-plan.md`, so a pasted invocation hands you the plan path and the ID outright — open that file and take that finding, without globbing. Looser forms (`F7`, `according to F7 in the review plan`) are fine, but an ID without a path is ambiguous, since finding IDs are module-local; if several open plans carry that ID, ask. A named finding that is not in the plan named, or already disposed of, is worth saying so about rather than guessing. Then: read its indented `Location:` / `Drift:` / `Resolution:` brief and **pass all three verbatim into the analyst prompt** alongside the change description, labelled as a review finding from module `<module>`, finding `<Fn>`. Say in one line that you are doing so.
+   - **Several match, or one exists and `$ARGUMENTS` is unrelated:** ask which (AskUserQuestion), offering the findings and "none of these — proceed with what I typed."
+
+   The brief is the surviving evidence of a whole-module survey that has since been discarded. Without it the analyst re-derives a boundary violation from code alone — expensive, and it can quietly conclude there is nothing there, which reads as the finding being wrong rather than as the evidence being missing. Treat it as an input to verify, not a conclusion: if the survey contradicts it, that goes in the brief's `## Considered and ruled out` and the operator decides at the Stage 0 gate.
+
+   Never edit `review-plan.md` — `/b-review` owns it. Name the finding in the post-design handoff so the operator knows to run `/b-review <module>` and tick it.
+
 1. **Spawn the `bower-analyst` subagent** using the Agent tool with `subagent_type: "bower-analyst"`. The prompt to the subagent must include:
    - The change description verbatim (`$ARGUMENTS`).
    - The project root (the current working directory).
+   - Any routed review-finding brief from step 0, verbatim.
    - An instruction to conform exactly to `_bower/brief-schema.md`.
 
    Do not attempt the analysis inline. The subagent exists precisely so the analysis happens in isolated context, focused on the survey.
@@ -35,7 +46,7 @@ The user's description of the change: $ARGUMENTS
 
 3. **Handle the no-op case.** If the brief is `Status: nothing to do` for all five stages and the considered-and-ruled-out section confirms nothing material was found, the change is a no-op. Emit a single line ("Brief: nothing to do — `<reason>`. Stopping.") and stop. The operator can re-run with a refined description if appropriate.
 
-4. **Gate:** Present the brief to the user via AskUserQuestion. Show the `## Summary` section, the `## Ambiguities and assumptions` section, and the `## Considered and ruled out` section as the primary surfaces. Reference the rest as available for inspection. Ask:
+4. **Gate:** Present the brief to the user via AskUserQuestion. Show the `## Summary` section, the `## Ambiguities and assumptions` section, and the `## Considered and ruled out` section as the primary surfaces. Reference the rest as available for inspection. **State step 0's outcome in one line here** — which routed finding was folded in, or that the glob found no open `route:/b-design` items. Say it even when there is nothing: an unstated result is indistinguishable from a skipped check, and this is the operator's only chance to catch a design run that ignored the finding it was meant to discharge. Ask:
    - "Here's the change brief from the analyst. Confirm to proceed, amend it (tell me what to add/remove/change), or stop."
 
 5. **If the user amends the brief**, update it in working memory and proceed. Do not re-spawn the analyst for amendments — incorporate the operator's correction directly. The corrected brief is the contract for Stages 1–5.
@@ -162,6 +173,10 @@ The block must include:
    - **Greenfield:** recommend `/b-module <first-module>` if the first module has ≤3 features and an unambiguous plan; otherwise `/b-feature <first-feature>`. Mention the other option in one line.
    - **Revision:** typically a list of `/b-feature <name>` invocations, one per touched plan, in the order the brief suggested.
 5. **Orientation hint** — "Run `/b-recap` any time to re-orient."
+
+If Stage 0 consumed a routed review finding, add `Run /b-review <reviewed-module>` to the next moves naming the finding ID — the module whose plan holds it, which for a cross-module finding is not the module the decision most affects. The item is still open in `review-plan.md` and only `/b-review` may tick it; leaving it unticked holds the module's review open indefinitely. Say explicitly that the finding is **not** discharged by this design run — an ADR is a decision, and the finding names a drift in the code that is still there.
+
+**Name implied work that no build order will carry.** A design run normally emits work as build-order entries, and `/b-index` then tracks it. When a decision implies code changes that are *not* new features — reshaping an existing component, removing a dependency, relocating a concern — Stage 4 legitimately adds no roster entries, and that work is then scheduled by nothing at all. An accepted ADR is a commitment, not a work item, and no command reads `docs/adr/` asking whether it was built. So when Stage 3 or Stage 4 concluded that the roster does not change but the code must, list the `/b-feature` invocations the decision implies under the next moves, marked as implied-not-tracked. This is a printed pointer, not a record: it does not go in a file, and if it is lost the drift is still in the code where a future review will find it.
 
 Example shape (revision):
 

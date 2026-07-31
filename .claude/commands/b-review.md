@@ -10,7 +10,8 @@ The target module: $ARGUMENTS
 
 - **Diagnosis is read-only; the apply is bounded.** The `bower-reviewer` subagent surveys and reports — it never writes. This command *acts*, but only on the **owned** reconciliation classes (`inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`). Everything else is routed to `/b-feature` or `/b-design` as a literal-command next move. The command never makes a behavioural or architectural change itself.
 - **Review is a state, not a single pass.** `## Module review`'s `Review:` marker in `module-status.md` goes ⏸ → 🚧 at the triage gate and 🚧 → ✓ only at closeout, when every accepted finding carries a disposition. Between those points the module is *in review*, the plan is on disk, and the operator can leave and come back across as many sessions as the work takes. Re-invoking `/b-review <module>` while the marker is 🚧 **resumes mediation** — it never re-diagnoses.
-- **The plan tracks every accepted finding, owned and routed alike.** `docs/modules/<module>/review-plan.md` holds one `## Findings` checklist. Owned/routed decides *who acts*, not what is tracked — a routed item is ticked when the operator has run the command it names. This is what stops a pile of `/b-feature` findings scrolling off the console with no record. A plan is written whenever there is at least one accepted finding, **including a routed-only review**.
+- **The plan tracks every accepted finding, owned and routed alike.** `docs/modules/<module>/review-plan.md` holds one `## Findings` checklist. Owned/routed decides *who acts*, not what is tracked. This is what stops a pile of `/b-feature` findings scrolling off the console with no record. A plan is written whenever there is at least one accepted finding, **including a routed-only review**. Routed items additionally carry the reviewer's `Location`/`Drift`/`Resolution` verbatim (Step 3) — they are deferred into a fresh context, so the plan line is their entire handoff.
+- **A finding is discharged when its drift is gone, not when a command has run.** The two coincide for `/b-feature` and come apart for `/b-design`, which produces a decision rather than a change. Ticks are verified against the code, at the tick and again at closeout.
 - **The plan is also the recovery anchor.** It is written *before* any reconciliation is applied, so a mid-apply crash leaves that file plus `git status` as the resumption material — same discipline as `/b-feature`'s post-gate `plan.md` write. It is transient: deleted at closeout, when the `Review: ✓` marker replaces it as the durable record.
 - **One gate to start, one to close.** The triage gate authorises the work; the closeout gate confirms the review is finished. You do not re-gate each item in between, except that `adr-supersede` items run through `/b-adr`, whose own gate fires.
 - **No findings log survives closeout.** What was fixed is in the commits; what was not was an operator decision. Do not write a findings history anywhere. The record is `Review: ✓ <date> (<N> of <N> features)` and nothing more.
@@ -98,9 +99,18 @@ Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision
 - [ ] F1 — ADR-0007 names Redis; code uses in-process — adr-supersede — /b-adr supersede ADR-0007
 - [ ] F4 — backfill expired-token refresh test — test-backfill — src/auth/__tests__/refresh.test.ts
 - [ ] F5 — session-revoke ✓ with pending verification — status-fix — docs/modules/<module>/session-revoke/status.md
-- [ ] F2 — non-owner 404 vs 403 — route:/b-feature — Run /b-feature modify <module> non-owner-response-consistency
-- [ ] F7 — session store reaches into billing tables — route:/b-design — Run /b-design
-- [ ] F6 — consolidate JWT helper tests — route:/b-feature — Run /b-feature modify billing consolidate-jwt-helper-tests
+- [ ] F2 — non-owner 404 vs 403 — route:/b-feature — Run /b-feature modify <module> non-owner-response-consistency according to F2 in docs/modules/<module>/review-plan.md
+  - Location: src/auth/login.ts:48 vs src/auth/refresh.ts:61
+  - Drift: login returns 404 for a session that isn't the caller's; refresh returns 403 for the equivalent case. Two features, two answers to one question.
+  - Resolution: Pick one (404 hides existence, 403 admits it); apply to both. Behavioural change with an acceptance criterion, not a doc reconcile.
+- [ ] F7 — session store reaches into billing tables — route:/b-design — Run /b-design session-store-billing-boundary according to F7 in docs/modules/<module>/review-plan.md
+  - Location: src/auth/session.ts:88 imports src/billing/repository/internal.ts
+  - Drift: auth's module boundary admits only the billing module's public surface; session.ts reads billing's repository internals directly to resolve a plan tier.
+  - Resolution: Architectural — the tier lookup belongs behind a billing-owned interface, or the concern belongs in a different module. /b-design decides which.
+- [ ] F6 — consolidate JWT helper tests — route:/b-feature — Run /b-feature modify billing consolidate-jwt-helper-tests according to F6 in docs/modules/<module>/review-plan.md
+  - Location: src/auth/__tests__/login.test.ts:70, refresh.test.ts:55
+  - Drift: both suites carry near-identical unit tests for the shared decodeJwt helper. Redundant; the helper deserves one home.
+  - Resolution: Consolidate into one suite. Low priority — the operator may decline.
 
 ## Observations (not actionable)
 
@@ -110,7 +120,13 @@ Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision
 Shape rules:
 
 - **One `## Findings` checklist, owned and routed together**, each line carrying its class so the reader knows who acts. Order owned-first — those get actioned in this pass — but do not split them into separate sections; a routed item in a second section stops being tracked work, which is the failure this shape fixes.
-- **A routed item names the exact command to run**, including its target module when the fix belongs to a *different* module than the one under review (F6 above). A cross-module finding stays in *this* module's plan — the plan is a review artifact, not a work queue — so the target must be explicit or the reader loses it.
+- **A routed item names the exact command to run**, including its target module when the fix belongs to a *different* module than the one under review (F6 above). A cross-module finding stays in *this* module's plan — the plan is a review artifact, not a work queue — so the target must be explicit or the reader loses it. **`route:/b-design` items get a slug too** — a bare `/b-design` is not a runnable instruction, and it leaves the operator inventing the change description that Stage 0 hands the analyst.
+- **The command ends `according to F<n> in <path-to-this-plan>`**, and that clause is part of the command, not a note beside it. The whole line is meant to be copied and run verbatim: `$ARGUMENTS` is narrative, and `/b-feature` and `/b-design` read a finding reference in it as an explicit selector that beats every other match. Written any other way — a parenthetical, a second line, a bare `F6` — it depends on the operator reassembling two pieces, and the one that gets dropped is the one that carries the evidence. **The path is required, not decorative:** finding IDs are module-local, so `F6` alone does not identify a finding, and a routed item's command is most often run in a session that has never opened this plan.
+- **Every routed item carries a three-line brief**, indented beneath it: `Location:`, `Drift:`, `Resolution:`, copied *verbatim* from the report's finding. **All three, each non-empty** — they do different jobs and none substitutes for another: where to look, what disagrees with what, what to do about it. A location-only brief is worse than none, because it looks like a handoff while still leaving the receiving session to infer why the file matters. Never write a bare label to fill the shape; if a field is genuinely unavailable, say so in the field rather than leaving it blank. Do not summarise them — the report is gone after this pass and these lines are the only surviving evidence. **Owned items do not get a brief** and must not be given one: they are actioned in this same pass with the report still in context, so the brief would be write-only weight in a file that is otherwise deleted within the hour.
+
+  The asymmetry is the point. A routed item is deferred to a later session, in a fresh context, run by a command that was not present at diagnosis. Its one line has to survive being the whole handoff. Without the brief, the receiving command re-derives the finding from code — which costs a survey, may reach a different conclusion, and may fail to reproduce the finding at all and tick it as looked-at-and-fine.
+
+  Sub-bullets are indented and carry **no checkbox** — one checkbox per finding, or `/b-recap`'s and the viewer's disposition counts double-count. Keep each to one line; if `Drift:` needs a paragraph, the finding should have been split.
 - **Record the diagnosis date and the roster count** in the preamble. The count is the length of `## Build order` right now, and it is what gets written into `Review: ✓ (N of N features)` at closeout.
 - `## Observations` is advisory, rides along so an interrupted session sees the whole picture, and never blocks closeout.
 
@@ -133,13 +149,29 @@ Walk the `## Findings` checklist. Tick each box as it is disposed of — **updat
 
 If implementation reveals the report was wrong about a finding (the drift doesn't actually exist), don't force the reconcile — mark it `[~]` with `report was wrong: <why>` and move on.
 
-**Routed items — do not action them.** A routed item is ticked only when the operator has actually run the command it names. In a single session that usually means you present them and stop; the operator runs `/b-feature`, comes back, and re-invokes `/b-review <module>` to tick them off. Ask before ticking a routed item — "did `/b-feature modify …` land?" — rather than assuming from the fact that you see relevant changes in the tree. Boundary erosion (`route:/b-design`) is never actioned here under any circumstances.
+**Routed items — do not action them.** In a single session that usually means you present them and stop; the operator runs `/b-feature`, comes back, and re-invokes `/b-review <module>`, which then checks each one against the rule below. Boundary erosion (`route:/b-design`) is never actioned here under any circumstances.
+
+**A routed item is ticked when the drift it names is gone — not when the command it names has run.** Those are the same thing for `/b-feature`, which implements, and they are *not* the same thing for `/b-design`, which decides. A design run ends with an ADR and, usually, implementation work that nothing schedules: the decision has landed, the drift has not moved. So before ticking any routed item, open the `Location:` from its brief and confirm the disagreement is actually gone. This is one targeted read per item, not a re-review — the brief exists precisely so it is cheap. Never tick on the operator's report that they ran something, and never on seeing related-looking changes in the tree.
+
+**When a `route:/b-design` item's decision has landed but its code has not, re-classify in place.** Same finding, same `F<n>`, same unticked box: replace the class with `route:/b-feature` and the command with the implementation command, and rewrite the brief so the design output is carried forward — `Location:` still names the offending code, `Resolution:` becomes *implement ADR-00NN's decision here*, and `Drift:` names the accepted ADR as the side the code now contradicts. Tell the operator you did it and why. The finding keeps its number deliberately: they may be holding a handoff that names it, and a renumber loses the thread.
+
+This mirrors the `test-backfill` rule above — a class is a claim about who can discharge the finding, and when that claim turns out to be wrong the finding is re-classed and stays open rather than being disposed of on a technicality. The escape is unchanged: if the operator decides the implementation is not worth doing, that is a `[~]` won't-fix, which is a decision rather than an oversight.
+
+**On a resumed review, check the briefs before presenting.** If an open routed item is missing any of `Location:`/`Drift:`/`Resolution:`, or carries one as a bare label with no value — the plan predates v0.32, or was hand-edited — say so once, naming the items. A partial brief needs saying as much as an absent one; it is the case that looks finished.
+
+Do **not** offer to write the missing fields yourself. A resumed review does not re-diagnose, so you have no reviewer report either — reconstructing a brief here means reading code to infer what the finding meant, which is a review performed with less context than `bower-reviewer` had and outside its isolation. Offer the operator the two real options instead: carry on without briefs (the commands still run; whoever discharges a finding re-derives it, as before v0.32), or discard and re-diagnose — delete `review-plan.md`, set `Review: ⏸`, and run `/b-review <module>` fresh. Name the cost of the second: a reviewer run, and any `[~]` won't-fix decisions come back to be declined again. Never delete the plan without their agreement.
 
 **Won't-fix.** Any item can be disposed of as `[~]` on an operator decision, routed items included. Record it as `[~] F6 — <gist> — won't fix (operator, YYYY-MM-DD)`. You may *propose* a won't-fix when an item has become moot, but never mark one unprompted — it discharges work the operator agreed to at the triage gate. Won't-fix needs no further record anywhere; the decision dies with the plan by design.
 
 ## Gate: Closeout
 
-When every item in `## Findings` carries a disposition (`[x]` or `[~]`), the review is finishable. Present one AskUserQuestion:
+When every item in `## Findings` carries a disposition (`[x]` or `[~]`), the review is finishable — but **verify the routed ticks before offering the gate.** Closeout deletes the plan, so this is the last moment any of it is recoverable, and a tick may have been made in an earlier session under the weaker rule, or by an operator answering "yes, I ran it." For each `[x]` routed item, read the `Location:` from its brief and confirm the drift is gone. Owned items were applied by this command and need no re-check; `[~]` items are decisions, not claims about code.
+
+**A legacy plan has no briefs, and that does not block closeout.** A plan written before v0.32 gives a routed tick no `Location:` to check, and re-deriving one here is the hand-reconstruction this command refuses to do. Locate the code from the finding's gist if the gist makes it unambiguous; where it does not, the item is **unverifiable, not failed** — do not untick it, and do not invent a location to check. Count those separately in the gate line and name them, so the operator can eyeball the ones nothing confirmed: `routed ticks: 3 verified, 2 unverifiable (F5, F9 — no brief; plan predates v0.32)`. They may still close the review; an unverifiable tick is the cost of the plan's age, and holding a review open forever over it helps nobody.
+
+Report the result as a line in the gate, always — `routed ticks verified: 5 of 5` — because an unstated check is indistinguishable from a skipped one. If a tick is checked and does not hold, do not present the gate: untick that item, re-classify it if the reason is a `route:/b-design` decision whose code never landed, say plainly what you found, and report progress instead. A review that reopens at the closeout gate has just done its job.
+
+Present one AskUserQuestion:
 
 "All N findings in module `<module>` are disposed of (`<x> resolved, <y> won't fix`). Close the review? I'll delete the plan and record `Review: ✓ <today>`."
 
@@ -170,8 +202,8 @@ Resolved this pass:
   - <one line per disposed item, or "(none)">
 
 Still open — tracked in review-plan.md:
-  - Run /b-feature modify <module> <slug>        (<finding gist>)
-  - Run /b-design                                 (<boundary-erosion gist>, if any)
+  - Run /b-feature modify <module> <slug> according to F1 in docs/modules/<module>/review-plan.md
+  - Run /b-design <slug> according to F7 in docs/modules/<module>/review-plan.md
   - (none — all findings disposed)
 
 Constitution:
@@ -188,12 +220,14 @@ Next move:
     (none — module reviewed clean and closed)
 ```
 
+**Print the command exactly as the plan carries it — reference included, on one line.** These are copied and run verbatim, and the reference is what makes the receiving command load the evidence instead of re-deriving it from code. Do not shorten it to fit the column, and do not move it to a second line: a two-line handoff is a one-line paste plus a dropped clause. Reproduce the gist as a trailing comment only if it fits; the reference is the part that cannot be lost.
+
 When the review is still open, say in one line that `/b-review <module>` resumes it and does not re-analyse — that is not obvious from the outside, and an operator who thinks resuming means re-running the reviewer will keep the findings in a text editor instead.
 
 Pick exactly one recommended next move. A `route:/b-design` finding (boundary erosion) outranks everything — if one exists, it is the next move, because architectural drift is the one thing the framework will not let accumulate.
 
 ## Resuming mediation
 
-When Step 0 found `Review: 🚧` with a plan on disk, you skipped diagnosis. Read the plan, then run Step 5 against its open `## Findings` items exactly as above — including the routed ones, which you tick as the operator confirms the commands landed — then the closeout gate if everything is disposed of, then the Step 6 handoff.
+When Step 0 found `Review: 🚧` with a plan on disk, you skipped diagnosis. Read the plan, then run Step 5 against its open `## Findings` items exactly as above — including the routed ones, which you tick only once you have checked the code and found the drift gone, never on the operator's report that a command landed — then the closeout gate if everything is disposed of, then the Step 6 handoff.
 
 Do **not** re-spawn the reviewer. The findings were already gated when the plan was written, and re-diagnosing would replace triaged work with a fresh derivation the operator never agreed to. If the operator wants a *fresh* review rather than a resume, the current review has to close first (or they delete the plan and reset the marker themselves); say so rather than running both. Re-diagnosis is also how the routed items get lost — the exact failure the plan exists to prevent.

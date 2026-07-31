@@ -94,6 +94,7 @@ const EXPECTED = [
   'review-open-no-plan',
   'review-plan-not-open',
   'review-stale',
+  'review-routed-no-brief',
   // scope criteria (v0.24)
   'criterion-no-owner',
   'criterion-stale-pointer',
@@ -236,6 +237,7 @@ for (const [kind, want] of [
   ['review-plan-not-open', 'warn'],
   ['review-stale', 'info'],
   ['review-section-missing', 'info'],
+  ['review-routed-no-brief', 'info'],
 ])
   assert(sevOf(kind) === want, `${kind} is ${want}`, `got ${sevOf(kind)}`);
 
@@ -243,8 +245,8 @@ for (const [kind, want] of [
 // open, `[x]` resolved and `[~]` won't-fix both discharge it. Won't-fix is an
 // operator decision recorded here and deliberately left no other trace.
 const bp = g.reviewPlans.find((p) => p.module === 'boldorder');
-assert(bp && bp.total === 4, 'every finding in the plan is tracked, routed included', `got ${bp && bp.total}`);
-assert(bp && bp.open === 2, 'only `[ ]` items hold the review open', `got ${bp && bp.open}`);
+assert(bp && bp.total === 7, 'every finding in the plan is tracked, routed included', `got ${bp && bp.total}`);
+assert(bp && bp.open === 4, 'only `[ ]` items hold the review open', `got ${bp && bp.open}`);
 assert(bp && bp.wontFix === 1, "`[~]` is counted as won't-fix", `got ${bp && bp.wontFix}`);
 
 // v0.31: the plan is readable, not just countable. A finding line splits into
@@ -271,12 +273,96 @@ const f2 = bp && bp.items[1];
 assert(f2 && f2.routed && /^won't fix/.test(f2.note) && !f2.pointer, "a won't-fix note is not mistaken for a pointer", JSON.stringify(f2));
 const f3 = bp && bp.items[2];
 assert(f3 && f3.routed && f3.pointerKind === 'command', 'a routed finding points at the command that discharges it', JSON.stringify(f3));
-const f4 = bp && bp.items[3];
+// v0.32: the finding reference is *inside* the command, so a pasted invocation
+// carries the plan path and the ID with it — IDs are module-local, so the path
+// is what identifies the finding. It must not split the line into two parts.
+assert(
+  f3 && /according to F3 in docs\/modules\/boldorder\/review-plan\.md$/.test(f3.pointer),
+  'the command carries its own finding reference, path included',
+  f3 && f3.pointer,
+);
+const f4 = bp && bp.items[4];
 assert(
   f4 && f4.class === null && f4.gist === 'a finding written as free prose, with no class and no pointer',
   'an unparseable line keeps its text rather than being dropped',
   JSON.stringify(f4),
 );
+
+// v0.32: a routed finding is deferred into a fresh session, so it carries the
+// reviewer's Location/Drift/Resolution verbatim. The sub-bullets are indented
+// and checkbox-free — the counts above prove they are attached, not tracked, as
+// a brief line mistaken for an item would inflate both total and open.
+assert(
+  f3 && f3.brief && f3.brief.location === 'src/boldorder/read.ts:48 vs src/boldorder/write.ts:61',
+  'a routed finding attaches its brief',
+  JSON.stringify(f3 && f3.brief),
+);
+assert(f3 && /404/.test(f3.brief.drift) && /Pick one/.test(f3.brief.resolution), 'all three brief fields are kept');
+assert(f1 && f1.brief === null, 'an owned finding has no brief and is not given one', JSON.stringify(f1 && f1.brief));
+// F5 is the gap the check exists for: routed, open, and briefless, so whichever
+// command eventually discharges it starts from the gist alone.
+const noBrief = g.health.filter((h) => h.kind === 'review-routed-no-brief');
+assert(noBrief.length === 2, 'each incomplete open routed finding is reported once', `got ${noBrief.length}`);
+// F14 has no brief at all; F5 has a Location and an empty Drift label. A partial
+// brief is the worse case — it looks like a handoff and is not one — so the
+// check requires all three fields, not the presence of the block.
+const f14msg = noBrief.find((h) => /F14/.test(h.message));
+assert(f14msg && /carries no Location\/Drift\/Resolution brief/.test(f14msg.message), 'a wholly absent brief is named as such', f14msg && f14msg.message);
+const f5msg = noBrief.find((h) => /F5/.test(h.message));
+assert(f5msg && /missing `drift` and `resolution`/.test(f5msg.message), 'a partial brief names the fields it lacks', f5msg && f5msg.message);
+// F13 is routed and ticked: the finding is discharged, so its brief is moot.
+assert(!noBrief.some((h) => /F13/.test(h.message)), 'a disposed routed finding is not chased for a brief');
+// An empty label is not a field: `- Drift:` with nothing after it must not read
+// as a populated brief anywhere downstream.
+const f5 = bp && bp.items.find((i) => i.id === 'F5');
+assert(f5 && f5.brief && !f5.brief.drift, 'an empty label does not become a field', JSON.stringify(f5 && f5.brief));
+
+// The review page is the plan's only rendering — links to review-plan.md
+// resolve here, not to a raw file view — so free prose under a finding (a
+// re-opened note, a caveat) is carried, not dropped. It is prose, not a brief:
+// F14's annotation coexists with its review-routed-no-brief finding above, and
+// the counts above prove it is attached, not tracked.
+const f14 = bp && bp.items.find((i) => i.id === 'F14');
+assert(
+  f14 && f14.annotations && /Re-opened 2026-07-30/.test(f14.annotations[0]),
+  'free prose under a finding is kept as an annotation',
+  JSON.stringify(f14 && f14.annotations),
+);
+assert(f3 && f3.annotations === null, 'a finding with no prose carries none', JSON.stringify(f3 && f3.annotations));
+// Same rule one level up: a section the schema doesn't name rides along whole.
+assert(
+  bp && bp.sections.length === 1 && bp.sections[0].title === 'Constitution',
+  'a non-schema section is extracted, not dropped',
+  JSON.stringify(bp && bp.sections),
+);
+
+// The check is version-gated: on a pre-v0.32 project every routed finding is
+// briefless by construction, which is history, not drift. The gate is the one
+// behaviour the fixture above (on the current version) cannot exercise, so the
+// same fixture is re-run with only its VERSION rewritten to 0.31.
+{
+  const fs = require('fs');
+  const os = require('os');
+  const pre = fs.mkdtempSync(path.join(os.tmpdir(), 'bower-viewer-pre032-'));
+  try {
+    fs.cpSync(path.join(FIXTURES, 'fixture'), pre, { recursive: true });
+    fs.writeFileSync(path.join(pre, '_bower/VERSION'), '0.31\n');
+    const gPre = extract(pre);
+    const bpPre = gPre.reviewPlans.find((p) => p.module === 'boldorder');
+    assert(bpPre && bpPre.total === 7, 'the pre-v0.32 copy still parses the plan', `got ${bpPre && bpPre.total}`);
+    assert(
+      !gPre.health.some((h) => h.kind === 'review-routed-no-brief'),
+      'review-routed-no-brief stands down on a pre-v0.32 project',
+      gPre.health.filter((h) => h.kind === 'review-routed-no-brief').map((h) => h.message).join('\n      '),
+    );
+    assert(
+      gPre.health.some((h) => h.kind === 'schema-version-skew'),
+      'the version skew itself is still reported',
+    );
+  } finally {
+    fs.rmSync(pre, { recursive: true, force: true });
+  }
+}
 assert(bp && bp.observations.length === 1, 'observations ride along with the plan', `got ${bp && bp.observations.length}`);
 
 // Exercise the actual review renderer, not just the graph it consumes. This
@@ -321,7 +407,7 @@ const descendants = (node) => [node, ...node.children.flatMap(descendants)];
 const renderedNodes = descendants(renderedReview);
 const renderedText = renderedReview.textContent;
 assert(renderedText.includes('Review · boldorder'), 'the review page renders its module heading');
-assert(renderedText.includes('2 of 4 disposed'), 'the review page renders disposition progress');
+assert(renderedText.includes('3 of 7 disposed'), 'the review page renders disposition progress');
 assert(renderedText.includes('ADR-0002'), 'the review page renders observations');
 assert(
   renderedNodes.some((node) => node.tagName === 'a' && node.attrs.href === '/open?path=docs%2Fmodules%2Fboldorder%2Fplan.md&line=12'),
@@ -334,6 +420,26 @@ assert(
 assert(
   renderedNodes.some((node) => node.className === 'strap' && node.textContent.includes('Marker disagrees with the plan')),
   'the review page exposes marker/plan disagreement',
+);
+// The brief is shown in full, not folded away: a reader on this page is deciding
+// whether to act on the finding, which is the question the brief answers.
+const hasClass = (node, c) => String(node.className || '').split(' ').includes(c);
+const briefRow = renderedNodes.find((node) => hasClass(node, 'brief'));
+assert(briefRow && briefRow.textContent.includes('src/boldorder/read.ts:48'), 'the review page renders the routed brief', briefRow && briefRow.textContent);
+assert(briefRow && /Location:.*Drift:.*Resolution:/s.test(briefRow.textContent), 'with all three fields labelled');
+const briefRows = renderedNodes.filter((node) => hasClass(node, 'brief'));
+assert(briefRows.length === 2, 'and only for the findings that have one', `got ${briefRows.length}`);
+// F5's brief is Location-only. It renders what it has rather than an empty
+// `Drift:` label — the health check is what reports the gap.
+const partial = briefRows.find((n) => n.textContent.includes('parse.ts:19'));
+assert(partial && !/Drift:/.test(partial.textContent), 'a partial brief renders only its populated fields', partial && partial.textContent);
+// Nothing in the file is invisible on the page: operator prose under a finding
+// and sections beyond Findings/Observations both render.
+const annRow = renderedNodes.find((node) => hasClass(node, 'ann'));
+assert(annRow && /Re-opened 2026-07-30/.test(annRow.textContent), 'the review page renders finding annotations', annRow && annRow.textContent);
+assert(
+  renderedText.includes('Constitution') && renderedText.includes('consented to'),
+  'the review page renders non-schema sections',
 );
 global.document = priorDocument;
 

@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.32 | 2026-07-31 | A routed review finding carries the reviewer's evidence into the session that discharges it, and is discharged by the code rather than by a command having run | judgement |
 | v0.31 | 2026-07-31 | Open-review findings become readable in the viewer; review contracts and release guards are aligned around the same lifecycle | none |
 | v0.30 | 2026-07-30 | A stored `Next move:` is feature-scoped and dies at ✓, where `status.md` compresses to a terminal form carrying `## Verification`; the project-scoped next move is printed and derived, never stored | mechanical |
 | v0.29 | 2026-07-30 | Module review becomes a recorded three-state lifecycle: a `Review:` marker in `module-status.md`, routed findings tracked in one checklist across sessions, staleness derived | judgement |
@@ -26,6 +27,40 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
 
 ---
+
+## v0.32 — 2026-07-31
+
+### Routed review findings carry their evidence
+
+`review-plan.md` compressed every finding to one line, which is right for an owned finding — actioned in the same pass with the reviewer's report still in context — and wrong for a routed one, which is deferred into a fresh session run by a command that never saw the report. The line also spends its last field on the command rather than a location, so the class needing the most evidence carried the least; the receiving command re-derived the finding from code, and could conclude there was nothing there. Routed findings now carry the reviewer's `Location` / `Drift` / `Resolution` verbatim as indented, checkbox-free sub-bullets. Owned findings do not, and must not. Reasoning in `_bower/rationale.md`, *Review as Reconciliation, not Record*.
+
+- `.claude/commands/b-review.md` — Step 3 writes the brief for routed items only; `route:/b-design` items now get a slug so the command is runnable; every routed command ends `according to F<n> in <plan path>`, so the pasted invocation carries its own reference (IDs are module-local, hence the path); a resumed review reports incomplete briefs rather than reconstructing them, and offers re-diagnosis instead.
+- `.claude/commands/b-feature.md` — Step 1 gains item 10: read the matching open `route:/b-feature` finding's brief and treat it as a primary input to verify. The lookup sweeps *every* open plan (one glob in Step 1's batch), not the target module's: a finding stays in the reviewed module's plan even when the fix belongs elsewhere, so a marker-keyed lookup would miss exactly the cross-module case. The inputs-selected ledger always states the outcome, so a skipped check is visible at the gate. Step 7's next move becomes `/b-review <module>` when a routed finding was discharged.
+- `.claude/commands/b-design.md` — Stage 0 gains step 0: match an open `route:/b-design` finding and pass its brief verbatim into the analyst prompt; the Stage 0 gate states the outcome either way.
+- `.claude/commands/b-recap.md` — counts checkbox lines only; ignores briefs.
+- `_bower/review-schema.md`, `_bower/framework-reference.md`, `_bower/rationale.md` — the contract, the spec, the reasoning.
+- `_bower/viewer/lib/extract.cjs` — attaches briefs to their finding; new info check `review-routed-no-brief`, which requires all three fields non-empty and names the ones it lacks, gated on the project being ≥ v0.32 and exempt from the obsolescence tripwire. Free indented prose under a finding is kept as an annotation and sections beyond `Findings`/`Observations` are carried through — links to the plan resolve to the review page, so the page must never show less than the file. `SCHEMA_VERSION` → 0.32.
+- `_bower/viewer/web/app.js`, `web/style.css`, `viewer/README.md` — the brief, annotations, and extra sections render under/after the findings; the findings grid caps the pointer column and lets it wrap, so one long path no longer starves every gist on the page; Schema contract rows added.
+- `tools/viewer-test/` — fixture gains briefed and briefless routed findings, a finding annotation, and a non-schema section; asserts sub-content attaches to findings rather than counting as items, renders, and that the brief check stands down on a pre-v0.32 copy of the fixture.
+
+### A routed finding is discharged by the code, not by the command
+
+The tick rule — *ticked when the operator has run the command it names* — was a proxy for *the drift is gone*. It holds for `/b-feature`, which implements, and fails for `/b-design`, which decides: a design run ends with an accepted ADR and often implementation work that no build order carries and no command schedules. A real review closed with the ADR written, every box ticked, and the boundary erosion still in the code. Ticks are now verified against the `Location:` in the finding's brief — affordable only because that brief now exists — and a `route:/b-design` finding whose decision landed but whose code did not is re-classified in place to `route:/b-feature`, keeping its number and its open box. Reasoning in `_bower/rationale.md`, *Review as Reconciliation, not Record*; the general fix (an `implemented:` state on ADRs) is deferred with its trigger in `_bower/roadmap.md`.
+
+- `.claude/commands/b-review.md` — Step 5's routed rule replaced; the closeout gate re-verifies every routed tick before deleting the plan and reopens the review rather than gating if one does not hold.
+- `.claude/commands/b-design.md` — the handoff states that a design run does not discharge the finding that prompted it, and names implied `/b-feature` work when Stage 4 adds no build-order entries.
+- `_bower/framework-reference.md`, `_bower/rationale.md`, `_bower/roadmap.md` — the spec, the reasoning, the deferred general fix.
+
+### Migration
+
+None — the new shape applies to the next diagnosed review. If a module already has an **open** review (`Review: 🚧` with a `review-plan.md` on disk), say so once and offer the operator a choice:
+
+- **Carry on.** The plan still works — the commands run, the checkboxes track. Routed findings lack briefs, so whoever discharges one re-derives it from code, which is what happened before this version. The docs viewer reports `review-routed-no-brief` (info) per affected finding until the review closes. Nothing is broken.
+- **Re-diagnose.** This is the only way to produce real briefs. It is not “re-run `/b-review`”: at `🚧`, that resumes mediation. For a fresh pass, delete `docs/modules/<module>/review-plan.md`, set `Review: ⏸` in that module's `module-status.md` `## Module review` section, then run `/b-review <module>`.
+
+Before re-diagnosing, state the trade: it costs a reviewer run and re-surfaces `[~]` won't-fix findings for the operator to decline again. Resolved findings will not return because their drift is gone; old `route:/b-design` items whose decisions landed but whose implementation did not will return because the drift remains. That is safer than auditing old tick marks by hand.
+
+Do not reconstruct briefs or audit old ticks by hand: both amount to a review with less context than `bower-reviewer` had. Never delete a plan without the operator's agreement — it is the review's only record.
 
 ## v0.31 — 2026-07-31
 
