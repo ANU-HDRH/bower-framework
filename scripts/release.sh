@@ -8,8 +8,9 @@
 #   scripts/release.sh --help      # show this usage and stop
 #
 # Aborts if the working tree is dirty, HEAD is not the published main commit,
-# the tag already exists, the changes.md section is missing, or the docs
-# viewer's acceptance test fails.
+# the tag already exists, the changes.md section is missing, the checked-in
+# runtime adapters have drifted from skills-src/, or any of the docs viewer,
+# adapter generator, or scaffold acceptance tests fail.
 set -euo pipefail
 
 DRY_RUN=0
@@ -31,6 +32,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION_FILE="$REPO_ROOT/_bower/VERSION"
 CHANGES_FILE="$REPO_ROOT/_bower/changes.md"
 VIEWER_TEST="$REPO_ROOT/tools/viewer-test/run.cjs"
+ADAPTER_BUILD="$REPO_ROOT/scripts/build-adapters.cjs"
+ADAPTER_TEST="$REPO_ROOT/tools/adapter-test/run.cjs"
+SCAFFOLD_TEST="$REPO_ROOT/tools/scaffold-test/run.sh"
 
 [[ -f "$VERSION_FILE" ]] || { echo "error: $VERSION_FILE not found" >&2; exit 1; }
 [[ -f "$CHANGES_FILE" ]] || { echo "error: $CHANGES_FILE not found" >&2; exit 1; }
@@ -86,6 +90,54 @@ if [[ -f "$VIEWER_TEST" ]]; then
     fi
   else
     echo "warning: node not found — skipping the docs viewer acceptance test" >&2
+  fi
+fi
+
+# The four runtime adapter trees are generated from skills-src/ and checked in,
+# so a release can ship generated files that no longer say what their source
+# says — and a stale adapter reads as perfectly valid on its own. Byte-compare
+# the tree against a fresh build before publishing it.
+if [[ -f "$ADAPTER_BUILD" ]]; then
+  if command -v node >/dev/null 2>&1; then
+    echo "Checking the generated runtime adapters against skills-src/…"
+    if ! node "$ADAPTER_BUILD" --check; then
+      echo "error: the checked-in runtime adapters have drifted from skills-src/ (or a" >&2
+      echo "       source failed lint). Regenerate with" >&2
+      echo "           node scripts/build-adapters.cjs" >&2
+      echo "       and commit sources and generated files together before releasing." >&2
+      exit 1
+    fi
+  else
+    echo "warning: node not found — skipping the runtime adapter drift check" >&2
+  fi
+fi
+
+# --check only proves the tree matches the generator. These two prove the
+# generator and the scaffold are themselves still correct.
+if [[ -f "$ADAPTER_TEST" ]]; then
+  if command -v node >/dev/null 2>&1; then
+    echo "Checking the adapter generator against its fixtures…"
+    if ! node "$ADAPTER_TEST"; then
+      echo "error: the adapter generator's acceptance test failed — see" >&2
+      echo "       tools/adapter-test/run.cjs. Fix the generator, or the fixture if the" >&2
+      echo "       emission genuinely changed, before releasing." >&2
+      exit 1
+    fi
+  else
+    echo "warning: node not found — skipping the adapter generator acceptance test" >&2
+  fi
+fi
+
+# The scaffold is the only thing here that writes into somebody else's
+# repository; a regression clobbers project-owned files or leaves a split
+# footprint behind. Never publish past a failure in it.
+if [[ -f "$SCAFFOLD_TEST" ]]; then
+  echo "Checking the scaffold against its fixtures…"
+  if ! bash "$SCAFFOLD_TEST"; then
+    echo "error: the scaffold's acceptance test failed — see tools/scaffold-test/run.sh." >&2
+    echo "       Fix the scaffold, or the test if its footprint genuinely changed," >&2
+    echo "       before releasing." >&2
+    exit 1
   fi
 fi
 
