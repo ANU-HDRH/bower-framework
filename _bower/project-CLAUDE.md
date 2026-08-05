@@ -1,3 +1,2 @@
+@AGENTS.md
 @_bower/framework.md
-
-## Project-Specific Code Standards

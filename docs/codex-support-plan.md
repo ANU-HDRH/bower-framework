@@ -64,7 +64,17 @@ State: 16 sources under `skills-src/`, 32 generated files across the four trees,
 
 </details>
 
-### ⬜ M3 — Scaffold + templates + seeds
+### ✅ M3 — Scaffold + templates + seeds (DONE, uncommitted)
+
+Landed as specified below, with three deliberate refinements:
+
+- **The `_bower/` copy-loop exclusion is now the glob `project-*`** rather than a hand-maintained list of two, so a future template is excluded by naming convention instead of by editing both scripts.
+- **Both namespaces (`b-*` *and* `bower-*`) are replaced and pruned in both adapter trees**, not just `b-*` in skills and `bower-*` in Codex agents. The namespace declaration is what a project can rely on; matching the code to the declaration means a future rename across the two prefixes cannot strand an orphan.
+- **`scaffold.ps1`'s path literals moved from `\` to `/`** inside `Join-Path` (display strings unchanged). Backslash separators are not translated by PowerShell on Linux, so the script could not have run under `pwsh` at all — which would have made the parity case in the test permanently unrunnable rather than merely skipped. `/` works on both platforms.
+
+State: 3 templates, both scaffold scripts in lockstep, `tools/scaffold-test/run.sh` (45 checks). Test green; the pwsh parity case warn-skips on this box (no pwsh on PATH). Three deliberate regressions were injected to prove the assertions bite: unconditional `AGENTS.md` seed → 1 failure; prune widened past the namespaces → 1 failure; preflight disabled → 4 failures including the reproduced split footprint (`_bower/` and `.claude/` written, then death at `.agents/`).
+
+<details><summary>Original M3 spec</summary>
 
 Templates (in `_bower/`, excluded from the copy loop like the existing two):
 - `_bower/project-AGENTS.md` (new): thin — a heading, the one-line directive "**Before any Bower work — any `/b-*` skill, any change to `docs/` — read `_bower/framework.md` in full.** It is the router for how this project is designed, documented, and changed.", then `## Project-Specific Code Standards`. (Wording validated in spike S10; see `~/scratch/codex-spike/AGENTS.thin.md`.)
@@ -81,6 +91,8 @@ Templates (in `_bower/`, excluded from the copy loop like the existing two):
 **`tools/scaffold-test/run.sh`** (new, bash temp-dir matrix): fresh seed; second-run zero-diff idempotence; grown CLAUDE.md/AGENTS.md untouched; user skill at `.agents/skills/my-skill/` survives while planted `b-old/` is pruned and named; read-only `.agents/` → exit 1 with zero writes (preflight); `pwsh` parity re-run when available, warn-skip otherwise.
 
 (b-upgrade's 5a/5b/5c flow already landed in M1.)
+
+</details>
 
 ### ⬜ M4 — Release gate
 

@@ -2,24 +2,49 @@
 #
 # Usage: scripts\scaffold.ps1 <target-dir>
 #
+# Preflight:
+#   - Every directory this script manages is probed for writability BEFORE
+#     anything is written. If any probe fails, the script names the paths and
+#     exits 1 having written nothing. Some agent runtimes mount .agents\ and
+#     .codex\ read-only inside their sandbox and fail the write outright rather
+#     than prompting — a half-finished run would leave the runtime adapters on
+#     different framework versions.
+#
 # Always copies (overwrites):
-#   - _bower\                 (excluding project-CLAUDE.md, project-settings.json,
-#                              VERSION, and SOURCE — VERSION is owned by /b-upgrade
-#                              in the project; SOURCE is preserved so forks/mirrors
-#                              are respected; the two templates are seeded out, not
+#   - _bower\                 (excluding the project-* templates, VERSION, and
+#                              SOURCE — VERSION is owned by /b-upgrade in the
+#                              project; SOURCE is preserved so forks/mirrors are
+#                              respected; the templates are seeded out, not
 #                              copied in.)
 #   - .claude\agents\         (Bower subagents)
 #   - .claude\commands\       (Bower /b-* slash commands)
+#   - .agents\skills\b-*\     (Bower skills, the runtime-neutral location)
+#   - .codex\agents\bower-*   (Bower custom agents for Codex)
 #
 # Prunes:
 #   - Anything in <target>\_bower\ that the framework no longer ships, except
 #     VERSION and SOURCE (project-owned). Directories are replaced wholesale,
 #     so files retired inside them (e.g. a renamed viewer\ asset) go too.
+#   - Entries in <target>\.agents\skills\ and <target>\.codex\agents\ that are
+#     in a framework-owned namespace (`b-*`, `bower-*`) but have no counterpart
+#     in this framework version. Anything outside those two namespaces is left
+#     alone — .agents\skills\ is the standard skills location and a project may
+#     keep its own skills there.
 #     Each removal is named in the closing summary.
 #
 # Conditionally creates:
+#   - <target>\AGENTS.md             only if the target has no AGENTS.md, seeded
+#                                    from _bower\project-AGENTS.md. Thin: the
+#                                    router directive plus project content. A
+#                                    grown AGENTS.md is never edited.
 #   - <target>\CLAUDE.md             only if the target has no CLAUDE.md, seeded
-#                                    from _bower\project-CLAUDE.md.
+#                                    from _bower\project-CLAUDE.md — a two-line
+#                                    shim that includes AGENTS.md and the
+#                                    framework router.
+#   - <target>\.codex\config.toml    only if absent, seeded from
+#                                    _bower\project-codex-config.toml. Codex
+#                                    convenience defaults; the project owns it
+#                                    afterwards.
 #   - <target>\.claude\settings.json only if absent, seeded from
 #                                    _bower\project-settings.json. Pre-allows
 #                                    safe read-only Bash patterns Bower skills
@@ -37,12 +62,15 @@
 #                                    `origin` remote.
 #
 # Does not touch:
-#   - target's existing CLAUDE.md, .claude\settings.json, _bower\VERSION, _bower\SOURCE
-#   - target's docs\, .claude\settings.local.json, or anything else.
+#   - target's existing AGENTS.md, CLAUDE.md, .codex\config.toml,
+#     .claude\settings.json, _bower\VERSION, _bower\SOURCE
+#   - target's docs\, .claude\settings.local.json, non-framework skills, or
+#     anything else.
 #
 # Idempotent: re-running upgrades an existing project to the current framework
-# version by refreshing _bower\ and .claude\agents,commands in place. The project
-# should then run /b-upgrade to apply any per-version migrations and bump VERSION.
+# version by refreshing _bower\ and the runtime adapter trees in place. The
+# project should then run /b-upgrade to apply any per-version migrations and
+# bump VERSION.
 
 [CmdletBinding()]
 param(
@@ -59,23 +87,70 @@ if (-not (Test-Path -LiteralPath $Target)) {
 }
 $Target = (Resolve-Path -LiteralPath $Target).Path
 
-$frameworkVersion = (Get-Content -LiteralPath (Join-Path $src '_bower\VERSION') -Raw).Trim()
+$frameworkVersion = (Get-Content -LiteralPath (Join-Path $src '_bower/VERSION') -Raw).Trim()
 
 # Capture project's old version (if any) before we touch anything.
-$oldVersionPath = Join-Path $Target '_bower\VERSION'
+$oldVersionPath = Join-Path $Target '_bower/VERSION'
 $oldVersion = ''
 if (Test-Path -LiteralPath $oldVersionPath) {
     $oldVersion = (Get-Content -LiteralPath $oldVersionPath -Raw).Trim()
 }
 
-# 1. _bower\ — copy everything except template seeds (project-CLAUDE.md,
-#    project-settings.json), VERSION, and SOURCE.
+# 0. Preflight: can we write everywhere we intend to? A directory that doesn't
+#    exist yet is judged by its nearest existing ancestor, which is where the
+#    mkdir would land. Probe files are removed immediately; a failed probe
+#    creates nothing.
+function Test-BowerWritable {
+    param([string]$Path)
+    $d = $Path
+    while (-not (Test-Path -LiteralPath $d -PathType Container)) {
+        $parent = Split-Path -Parent $d
+        if (-not $parent -or $parent -eq $d) { return $false }
+        $d = $parent
+    }
+    $probe = Join-Path $d ".bower-write-probe.$PID"
+    try {
+        New-Item -ItemType File -Path $probe -Force -ErrorAction Stop | Out-Null
+        Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+$managed = @(
+    $Target,
+    (Join-Path $Target '_bower'),
+    (Join-Path $Target '.claude'),
+    (Join-Path $Target '.agents/skills'),
+    (Join-Path $Target '.codex/agents')
+)
+$unwritable = @($managed | Where-Object { -not (Test-BowerWritable $_) })
+if ($unwritable.Count -gt 0) {
+    Write-Error -Message (@(
+        'cannot write to paths this scaffold manages:'
+        ($unwritable | ForEach-Object { "  $_" })
+        ''
+        'Nothing was written — the target is unchanged.'
+        ''
+        'Some agent runtimes mount .agents\ and .codex\ read-only inside their'
+        'sandbox and fail the write outright rather than prompting for approval.'
+        'If that is what happened, run this yourself in a terminal outside the'
+        'sandbox:'
+        ''
+        "  powershell -File $src\scripts\scaffold.ps1 $Target"
+    ) -join [Environment]::NewLine) -ErrorAction Continue
+    exit 1
+}
+
+# 1. _bower\ — copy everything except the project-* template seeds, VERSION,
+#    and SOURCE.
 $bowerDst = Join-Path $Target '_bower'
 if (-not (Test-Path -LiteralPath $bowerDst)) {
     New-Item -ItemType Directory -Path $bowerDst | Out-Null
 }
 Get-ChildItem -LiteralPath (Join-Path $src '_bower') -Force | Where-Object {
-    $_.Name -notin @('project-CLAUDE.md', 'project-settings.json', 'VERSION', 'SOURCE')
+    $_.Name -notlike 'project-*' -and $_.Name -notin @('VERSION', 'SOURCE')
 } | ForEach-Object {
     # Replace directories wholesale rather than merging, so files retired
     # inside them don't linger downstream.
@@ -94,19 +169,20 @@ $pruned = @()
 Get-ChildItem -LiteralPath $bowerDst -Force | Where-Object {
     $_.Name -notin @('VERSION', 'SOURCE')
 } | ForEach-Object {
-    if (-not (Test-Path -LiteralPath (Join-Path $src "_bower\$($_.Name)"))) {
+    if (-not (Test-Path -LiteralPath (Join-Path $src "_bower/$($_.Name)"))) {
         Remove-Item -LiteralPath $_.FullName -Recurse -Force
         $pruned += $_.Name
     }
 }
 
-# 2. .claude\agents and .claude\commands — refresh in place.
+# 2. .claude\agents and .claude\commands — refresh in place. Both trees are
+#    wholly framework-owned, so they are replaced wholesale.
 $claudeDst = Join-Path $Target '.claude'
 if (-not (Test-Path -LiteralPath $claudeDst)) {
     New-Item -ItemType Directory -Path $claudeDst | Out-Null
 }
 foreach ($sub in @('agents', 'commands')) {
-    $subSrc = Join-Path $src ".claude\$sub"
+    $subSrc = Join-Path $src ".claude/$sub"
     $subDst = Join-Path $claudeDst $sub
     if (Test-Path -LiteralPath $subSrc) {
         if (Test-Path -LiteralPath $subDst) {
@@ -116,34 +192,111 @@ foreach ($sub in @('agents', 'commands')) {
     }
 }
 
-# 3. CLAUDE.md — seed only if absent.
+# 3. .agents\skills\ — namespace-scoped replace. This is the standard skills
+#    location and the project may keep its own skills alongside ours, so only
+#    the framework-owned namespaces (b-*, bower-*) are ever touched.
+$skillsSrc = Join-Path $src '.agents/skills'
+$skillsDst = Join-Path $Target '.agents/skills'
+if (-not (Test-Path -LiteralPath $skillsDst)) {
+    New-Item -ItemType Directory -Path $skillsDst -Force | Out-Null
+}
+$shippedSkills = @()
+if (Test-Path -LiteralPath $skillsSrc) {
+    Get-ChildItem -LiteralPath $skillsSrc -Force -Directory | Where-Object {
+        $_.Name -like 'b-*' -or $_.Name -like 'bower-*'
+    } | ForEach-Object {
+        $shippedSkills += $_.Name
+        $dst = Join-Path $skillsDst $_.Name
+        if (Test-Path -LiteralPath $dst) {
+            Remove-Item -LiteralPath $dst -Recurse -Force
+        }
+        Copy-Item -LiteralPath $_.FullName -Destination $dst -Recurse -Force
+    }
+}
+
+$skillsPruned = @()
+Get-ChildItem -LiteralPath $skillsDst -Force -Directory | Where-Object {
+    $_.Name -like 'b-*' -or $_.Name -like 'bower-*'
+} | ForEach-Object {
+    if ($shippedSkills -notcontains $_.Name) {
+        Remove-Item -LiteralPath $_.FullName -Recurse -Force
+        $skillsPruned += $_.Name
+    }
+}
+
+# 4. .codex\agents\ — same namespace-scoped rule, over bower-*.toml files.
+$codexSrc = Join-Path $src '.codex/agents'
+$codexDst = Join-Path $Target '.codex/agents'
+if (-not (Test-Path -LiteralPath $codexDst)) {
+    New-Item -ItemType Directory -Path $codexDst -Force | Out-Null
+}
+$shippedCodex = @()
+if (Test-Path -LiteralPath $codexSrc) {
+    Get-ChildItem -LiteralPath $codexSrc -Force -File | Where-Object {
+        ($_.Name -like 'b-*.toml' -or $_.Name -like 'bower-*.toml')
+    } | ForEach-Object {
+        $shippedCodex += $_.Name
+        Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $codexDst $_.Name) -Force
+    }
+}
+
+$codexPruned = @()
+Get-ChildItem -LiteralPath $codexDst -Force -File | Where-Object {
+    ($_.Name -like 'b-*.toml' -or $_.Name -like 'bower-*.toml')
+} | ForEach-Object {
+    if ($shippedCodex -notcontains $_.Name) {
+        Remove-Item -LiteralPath $_.FullName -Force
+        $codexPruned += $_.Name
+    }
+}
+
+# 5. AGENTS.md — seed only if absent. A grown AGENTS.md is never edited; adding
+#    the router directive to one is /b-upgrade's judgement step.
+$agentsMd = Join-Path $Target 'AGENTS.md'
+if (Test-Path -LiteralPath $agentsMd) {
+    $agentsAction = 'preserved (already exists)'
+} else {
+    Copy-Item -LiteralPath (Join-Path $src '_bower/project-AGENTS.md') -Destination $agentsMd
+    $agentsAction = 'created from _bower\project-AGENTS.md'
+}
+
+# 6. CLAUDE.md — seed only if absent.
 $claudeMd = Join-Path $Target 'CLAUDE.md'
 if (Test-Path -LiteralPath $claudeMd) {
     $claudeAction = 'preserved (already exists)'
 } else {
-    Copy-Item -LiteralPath (Join-Path $src '_bower\project-CLAUDE.md') -Destination $claudeMd
+    Copy-Item -LiteralPath (Join-Path $src '_bower/project-CLAUDE.md') -Destination $claudeMd
     $claudeAction = 'created from _bower\project-CLAUDE.md'
 }
 
-# 4. .claude\settings.json — seed only if absent. The project owns it after that.
+# 7. .codex\config.toml — seed only if absent. The project owns it after that.
+$codexConfig = Join-Path $Target '.codex/config.toml'
+if (Test-Path -LiteralPath $codexConfig) {
+    $codexConfigAction = 'preserved (already exists)'
+} else {
+    Copy-Item -LiteralPath (Join-Path $src '_bower/project-codex-config.toml') -Destination $codexConfig
+    $codexConfigAction = 'created from _bower\project-codex-config.toml'
+}
+
+# 8. .claude\settings.json — seed only if absent. The project owns it after that.
 $settingsPath = Join-Path $claudeDst 'settings.json'
 if (Test-Path -LiteralPath $settingsPath) {
     $settingsAction = 'preserved (already exists)'
 } else {
-    Copy-Item -LiteralPath (Join-Path $src '_bower\project-settings.json') -Destination $settingsPath
+    Copy-Item -LiteralPath (Join-Path $src '_bower/project-settings.json') -Destination $settingsPath
     $settingsAction = 'created from _bower\project-settings.json'
 }
 
-# 5. _bower\VERSION — seed only if absent. /b-upgrade owns it from then on.
+# 9. _bower\VERSION — seed only if absent. /b-upgrade owns it from then on.
 if ([string]::IsNullOrEmpty($oldVersion)) {
-    Copy-Item -LiteralPath (Join-Path $src '_bower\VERSION') -Destination $oldVersionPath
+    Copy-Item -LiteralPath (Join-Path $src '_bower/VERSION') -Destination $oldVersionPath
     $versionAction = "created at $frameworkVersion"
 } else {
     $versionAction = "preserved (already exists, was $oldVersion)"
 }
 
-# 6. _bower\SOURCE — seed only if absent.
-$sourcePath = Join-Path $Target '_bower\SOURCE'
+# 10. _bower\SOURCE — seed only if absent.
+$sourcePath = Join-Path $Target '_bower/SOURCE'
 if (Test-Path -LiteralPath $sourcePath) {
     $sourceAction = 'preserved (already exists)'
 } else {
@@ -168,10 +321,25 @@ foreach ($name in $pruned) {
 }
 Write-Host "  .claude\agents\          refreshed"
 Write-Host "  .claude\commands\        refreshed"
+Write-Host "  .agents\skills\          refreshed (framework skills only)"
+foreach ($name in $skillsPruned) {
+    Write-Host "  .agents\skills\$name  removed (retired upstream)"
+}
+Write-Host "  .codex\agents\           refreshed (framework agents only)"
+foreach ($name in $codexPruned) {
+    Write-Host "  .codex\agents\$name  removed (retired upstream)"
+}
+Write-Host "  AGENTS.md                $agentsAction"
 Write-Host "  CLAUDE.md                $claudeAction"
+Write-Host "  .codex\config.toml       $codexConfigAction"
 Write-Host "  .claude\settings.json    $settingsAction"
 Write-Host "  _bower\VERSION           $versionAction"
 Write-Host "  _bower\SOURCE            $sourceAction"
+
+Write-Host ''
+Write-Host 'This rewrote instruction files. Agent runtimes do not reliably reload them'
+Write-Host 'mid-session — if this ran under one, start a new session before further'
+Write-Host 'Bower work.'
 
 if ($oldVersion -and $oldVersion -ne $frameworkVersion) {
     Write-Host ''
