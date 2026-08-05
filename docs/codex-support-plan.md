@@ -104,7 +104,20 @@ No changelog entry: release tooling is not framework behaviour downstream projec
 
 **Carry into M6:** bumping viewer `SCHEMA_VERSION` to `0.33` requires bumping `tools/viewer-test/fixture{,-adoption,-obsolete}/_bower/VERSION` to `0.33` in the same commit — the viewer test asserts the fixture is on the version the viewer parses, so the release gate fails otherwise.
 
-### ⬜ M5 — Conformance scenarios
+### ✅ M5 — Conformance scenarios (DONE, uncommitted)
+
+Landed as specified below, with two deliberate refinements:
+
+- **The fixtures and the exec harness are executable, and live in `tools/conformance/`** rather than being prose Setup steps. `make-fixture.sh <kind> <dir>` builds five kinds (`empty`, `brownfield`, `bower`, `drift`, `pinned`), each ending on one commit with a clean tree; `run-codex.sh` wraps `codex exec --json` and records the porcelain diff, the event stream, and a delegation-event tally per run. The demotion rule requires re-running C3+C8 on every gate-text change, so the cost of a re-run is a design parameter, not an afterthought. `tools/` is the existing home for framework-repo tooling; `docs/conformance/` stays prose per the spec.
+- **`pinned` reconstructs a real pre-v0.33 project** from `git archive v0.32` — v0.32 `_bower/` + `.claude/`, no `.agents/`/`.codex/`, no `AGENTS.md`, `VERSION` at 0.32, `SOURCE` pointing at the local clone (no network), and a *grown* `CLAUDE.md` carrying three project code-standards bullets, so C5's judgement migration step has real content to move and lose.
+
+State: `docs/conformance/{README.md,c1-design.md…c8-batch-gate.md,runs.md}` + the two scripts. All five fixture kinds build; all four acceptance tests still green.
+
+**Runs executed (Codex, codex-cli 0.146.0, gpt-5.6-luna/medium, v0.33-pre @ `abcc2ff`):** install-discovery PASS (13 generated skills + 3 custom agents discovered by path), C3 core PASS-WITH-DEGRADATION, C3 pressure PASS, C1 PASS, C6 PASS-WITH-DEGRADATION, C7 (`workspace-write`) PASS. **Codex's experimental tier is earned** (clean install + C3 core). Two findings recorded in `runs.md`: the spike's S3 false-`Context: inline` caveat is **closed** (C1/C7 delegated with no marker, C6 fell back with one), and parent sandbox mode *may* gate delegation but is confounded with model and effort across the three observations, so no rule is claimable — C6 now specifies `workspace-write`.
+
+**Remaining (operator-interactive, cannot be scripted):** C2, C4, C5, C8, C7 under `danger-full-access`, and the Claude Code C1–C5 baseline — which subsumes M1's outstanding smoke test. None block M6: the experimental tier does not require them, and `runs.md` names them as not-run rather than implying coverage. C3's `cancel`-omission degradation was added to that scenario's tolerated list after the first run offered only confirm/adjust; the same shape offered all three on the pressure variant, so it is recorded as variance to watch, not a wording fix.
+
+<details><summary>Original M5 spec</summary>
 
 `docs/conformance/` (not scaffolded): `README.md` (how to run; tier rules below; demotion rule — any version changing gate/delegation text re-runs C3+C8 before repeating a tier claim), `c1-design.md` … `c8-batch-gate.md` (each: Setup / Steps incl. adversarial operator inputs / Pass criteria / Tolerated degradations), `runs.md` append-only ledger (runtime × runtime-version × framework-version × scenario → PASS / PASS-WITH-DEGRADATION / FAIL + evidence pointer).
 
@@ -112,13 +125,15 @@ C1 design (empty repo; analyst delegated-or-marked; Stage 0 stops pre-write) · 
 
 Tiers: **experimental** = clean scaffold install + C3 core once (Codex ships here at v0.33). **supported** = full green C1–C8 with every degradation named; any C3 silence FAIL blocks graduation. Claude Code runs C1–C5 as the regression baseline. Spike transcripts (`~/scratch/codex-spike/transcripts/`) are admissible evidence for the C6/C7 rows — don't re-spend on what S3/S5 already proved. **Note: C-runs cost real tokens on the operator's OpenRouter key at xhigh — batch them deliberately.**
 
+</details>
+
 ### ⬜ M6 — v0.33 docs + release
 
 - `_bower/changes.md`: terse v0.33 entry + Version index row (migration class **judgement**) + `### Migration`, self-contained, covering: (1) new dirs/files appear mechanically (`.agents/skills/b-*`, `.codex/agents/bower-*`, `.codex/config.toml` seed, `AGENTS.md` seed) — no action to stay Claude-only; (2) **judgement step**: ensure `AGENTS.md` exists with the router directive and project content (move grown CLAUDE.md body content there; CLAUDE.md becomes the two-line shim `@AGENTS.md` + `@_bower/framework.md`); operator eyeballs the result; (3) instruction bodies now runtime-neutral via Runtime bindings — delivered by the scaffold, no action; (4) Codex notes: trust prompt is a hard gate on first open ("nothing Bower ships is reachable until you accept"); after an upgrade under Codex, start a new session; `.agents/`/`.codex/` are sandbox-protected — upgrades hand you the scaffold command to run yourself; (5) `.codex/config.toml` is convenience defaults, seeded only-if-absent.
 - `_bower/rationale.md`: new section "One Contract, Two Runtimes" — conformance-not-translation; the gate contract (workflow owns the decision / adapter owns the interaction / permission ≠ acceptance); conversational batch gate; thin-pointer AGENTS.md citing the S10 3/3 verdict and the two-line shim asymmetry; named degradations and tiers.
 - `_bower/roadmap.md`: replace the beyond-Claude item with the residual (plugin distribution; further runtimes; Codex experimental→supported, trigger = green `docs/conformance/runs.md` rows); touch the context-optimisation cross-reference.
 - Version bump ×4 (`_bower/VERSION`, `framework.md` heading, `README.md` heading, changes.md heading) **+ viewer `SCHEMA_VERSION` → '0.33'** (release.sh requires equality even with no schema change). README gains a dual-runtime paragraph with "Codex: experimental".
-- Contributor `CLAUDE.md`: repository-layout tree (skills-src/, .agents/, .codex/, new templates, tools/adapter-test, tools/scaffold-test, docs/conformance/); replace "edit `.claude/commands/` directly" posture with "edit `skills-src/` only; run `node scripts/build-adapters.cjs`; commit sources + generated together"; template paragraph updated.
+- Contributor `CLAUDE.md`: repository-layout tree (skills-src/, .agents/, .codex/, new templates, tools/adapter-test, tools/scaffold-test, tools/conformance/, docs/conformance/) **and a conformance paragraph carrying the demotion rule** — a gate/delegation-text change re-runs C3+C8 before the tier claim is repeated, which is a contributor obligation and belongs alongside the viewer's schema-contract rule; replace "edit `.claude/commands/` directly" posture with "edit `skills-src/` only; run `node scripts/build-adapters.cjs`; commit sources + generated together"; template paragraph updated.
 - PR review artifact: the 43-site gate audit table (per original AskUserQuestion site: decision, choices preserved y/n, stop explicit already/added, single/batch) — walk the M1 diff.
 - `scripts/release.sh --dry-run`, merge, release.
 
