@@ -127,7 +127,19 @@ Tiers: **experimental** = clean scaffold install + C3 core once (Codex ships her
 
 </details>
 
-### ⬜ M6 — v0.33 docs + release
+### ✅ M6 — v0.33 docs + release (DONE except merge/release, uncommitted)
+
+Landed as specified below. State: v0.33 entry + index row + four-part `### Migration` in `_bower/changes.md`; *One Contract, Two Runtimes* in `rationale.md` (plus the two dual-runtime corrections in *AI-Readable Context* and *Always-Loaded Context*); the roadmap's beyond-Claude item replaced by two residual items (Codex graduation; plugin distribution + further runtimes) and the context-optimisation cross-reference re-pointed at the weakest-model floor; version bumped in all four label sites **plus** viewer `SCHEMA_VERSION` and the three viewer-test fixture `VERSION` files; README gains a *Two runtimes* section and dual-runtime getting-started/upgrading text; contributor `CLAUDE.md` gains *Skills are generated*, *Changing gate or delegation wording? Re-run the conformance scenarios* (carrying the demotion rule), a rewritten repository-layout tree and scaffold section, and the tooling-coupled version copies.
+
+The 43-site gate audit is `docs/gate-audit-v0.33.md` rather than a PR comment — 4 prohibitions and 39 gate sites, each with its decision, whether the choices survived verbatim, and where the stop came from (`binding` / `already` / `added`), plus the four verification greps. A file outlives the PR thread and is the thing a future demotion-rule re-run wants to diff against.
+
+`scripts/release.sh --dry-run` is **exit 0** with all four gates green, tag `v0.33`, title `v0.33 — 2026-08-05`, notes extracted correctly.
+
+One addition beyond the spec: a note in `docs/conformance/runs.md` recording that the v0.33-pre rows carry forward to the released version, because nothing between `abcc2ff` and the tag touches gate, delegation, or generator text — verified by `git diff abcc2ff..HEAD -- skills-src/ _bower/framework.md scripts/build-adapters.cjs .claude/ .agents/ .codex/`, which shows only the `framework.md` version heading. Without it the tier claim rests on rows whose framework-version column reads `v0.33-pre`, which an auditor would be right to question.
+
+**Remaining (operator):** commit, merge to `main`, push, run `scripts/release.sh`. Delete or archive this file and consider `docs/codex-support.md`'s status at that point. The M1 smoke test and the C1–C5 Claude Code baseline are still outstanding — neither blocks the release (the README and conformance ledger both say so), and both are now tracked as the roadmap's Codex-graduation item.
+
+<details><summary>Original M6 spec</summary>
 
 - `_bower/changes.md`: terse v0.33 entry + Version index row (migration class **judgement**) + `### Migration`, self-contained, covering: (1) new dirs/files appear mechanically (`.agents/skills/b-*`, `.codex/agents/bower-*`, `.codex/config.toml` seed, `AGENTS.md` seed) — no action to stay Claude-only; (2) **judgement step**: ensure `AGENTS.md` exists with the router directive and project content (move grown CLAUDE.md body content there; CLAUDE.md becomes the two-line shim `@AGENTS.md` + `@_bower/framework.md`); operator eyeballs the result; (3) instruction bodies now runtime-neutral via Runtime bindings — delivered by the scaffold, no action; (4) Codex notes: trust prompt is a hard gate on first open ("nothing Bower ships is reachable until you accept"); after an upgrade under Codex, start a new session; `.agents/`/`.codex/` are sandbox-protected — upgrades hand you the scaffold command to run yourself; (5) `.codex/config.toml` is convenience defaults, seeded only-if-absent.
 - `_bower/rationale.md`: new section "One Contract, Two Runtimes" — conformance-not-translation; the gate contract (workflow owns the decision / adapter owns the interaction / permission ≠ acceptance); conversational batch gate; thin-pointer AGENTS.md citing the S10 3/3 verdict and the two-line shim asymmetry; named degradations and tiers.
@@ -136,6 +148,8 @@ Tiers: **experimental** = clean scaffold install + C3 core once (Codex ships her
 - Contributor `CLAUDE.md`: repository-layout tree (skills-src/, .agents/, .codex/, new templates, tools/adapter-test, tools/scaffold-test, tools/conformance/, docs/conformance/) **and a conformance paragraph carrying the demotion rule** — a gate/delegation-text change re-runs C3+C8 before the tier claim is repeated, which is a contributor obligation and belongs alongside the viewer's schema-contract rule; replace "edit `.claude/commands/` directly" posture with "edit `skills-src/` only; run `node scripts/build-adapters.cjs`; commit sources + generated together"; template paragraph updated.
 - PR review artifact: the 43-site gate audit table (per original AskUserQuestion site: decision, choices preserved y/n, stop explicit already/added, single/batch) — walk the M1 diff.
 - `scripts/release.sh --dry-run`, merge, release.
+
+</details>
 
 ## Standing constraints
 

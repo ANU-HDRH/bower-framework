@@ -1,4 +1,4 @@
-# Bower Framework v0.32
+# Bower Framework v0.33
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -6,7 +6,7 @@ A lightweight AI-assisted development pattern for research software engineering.
 
 ## What is Bower?
 
-Bower is a set of files you drop into a project that uses [Claude Code](https://claude.com/claude-code). It installs nothing, runs no server, and needs no account beyond your existing Claude Code setup. What it adds is structure for planning, documenting and implementing software where an AI agent does much of the work:
+Bower is a set of files you drop into a project that uses [Claude Code](https://claude.com/claude-code) or [OpenAI Codex](https://developers.openai.com/codex). It installs nothing, runs no server, and needs no account beyond your existing agent setup. What it adds is structure for planning, documenting and implementing software where an AI agent does much of the work:
 
 - **Planning before building.** Design and document before implementing, with a confirmation gate before code.
 - **Living documentation.** Documents describe current state, not history; git is the change log.
@@ -15,7 +15,16 @@ Bower is a set of files you drop into a project that uses [Claude Code](https://
 - **Agent-efficient context.** One small always-loaded router; specs, schemas and ADRs are pulled in only when a command needs them, and ADRs are selected by facet rather than read wholesale.
 - **A project state viewer.** A zero-dependency local viewer renders the whole project and reports drift: forty-odd checks that compare documents against each other and against the files on disk.
 
-The pattern borrows planning discipline from [SpecKit](https://github.com/github/spec-kit) and living documentation from [OpenSpec](https://github.com/Fission-AI/OpenSpec), tuned for small research teams and the full prototype-to-infrastructure lifecycle. Claude Code is the only supported runtime today; adapters for other coding agents (including OpenAI Codex) are tracked on the roadmap.
+The pattern borrows planning discipline from [SpecKit](https://github.com/github/spec-kit) and living documentation from [OpenSpec](https://github.com/Fission-AI/OpenSpec), tuned for small research teams and the full prototype-to-infrastructure lifecycle.
+
+## Two runtimes
+
+From v0.33 the same workflows run on **Claude Code** and on **OpenAI Codex**, from one set of sources. Bower's contracts — a gate before every write, one home per fact, roles that only read — are behavioural, so they carry across; only the delivery differs, and the scaffold installs both footprints by default. Nothing about a Claude-only project changes: the extra directories are a few tens of KiB and are ignored by the runtime that doesn't use them.
+
+- **Claude Code — supported.** The reference runtime. `CLAUDE.md`, `.claude/commands/` for the `/b-*` skills, `.claude/agents/` for the three subagents. Gates are presented through `AskUserQuestion`, which blocks structurally.
+- **Codex — experimental.** `AGENTS.md`, `.agents/skills/b-*/SKILL.md` (the open Agent Skills standard, invoked with `$b-feature` or `/skills`), `.codex/agents/bower-*.toml` for the subagents. Gates are presented in the ordinary reply, ending the turn. Earned on a clean install plus the feature gate holding under pressure; graduation to *supported* needs the full scenario set green. One primitive is not supported: Codex's sandbox makes `.agents/` and `.codex/` read-only during normal work, so `/b-upgrade` hands you the scaffold command to run yourself rather than refreshing them in-session.
+
+What each runtime is claimed to do, the evidence behind the claim, and how it is re-tested live in [`docs/conformance/`](docs/conformance/).
 
 ## How it works
 
@@ -42,22 +51,24 @@ git clone https://github.com/anu-hdrh/bower-framework /tmp/bower
 rm -rf /tmp/bower
 ```
 
-This copies `_bower/` (the framework guidance; treat it as read-only) and `.claude/` (the `/b-*` commands and three subagents) into your project, and seeds a `CLAUDE.md` if you don’t already have one. An existing `CLAUDE.md` is left alone; the only line Bower needs in it is `@_bower/framework.md`. If you’d rather copy the files by hand, the script is short and readable; do what it does.
+This copies `_bower/` (the framework guidance; treat it as read-only) and the runtime adapters — `.claude/` for Claude Code, `.agents/skills/` and `.codex/agents/` for Codex — into your project. It seeds `AGENTS.md`, `CLAUDE.md` and `.codex/config.toml` only if they are absent, and never edits them again; an existing `AGENTS.md` or `CLAUDE.md` is left exactly as it is. The two lines Bower needs are `@AGENTS.md` and `@_bower/framework.md` in `CLAUDE.md`, and a directive in `AGENTS.md` telling the agent to read `_bower/framework.md` before any Bower work. It never touches `docs/`. If you’d rather copy the files by hand, the script is short and readable; do what it does.
 
 Then:
 
-1. **Tell Claude about your code standards.** Open `CLAUDE.md` and fill in the *Project-Specific Code Standards* section: language, formatter, test runner, anything you’d tell a new collaborator. Two or three bullets is enough to start. Claude Code reads this file automatically every session; the slash commands appear as soon as `.claude/commands/` exists.
+1. **Tell the agent about your code standards.** Open `AGENTS.md` and fill in the *Project-Specific Code Standards* section: language, formatter, test runner, anything you’d tell a new collaborator. Two or three bullets is enough to start. Both runtimes read it every session — Codex directly, Claude Code through the `@AGENTS.md` include.
 
 2. **Start a session and design:**
 
    ```bash
    cd your-project
-   claude
+   claude          # or: codex
    ```
 
    ```
    /b-design I want to build <one-sentence description>
    ```
+
+   On Codex the same skill is `$b-design` (or pick it from `/skills`), and the first thing it asks is whether you trust the repository — nothing Bower ships is reachable until you accept.
 
 After the first design pass, day-to-day work is `/b-feature` (or `/b-module` for a whole module), with `/b-recap` to find your feet when you come back to the project later.
 
@@ -141,7 +152,9 @@ Bower doesn’t prescribe a test runner, directory layout or coverage bar; those
 
 ## Upgrading
 
-`/b-upgrade` moves a project to the current framework version. It refuses to run on a dirty git tree (so `git reset --hard` is always a clean escape), refreshes `_bower/` and `.claude/`, then walks each intermediate version’s migration notes from `_bower/changes.md` one version at a time, with a gate before applying each, and finishes with a candid self-assessment.
+`/b-upgrade` moves a project to the current framework version. It refuses to run on a dirty git tree (so `git reset --hard` is always a clean escape), refreshes `_bower/` and the runtime adapters, then walks each intermediate version’s migration notes from `_bower/changes.md` one version at a time, with a gate before applying each, and finishes with a candid self-assessment.
+
+Under Codex the refresh step is yours to run: `.agents/` and `.codex/` are read-only inside its sandbox, and a partial write there would leave the two adapter trees on different framework versions. So the command probes first, hands you the exact scaffold command, and stops rather than reporting an upgrade it could not finish. Start a new session afterwards — instruction files are read once per session.
 
 It clones from the URL in `_bower/SOURCE`, so forks just work: scaffold from your fork and upgrades pull from your fork; edit `SOURCE` to retarget an existing project. Upgrades track the tip of `main` in whatever repo `SOURCE` names.
 

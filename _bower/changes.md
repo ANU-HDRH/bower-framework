@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.33 | 2026-08-05 | The same workflows run on Claude Code and on OpenAI Codex, generated from one set of sources; `AGENTS.md` becomes the project instruction file and `CLAUDE.md` a two-line shim | judgement |
 | v0.32 | 2026-07-31 | A routed review finding carries the reviewer's evidence into the session that discharges it, and is discharged by the code rather than by a command having run | judgement |
 | v0.31 | 2026-07-31 | Open-review findings become readable in the viewer; review contracts and release guards are aligned around the same lifecycle | none |
 | v0.30 | 2026-07-30 | A stored `Next move:` is feature-scoped and dies at ✓, where `status.md` compresses to a terminal form carrying `## Verification`; the project-scoped next move is printed and derived, never stored | mechanical |
@@ -27,6 +28,83 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
 
 ---
+
+## v0.33 — 2026-08-05
+
+### One contract, two runtimes
+
+Bower's workflows now run on **OpenAI Codex** as well as Claude Code, from one set of sources. The instruction bodies were neutralised: a workflow states the idiom — operator gate, batch gate, delegate, the request, handoff spelling — and `_bower/framework.md`'s new `## Runtime bindings` section supplies the mechanics for the runtime in use, in one place. Decision content at every gate is unchanged; what was implicit in `AskUserQuestion` (present the choices, stop, refuse a non-answer) is now written down. Codex ships as **experimental**; agent-managed refresh of `.agents/`/`.codex/` is a named unsupported primitive. Reasoning in `_bower/rationale.md`, *One Contract, Two Runtimes*.
+
+- **`_bower/framework.md`** — new `## Runtime bindings`: operator gates, batch gates, delegation and its inline fallback, the request, handoff spelling, sessions, and permission-is-not-acceptance. The only place in the framework where a tool name may appear.
+- **All 13 commands and 3 agents** — gate, delegation and argument idioms neutralised; `/b-design`, `/b-analysis` and `/b-review` gained the inline delegation fallback they lacked.
+- **`.claude/commands/b-upgrade.md`** — Step 5 probes for protected paths first and hands the operator the scaffold command rather than attempting a run that would half-succeed; Step 7 tells the operator to start a new session.
+- **`_bower/brief-schema.md`, `_bower/review-schema.md`** — the optional `Context: inline` header, written by the caller on the fallback path only.
+- **`_bower/rationale.md`, `_bower/roadmap.md`** — the reasoning; the roadmap item replaced by what remains (Codex graduation, plugin distribution, further runtimes).
+
+### `skills-src/` is canonical; the adapters are generated
+
+Editing thirteen commands in four places was never going to hold. `skills-src/` holds one body per command and agent; `scripts/build-adapters.cjs` emits the four trees and they are checked in. Transformations are mechanical — frontmatter, argument binding, TOML escaping — never prose. Lints fail the build on a runtime tool name, a literal `$ARGUMENTS`, or a `name:` that disagrees with its directory. This is framework-repo structure: projects receive generated files exactly as before.
+
+- **`skills-src/`** (new, not scaffolded) — 16 canonical sources; **`scripts/build-adapters.cjs`** (new) — `--check` byte-compares and is a release gate.
+- **`.agents/skills/b-*/SKILL.md`, `.codex/agents/bower-*.toml`** (new, generated) — the Codex adapter trees, alongside the existing `.claude/` ones.
+- **`tools/adapter-test/`, `scripts/release.sh`** — golden comparison and TOML round-trip; the release now gates on adapter drift and both new acceptance tests.
+
+### `AGENTS.md` is the project instruction file
+
+Codex has no include mechanism, so the router cannot be `@`-included into it. A thin `AGENTS.md` — project content plus a one-line directive to read `_bower/framework.md` before any Bower work — was measured against three fresh sessions on the weakest supported model and carried all three, so it ships in preference to a scaffold-managed inline copy of the router. `CLAUDE.md` becomes a two-line shim so Claude Code keeps loading the router by include rather than by compliance.
+
+- **`_bower/project-AGENTS.md`, `_bower/project-codex-config.toml`** (new templates) and **`_bower/project-CLAUDE.md`** (now `@AGENTS.md` + `@_bower/framework.md`) — all seeded only if absent, never edited again.
+- **`scripts/scaffold.sh`, `scripts/scaffold.ps1`** — preflight writability check that aborts with zero writes before touching anything; namespace-scoped replace-and-prune of `b-*` and `bower-*` in the adapter trees, leaving a project's own skills alone; new seeds and summary lines.
+- **`tools/scaffold-test/`** (new) — fresh seed, idempotence, grown instruction files untouched, user skill survives a prune, read-only target aborts clean.
+
+### Support tiers are claims with evidence attached
+
+`docs/conformance/` (framework-repo only) holds eight behavioural scenarios, written pass criteria, and an append-only ledger. A tier states what has been demonstrated: Claude Code *supported*, Codex *experimental* on a clean install plus the feature gate holding under an explicit trust waiver. Degradations are named and scored, never slid past. The demotion rule binds contributors: a version that edits gate or delegation wording re-runs the gate and batch-gate scenarios before repeating a tier claim.
+
+- **`docs/conformance/`** — `README.md` (tiers, demotion rule, cost), `c1`–`c8` scenario specs, `runs.md` ledger; **`tools/conformance/`** — fixture builder (5 kinds) and a `codex exec` harness.
+- **`README.md`, `CLAUDE.md`** — the two-runtime summary for readers; the contributor rules for generated adapters and conformance.
+
+### Migration
+
+This version changes how instructions are *delivered*, not what any document looks like. No `docs/` schema changed.
+
+**Part 1 — already done by the scaffold, no action.** By the time you read this the scaffold has run. It added `.agents/skills/b-*/SKILL.md` (13 skills) and `.codex/agents/bower-*.toml` (3 agents), seeded `.codex/config.toml` and — only if the project had none — `AGENTS.md`, and refreshed `_bower/` and `.claude/`. Commit all of it; the adapters are meant to be checked in. If the project keeps its own skills in `.agents/skills/`, they were not touched: the scaffold only replaces and prunes the `b-*` and `bower-*` namespaces. Claude Code behaviour is unchanged — the commands say the same things in runtime-neutral wording.
+
+**Part 2 — the judgement step: one home for project instructions.** Read the project's `CLAUDE.md` and `AGENTS.md` before deciding anything, and check the scaffold's summary line for `AGENTS.md` (it says `seeded` or `left alone`). The goal state is: **`AGENTS.md` carries the project's own instructions plus the router directive, and `CLAUDE.md` is exactly two lines.** Project content must end up in exactly one of the two files, never both.
+
+The two lines `CLAUDE.md` must end with:
+
+```
+@AGENTS.md
+@_bower/framework.md
+```
+
+The second line is not redundant. Claude Code loads the router by include; Codex reaches it by following the directive in `AGENTS.md`. Removing either weakens one runtime.
+
+The router directive, to be present in `AGENTS.md` verbatim as its own paragraph near the top:
+
+```
+**Before any Bower work — any `/b-*` or `$b-*` skill, any question about project state, any change to `docs/` — read `_bower/framework.md` in full.** It is the router for how this project is designed, documented, and changed; acting without it produces non-conformant work.
+```
+
+Then work the case that matches:
+
+- **`CLAUDE.md` is still the untouched v0.32 template** (an `@_bower/framework.md` line and an empty `## Project-Specific Code Standards` heading), `AGENTS.md` freshly seeded. Mechanical: overwrite `CLAUDE.md` with the two lines. Nothing is lost.
+- **`CLAUDE.md` has grown project content**, `AGENTS.md` freshly seeded. Judgement. Move the project's own material — code standards, conventions, commands, anything the project wrote — into `AGENTS.md` under its `## Project-Specific Code Standards` heading, **verbatim**: copy the wording, do not summarise, do not reorder, do not "improve" it. Do not move the `@_bower/framework.md` include line or any other framework boilerplate; that is not project content. Then overwrite `CLAUDE.md` with the two lines. Show the operator the exact split — what moves, what is dropped as boilerplate — at the gate, before writing either file.
+- **`AGENTS.md` already existed** (the scaffold left it alone). Never overwrite it. Add the router directive paragraph near the top, after any title heading, keeping everything else as it is. Then handle `CLAUDE.md` as above — and if `CLAUDE.md` and `AGENTS.md` now say the same thing in two places, keep the `AGENTS.md` copy and delete the duplicate from `CLAUDE.md`. Two homes for one instruction is the drift this framework forbids everywhere else.
+- **`CLAUDE.md` carries genuinely Claude-specific material** that would be wrong for another runtime (tool names, Claude Code settings guidance). Rare. Leave that material in `CLAUDE.md` *below* the two include lines and put everything runtime-neutral in `AGENTS.md`. Name the split explicitly at the gate; it is a judgement call the operator should agree to.
+
+After writing, read `CLAUDE.md` back and confirm it contains both include lines, and read `AGENTS.md` back and confirm the directive is present and the project's content survived. Report in the Step 7 self-assessment which case applied and what was moved.
+
+**Part 3 — Codex notes, no file edits.** Report these once in the final summary; they are operator knowledge, not work:
+
+- **Trust is a hard gate.** Codex asks you to trust the repository when you first open it. Nothing Bower ships — skills, custom agents, project config — is reachable until you accept, and declining exits Codex; there is no partial mode.
+- **Start a new session after an upgrade.** Instruction files are read once per run. If this upgrade ran under Codex, do not do further Bower work in this session.
+- **`.agents/` and `.codex/` are read-only inside Codex's default sandbox**, and a write there fails outright rather than prompting for approval. That is why `/b-upgrade` probes first and hands you the scaffold command to run yourself. It is a named unsupported primitive, not a bug to route around.
+- **`.codex/config.toml` is convenience, not enforcement.** Seeded only if absent, project-owned thereafter, and it sets `sandbox_mode = "workspace-write"`. Loosening the sandbox does not loosen a Bower gate, and tightening it does not create one — gates are semantic and live in the skill instructions.
+- **Codex is experimental at v0.33.** Invocation, implicit routing, `/b-*` handoff lines, delegation to the TOML-defined agents, and read-only roles are all supported and evidenced. If a gate is skipped or a role writes when it should not, that is a reportable defect against this version.
+
+**Part 4 — nothing else.** No document schema changed, so `docs/` needs no edits, the viewer parses the same shapes, and a project that only ever uses Claude Code needs nothing beyond Part 2.
 
 ## v0.32 — 2026-07-31
 

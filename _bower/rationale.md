@@ -65,7 +65,7 @@ The middle option — keeping the list but marking it illustrative — is the wo
 ### AI-Readable Context
 
 The documentation structure is designed for discoverability:
-- `CLAUDE.md` loads automatically and provides navigation pointers
+- The project instruction file (`AGENTS.md`, reached by Claude Code through `CLAUDE.md`'s include) loads automatically and points at the router
 - `docs/index.md` gives the full project map with status at a glance
 - `plan.md` files contain source locations, eliminating search
 - Status markers are machine-parseable
@@ -200,11 +200,11 @@ Research software engineering has specific characteristics that neither SpecKit 
 
 ## This Implementation
 
-Bower v2 implements these principles through Claude Code's native capabilities:
+Bower implements these principles through the native capabilities of the runtimes it supports — Claude Code and, from v0.33, OpenAI Codex (see *One Contract, Two Runtimes*):
 
-### Always-Loaded Context (CLAUDE.md)
+### Always-Loaded Context
 
-The reference layer — principles, file layout, status markers, and update rules — lives in `CLAUDE.md` which Claude Code loads automatically into every conversation. This means the agent always knows how the project is structured and what conventions to follow, without being told.
+The reference layer — principles, file layout, status markers, and update rules — lives in `_bower/framework.md`, and every session reaches it from the project instruction file the runtime loads automatically. Codex reads `AGENTS.md`, which carries a directive to read the router in full; Claude Code reads `CLAUDE.md`, a two-line shim that `@`-includes both `AGENTS.md` and the router itself. Either way the agent knows how the project is structured and what conventions to follow without being told.
 
 ### Slash Commands for Workflow
 
@@ -273,6 +273,22 @@ The v0.26 features-roster change demonstrated this at full scale. The roster mov
 The lesson generalises past this one tool: **a mechanical check that fires on every candidate is evidence about the check, not about the subject.** So the viewer carries a tripwire that says so — any check matching 100% of its population emits a finding against the viewer itself, naming the check and suggesting it be verified against the current framework version. It is cheap, it needs no maintenance, and it is the only mechanism in the stack that works when everything else has been forgotten.
 
 The rest of the stack is ordered by teeth, on the theory that guidance alone already failed once: a contributor rule in `CLAUDE.md` (intent), a schema-contract table naming each defining section verbatim so it is greppable (discovery), fixtures asserting an *exact* set of finding kinds so a check firing on conformant documents fails the run (detection), and `scripts/release.sh` gating on that test (enforcement). The fixtures matter for a non-obvious reason: a healthy real project cannot test a drift check, because it has no drift to find. The reference project reported zero errors, meaning every error-severity check was unexercised. Test data has to *contain* the conditions; real data proves the parser survives reality. Neither substitutes for the other, and the framework asks for both.
+
+### One Contract, Two Runtimes
+
+There are two ways to put Bower on a second coding agent. The obvious one is translation: copy `.claude/commands/`, rewrite the paths and the tool names, ship it. That yields a working install and an unearned claim — that the two deliveries do the same thing — because nothing has checked the only property that matters. What Bower promises is behavioural: a gate stops before a write, a read-only role leaves the tree untouched, a handoff line routes to the skill it names. So a second runtime is a **conformance** problem, not a filename problem: one set of canonical sources, mechanically generated adapters, a scenario suite that scores the behaviour on each runtime, and tiers that state what has been demonstrated rather than what is hoped.
+
+**The workflow owns the decision; the adapter owns the interaction.** That is where the seam falls, and it falls there because the two halves have different stability. *What* is being decided, what the operator must see to decide it, which choices exist and what counts as an answer are properties of the individual workflow — they differ at every gate, and pushing them into the binding would duplicate them forty-odd times. *Which mechanism asks* is a property of the runtime and belongs in exactly one place: `framework.md`'s *Runtime bindings*. Neutralising the instruction bodies was therefore an audit rather than a search-and-replace: at each site the decision and its choices had to survive intact, and the stop had to be written down where the tool had previously implied it. `AskUserQuestion` blocks structurally, so a Claude-only body could leave "and wait" unsaid; a chat binding cannot.
+
+The same seam forces a distinction the runtimes make easy to blur: **permission is not acceptance.** Approving a command execution or a sandbox escalation is mechanical; accepting a proposal is a content decision. A workflow that reads an approval as acceptance has skipped its gate while appearing to honour it, which is why an approval-only reply is one of the non-answers the conformance suite requires a gate to refuse.
+
+**The batch gate is where a chat binding is easiest to fake.** One decision maps to a chat turn cleanly. A disposition *per finding* does not: the tempting shape is to print all nine and ask "which of these?", which scrolls off the screen, invites commentary instead of dispositions, and returns partial answers the workflow then has to guess at. So the Codex binding is specified conversationally — groups of at most four, an explicit disposition per item, a running tally, and a full restatement confirmed before anything is written. Where the medium supplies no structure, the instruction has to.
+
+**The router is the one file that cannot be skipped, and it is delivered by a pointer.** Claude Code has `@`-includes; Codex has no include mechanism at all, only `AGENTS.md` files concatenated down the directory chain. The safe-looking answer was to inline `framework.md` into `AGENTS.md` behind scaffold-managed markers: guaranteed loading, paid for with a generated copy of the framework's most-read file in every project, marker machinery, and a budget against Codex's 32 KiB instruction cap. The cheap answer was one directive — *read `_bower/framework.md` before any Bower work* — which converts a guarantee into model compliance. That is not a trade to make on assumption, so it was measured before it was chosen: three fresh sessions on the weakest supported model, all three read the router and oriented correctly, against a bar set at 3/3 in advance. The pointer ships. The asymmetry that follows is deliberate rather than untidy: `CLAUDE.md` is two lines, `@AGENTS.md` *and* `@_bower/framework.md`, so Claude Code keeps the stronger mechanism it already had instead of degrading to the weaker one for symmetry's sake.
+
+**Where a primitive is missing, name it.** Codex's default sandbox makes an existing `.agents/` or `.codex/` recursively read-only, and a write there does not raise an approval prompt — it fails hard. The failure is worse than a refusal would be, because by then the unprotected half of the scaffold has been written, leaving the two adapter trees on different framework versions. Three consequences, all of them explicit: the scaffold preflights every managed target for writability and aborts before mutating anything; `/b-upgrade` under Codex hands the operator the exact command instead of attempting the refresh; and agent-managed adapter refresh is written into the tier statement as an unsupported primitive. Degradation inside a run is declared the same way — a role run inline because delegation was unavailable says so and stamps `Context: inline` on its artifact, so `/b-review`'s adversarial-freshness claim stays true or is visibly qualified. A degradation the workflow slides past silently is scored as a failure, not a near-miss.
+
+**A tier is a claim with its evidence attached.** *Experimental* is a clean install plus the feature gate holding once under adversarial non-answers; *supported* is the full scenario set green with every degradation named, and a gate-refusal failure blocks graduation outright — that one contract is not allowed to degrade. Claude Code is the reference runtime and Codex enters at experimental. The rule that keeps this honest over time is the demotion rule: a version that edits gate or delegation wording must re-run those two scenarios before repeating a tier claim, because in exactly those two the wording *is* the mechanism. It is the same posture as the viewer's schema tripwire — the framework assumes it will forget, and puts the reminder where the forgetting happens.
 
 ## Credit
 

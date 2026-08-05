@@ -33,6 +33,8 @@ Not run at this version: **C2**, **C4**, **C5**, **C8** — all four need an ope
 
 Runtime: **Claude Code** — no rows at this version. The C1–C5 regression baseline is an operator session run; `AskUserQuestion` cannot fire headlessly, so there is no scripted equivalent.
 
+**These rows carry forward to the released v0.33.** They were run at `abcc2ff`, before the version bump. Everything committed between that point and the v0.33 tag is documentation, conformance material, and version strings: no skill body, no agent definition, no `## Runtime bindings` text, and no generator transformation changed. The demotion rule is therefore not triggered and the rows stand as written. Anyone auditing this can check it directly — `git diff abcc2ff..v0.33 -- skills-src/ _bower/framework.md scripts/build-adapters.cjs` is the exact question, and it should show only the `framework.md` version heading.
+
 ---
 
 ## M0 spike — pre-suite evidence, admitted by citation
