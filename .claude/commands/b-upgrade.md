@@ -3,12 +3,12 @@
 You are running the Bower framework upgrade workflow in a **project** (not in the framework repo itself). This command:
 
 1. Clones the Bower framework repo into a temp directory.
-2. Runs its `scripts/scaffold.sh` (or `scaffold.ps1`) against this project to refresh `_bower/` and `.claude/`.
+2. Runs its `scripts/scaffold.sh` (or `scaffold.ps1`) against this project to refresh the framework footprint: `_bower/`, `.claude/agents` + `.claude/commands`, `.agents/skills/b-*`, and `.codex/agents/bower-*`.
 3. Walks each intermediate version's migration notes in order, applying them step-by-step and bumping `_bower/VERSION` after each.
 
 Artifacts jump to the latest framework version in one scaffold pass; only `VERSION` moves step-by-step as migrations apply. This is intentional — see `_bower/changes.md` for the per-version migration notes that drive each step.
 
-The user's optional argument: $ARGUMENTS
+The request (the user's optional argument): $ARGUMENTS
 
 ## Important Behavioural Rules
 
@@ -21,8 +21,8 @@ The user's optional argument: $ARGUMENTS
 ## Step 1: Preconditions
 
 1. Run `git status --porcelain`. If the output is non-empty, stop. Tell the user the upgrade requires a clean working tree (so `git reset --hard` remains a valid escape) and recommend `git stash` or a commit. Do not proceed.
-2. Read `_bower/VERSION` from the project. If the file is missing, the project predates the VERSION convention — use AskUserQuestion to ask the user what version their project is currently on (offer the versions from the heading lists you gather in Step 3 — those cover both the current-era changelog and the archive). Stop and wait for their answer before proceeding.
-3. Read `_bower/SOURCE` from the project for the framework repo URL. If missing, use AskUserQuestion to ask the user for the framework repo URL (default suggestion: `https://github.com/ANU-HDRH/bower-framework.git`).
+2. Read `_bower/VERSION` from the project. If the file is missing, the project predates the VERSION convention — ask the user at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) what version their project is currently on (offer the versions from the heading lists you gather in Step 3 — those cover both the current-era changelog and the archive). Stop and wait for their answer before proceeding.
+3. Read `_bower/SOURCE` from the project for the framework repo URL. If missing, ask the user at an operator gate for the framework repo URL (default suggestion: `https://github.com/ANU-HDRH/bower-framework.git`).
 
 ## Step 2: Clone the framework
 
@@ -55,7 +55,7 @@ If the clone fails (network, auth, bad URL), surface the error to the user and s
 
 ## Step 4: Decide commit cadence (only if multi-step)
 
-If the step list contains more than one version, use AskUserQuestion to ask:
+If the step list contains more than one version, ask at an operator gate:
 
 > The upgrade spans N version steps (v0.X → v0.Y → ...). Commit between each step, or do all steps and commit at the end?
 
@@ -67,7 +67,25 @@ If the list is a single step, skip this question — the user can commit when th
 
 ## Step 5: Run the scaffold script
 
-Run the scaffold from the clone against the project's working directory:
+### 5a. Check whether this runtime can run the scaffold at all
+
+The scaffold writes into `.agents/` and `.codex/`, which some runtimes protect from workspace writes (Codex's `workspace-write` sandbox mounts both read-only, with no approval prompt — the write simply fails). Decide the path **before invoking the scaffold**: never run it in-sandbox hoping to recover, because a partial run refreshes `_bower/` and `.claude/` and then dies at the protected trees, leaving the runtime adapters on different framework versions.
+
+Probe first: `touch .agents/.bower-write-probe && rm .agents/.bower-write-probe` (and the same for `.codex/`). Both succeed → Step 5c. Either fails →
+
+### 5b. Protected paths: hand the scaffold to the operator
+
+If the runtime offers a way to request escalated execution for a single command, you may request it for the exact scaffold command — a runtime permission request, which the operator may freely deny. If no escalation path exists, or it is denied, do **not** attempt any part of the scaffold. Print the exact command for the operator to run themselves in a terminal outside this runtime's sandbox:
+
+```
+bash <clone>/scripts/scaffold.sh <project-root>
+```
+
+(On Windows: `powershell -File <clone>\scripts\scaffold.ps1 <project-root>`.)
+
+Tell them the clone must stay in place until this is done, wait for their confirmation that the scaffold ran (an operator gate — their explicit word, not an assumption), and verify by checking that a file the new version ships has actually changed before continuing to Step 6. If they decline to run it, abort the upgrade honestly: no migration has been applied, `_bower/VERSION` is untouched, and the clone path is reported for manual cleanup. Never report a partial upgrade as complete.
+
+### 5c. Run the scaffold
 
 ```
 bash <clone>/scripts/scaffold.sh <project-root>
@@ -75,9 +93,9 @@ bash <clone>/scripts/scaffold.sh <project-root>
 
 (On Windows, run `scaffold.ps1` instead.)
 
-This refreshes `_bower/` (except `VERSION` and `SOURCE`, which the scaffold preserves) and `.claude/agents`/`.claude/commands`. It also prunes any `_bower/` files the framework no longer ships, printing a `removed (retired upstream)` line for each — note these for the Step 7 summary; they need no other action. The project's `_bower/VERSION` is still at the *old* value at this point — that's intentional. You own VERSION writes from here on.
+This refreshes `_bower/` (except `VERSION` and `SOURCE`, which the scaffold preserves) and the runtime command/agent surfaces (`.claude/agents`, `.claude/commands`, `.agents/skills/b-*`, `.codex/agents/bower-*`). It also prunes any framework files the framework no longer ships, printing a `removed (retired upstream)` line for each — note these for the Step 7 summary; they need no other action. The project's `_bower/VERSION` is still at the *old* value at this point — that's intentional. You own VERSION writes from here on.
 
-**Note:** The scaffold just rewrote `.claude/commands/b-upgrade.md` (this skill). The new version takes effect on the next `/b-upgrade` invocation; this run continues with the instructions already in your context.
+**Note:** The scaffold just rewrote this workflow's own definition (`.claude/commands/b-upgrade.md` and `.agents/skills/b-upgrade/SKILL.md`). The new version takes effect on the next `/b-upgrade` invocation; this run continues with the instructions already in your context.
 
 ## Step 6: Walk migration steps
 
@@ -104,7 +122,7 @@ Read any project files the migration notes reference (e.g. `docs/architecture.md
 
 ### 6c. Gate
 
-Present the plan via AskUserQuestion. Frame as: "Here's the plan for migration v<X.Y>. Confirm to apply, or tell me what to adjust."
+Present the plan at an operator gate. Frame as: "Here's the plan for migration v<X.Y>. Confirm to apply, or tell me what to adjust."
 
 Options:
 - **Apply this plan** — proceed to execution.
@@ -151,6 +169,9 @@ Self-assessment:
 Next move:
   - If everything looks right: commit (if you chose end-of-run commits) and continue your work.
   - If something looks wrong: `git reset --hard <baseline-ref>` to undo, then investigate.
+  - Start a new session before further Bower work — this upgrade rewrote instruction
+    and skill files, and a running session must not be assumed to have reloaded them
+    (binding: _bower/framework.md → Runtime bindings → Sessions).
 ```
 
 <critical_constraints>
@@ -160,8 +181,11 @@ Next move:
 - Do not read more than one version's migration notes into a single plan — walk them strictly in order
 - Do not edit files in the cloned framework repo — it is read-only reference; edit the project only
 - Do not auto-commit if the user chose "commit at the end" or didn't see Step 4's question
-- Do not silently skip a step whose migration notes are non-trivial — if you can't interpret them, ask via AskUserQuestion rather than guessing
+- Do not silently skip a step whose migration notes are non-trivial — if you can't interpret them, ask at an operator gate rather than guessing
 - Do not bump VERSION before applying the step's migrations — the bump signals the migration landed
+- Do not run the scaffold in-sandbox when the runtime protects `.agents/` or `.codex/` — a partial run leaves the runtime adapters on different framework versions; probe first (Step 5a) and hand the command to the operator (Step 5b)
+- Do not report a partial or operator-declined upgrade as complete — if the scaffold did not run, no migration happened and VERSION is untouched
+- Do not claim the running session has reloaded the files this upgrade rewrote — hand off to a new session for further Bower work
 - Do not leave the temp clone directory behind
 - Do not claim a clean migration if any part required substantial judgement — the self-assessment is for the user to decide whether to `git reset`, and an over-confident assessment defeats the safety mechanism
 - Do not emit free-prose next moves — use literal shell/slash commands in the handoff

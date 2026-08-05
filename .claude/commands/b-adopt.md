@@ -4,7 +4,7 @@ You are running Bower **brownfield adoption** in a project that has an existing 
 
 This is the cold-start path for a codebase Bower has never touched. It is **not** `/b-upgrade` (which refreshes an already-adopted project across framework versions) and **not** `/b-design` (which frames a *new* project from intent, forward). Adoption runs backward: it infers framing from artefacts.
 
-The user's optional argument: $ARGUMENTS
+The request (the user's optional argument): $ARGUMENTS
 
 ## The governing idea
 
@@ -20,7 +20,7 @@ Do **not** manufacture ADRs during adoption. An ADR asserts a captured decision;
 - **Writes are confined to `docs/` and index — and never clobber.** This command never touches source code, tests, build files, or anything outside the documentation footprint (their code is not at risk — say so up front). Within `docs/`, it never silently overwrites a pre-existing file: every write target is stat'd in Phase 0 and resolved at a gate by its collision class (Phase 0 step 3) — required anchors preserve only when already schema-compatible, narrative/human-owned docs default to preserve, and `docs/index.md` is always an in-place update. "Creates" is only true for paths that were empty.
 - **Never guess intent.** When a choice looks cross-cutting but its rationale is unknown, the honest record is "observed; intent unknown" in the ledger — not an inferred ADR and not a confident architecture claim.
 - **Hedge inferred framing; the banner carries the caveat.** The orienting docs stay in normal Bower shape (no per-claim provenance tags — that would tax the docs forever for a phase that ends). The adoption banner in `docs/index.md` is the single global signal that these docs were reconstructed and are provisional.
-- **Gate every content group.** Like `/b-design`, present drafted content via AskUserQuestion before writing. The user is the intent oracle; the gates are where you consult them.
+- **Gate every content group.** Like `/b-design`, present drafted content at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) before writing. The user is the intent oracle; the gates are where you consult them.
 - **Elicit lazily.** Query the user up front only for what the *top-level framing* needs to be coherent (problem space, scope boundary, module boundaries). Detail-level intent is deferred to the ledger and drained later — do not interrogate them about the whole codebase.
 - **Recommend, don't dictate.** Mark one option `(recommended)` with a brief rationale; the user chooses.
 - **Literal-command handoff.** The closing handoff names exact slash commands, never free prose.
@@ -28,7 +28,7 @@ Do **not** manufacture ADRs during adoption. An ADR asserts a captured decision;
 ## Phase 0: Preconditions
 
 1. **Not already adopted.** If `docs/scope.md` **and** `docs/architecture.md` already exist in Bower shape, this project is already designed with Bower. Stop and redirect: `/b-feature` for a change, `/b-upgrade` to move framework versions. Do not overwrite an existing design.
-2. **Framework files present.** `_bower/` and `.claude/` should already be scaffolded (that is how this command reached the project). If `_bower/framework.md` is absent, tell the user to run the scaffold script first, and stop.
+2. **Framework files present.** `_bower/` and the runtime's command/agent files should already be scaffolded (that is how this command reached the project). If `_bower/framework.md` is absent, tell the user to run the scaffold script first, and stop.
 3. **Collision scan — before writing anything.** A brownfield repo may already carry hand-written docs at the paths adoption wants to produce. Passing the "already adopted" check in step 1 does **not** mean these paths are clear — a repo can have a hand-written `architecture.md`, a `constitution.md`, or a `README`-style design note without having both Bower anchors. Adoption must **never silently overwrite a pre-existing file.** Stat every write target up front and classify each into one of three collision classes, because "preserve" does not mean the same thing for all of them:
 
    **(a) Required Bower anchors — `docs/scope.md`, `docs/architecture.md`, and each `docs/modules/<module>/module-status.md`.** These have a required shape that downstream commands depend on (`architecture.md` needs both a runtime view *and* a `## Software architecture` section; `scope.md` needs scope / non-goals / success-criteria, the criteria carrying `Delivered by:` module clauses and no status field; `module-status.md` needs `## Module integration` + `## Build order` + `## Module review`). On collision, offer **preserve _only if the existing file is already schema-compatible_** (it already carries the required shape — e.g. the project was partly hand-set-up). If it is **not** schema-compatible (a non-Bower file that merely occupies the path), do **not** offer preserve: the choices are **merge** (fold the required shape in around the existing content, shown for confirmation) or **abort**. Adoption may not report completion with a required anchor lacking its shape — a preserved non-Bower `architecture.md` would leave `/b-feature`, `/b-recap`, etc. without the structure they read.
@@ -42,7 +42,7 @@ Do **not** manufacture ADRs during adoption. An ADR asserts a captured decision;
 
 ## Phase 1: Survey (delegated)
 
-The repo survey is large and read-only — exactly the shape that belongs in an isolated context. **Spawn a read-only survey subagent** (Agent tool, `subagent_type: "general-purpose"`, or `Explore` for a lighter pass) and have it return a **structured inventory**, so the heavy reading does not accumulate in this command's context. If the Agent tool is unavailable, do the survey inline and say so.
+The repo survey is large and read-only — exactly the shape that belongs in an isolated context. **Delegate the survey to a read-only general-purpose subagent** if the runtime offers one (binding: `_bower/framework.md` → *Runtime bindings*) and have it return a **structured inventory**, so the heavy reading does not accumulate in this command's context. If the runtime cannot delegate, do the survey inline and say so in one line.
 
 The survey subagent's brief:
 
@@ -63,7 +63,7 @@ Git history *can* carry decision rationale — but reading diffs/code-along-the-
    - consistent conventional-commit prefixes (`feat:`/`fix:`/`docs:`)
    - structured multi-line bodies with rationale prose vs. terse one-liners (`wip`, `fix stuff`)
 2. **Decide and offer.**
-   - **Signal-rich** → offer the full message-only pass via AskUserQuestion, with an honest cost estimate ("~N commits, messages only, roughly M tokens") and what it buys (decision-shaped commit bodies feeding ledger attribution and architecture notes). Still message-only — the rationale in an agent commit lives in the message, not the diff.
+   - **Signal-rich** → offer the full message-only pass at an operator gate, with an honest cost estimate ("~N commits, messages only, roughly M tokens") and what it buys (decision-shaped commit bodies feeding ledger attribution and architecture notes). Still message-only — the rationale in an agent commit lives in the message, not the diff.
    - **Signal-poor** → skip and say so: "History reads as terse human commits — low yield, skipping the git pass." Do not spend on it.
 3. **Where recovered rationale goes.** If the pass runs, some candidate ledger items become *provisionally attributable* — a commit body appears to explain the *why*. Attribution is what can keep a choice **off** the ledger (the ledger is the *un*attributed set), but it is only ever a **proposal until the operator accepts it** at the Phase 3 architecture gate: a commit body can be stale, superseded, or describe a different past state than the code's current one. So a git find does not remove the item now — it is carried into Phase 3 as a *pending* attribution and presented for confirmation. An attributed choice must also not silently vanish: unlike a *dismiss*, a git find carries real recovered information worth keeping. On the operator's decision at the gate:
    - **Accept** — the citation explains the current choice. Retain the rationale in the doc where that kind of rationale lives — almost always `docs/architecture.md` prose (a structural choice or constraint), occasionally `docs/scope.md` — as an *observed, cited* note that names the commit (e.g. `(commit a1b2c3d)`) so its provenance is visible. The item is now attributed and does not enter the ledger. (This is not the per-claim provenance tagging the docs otherwise avoid: it's a specific citation on a specific reconstructed rationale, normal documentation practice, and there won't be many.)

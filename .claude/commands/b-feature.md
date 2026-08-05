@@ -19,16 +19,16 @@ Before proceeding, check whether this request is actually for this skill:
 Backend feature work and small under-the-hood code changes belong here. **Mixed work stays here** — a feature that includes backend (model, API, controller) plus UI scaffolding (a new screen, components) runs in `/b-feature` and reconciles `docs/ui.md` in Step 6 alongside the feature's `plan.md`. Pure-UI work routes out; mixed work stays.
 </intent_redirects>
 
-The user's description of what they want to change: $ARGUMENTS
+The request (the user's description of what they want to change): $ARGUMENTS
 
 ## Important Behavioural Rules
 
-- **Consult before building.** Use AskUserQuestion to present your proposal and get confirmation before writing any code. The user is an engineer — they expect to review the plan.
+- **Consult before building.** Present your proposal at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) and get explicit confirmation before writing any code. The user is an engineer — they expect to review the plan.
 - **Read first.** Read the existing architecture, relevant module docs, and any affected plan.md/status.md files before proposing changes.
 - **Scope tightly.** Only propose changes needed for this specific request. Don't redesign what works.
 - **Acceptance is explicit.** Propose how the change will be verified (tests, manual checks, or both) and get agreement on that too.
 - **Plan is the recovery anchor.** Write `plan.md` immediately after the gate, before any code is touched (Step 3). The plan is intent on disk — if the session crashes mid-implementation, this file plus `git status` is what makes recovery possible. The completion stamp and any implementation footnotes are appended at Step 6, not written from scratch there.
-- **Implementation is delegated.** After the gate and the plan write, a fresh `bower-implementer` subagent implements and tests against the approved plan and returns an implementation report; you retain the gate, acceptance and decision reconciliation, and doc updates. Fall back to inline implementation only if the Agent tool is unavailable — and say so explicitly when you do.
+- **Implementation is delegated.** After the gate and the plan write, a fresh `bower-implementer` subagent implements and tests against the approved plan and returns an implementation report; you retain the gate, acceptance and decision reconciliation, and doc updates. Fall back to inline implementation only if this runtime cannot delegate — and say so explicitly when you do (Step 4.4).
 - **Literal-command handoff.** Every "next move" you emit (in `status.md`, in any handoff line) names the exact slash command to type next, never free prose. "Run `/b-integration foundation`" — yes. "Write the integration test next" — no.
 - **Stored next moves are feature-scoped; printed ones are project-scoped.** The `Next move:` written into a feature's `status.md` may only name work on *that* feature (Step 6.7). What to do next given the whole project — the next feature, integration, review, the next module — is printed in the Step 7 handoff and never stored, because nothing rewrites every feature's `status.md` to keep such a line true.
 
@@ -47,7 +47,7 @@ Orientation is **selective**: read what this change needs, not the whole project
 9. Read relevant source code to understand the current implementation — batch the files the plans name; don't rediscover what the component maps already locate.
 10. **Check for a routed review finding — in every plan item 1's glob returned, not just this module's.** A review's findings stay in the *reviewed* module's plan even when the fix belongs elsewhere: `/b-review` writes `Run /b-feature modify billing <slug>` into `auth`'s plan and nothing is ever written on billing's side. So the plan that owns this invocation's finding is frequently a module you are not touching, and one whose `Review:` marker you have no reason to read. Read each returned plan's `## Findings` checklist and look for an open `route:/b-feature` item whose command matches this invocation. Match in this order:
 
-    1. **An explicit finding reference in `$ARGUMENTS`.** `/b-review` writes its routed commands to end `according to F<n> in docs/modules/<m>/review-plan.md`, so an operator who pasted one has handed you the plan path and the ID outright — open that file and take that finding. This wins over everything else and is never overridden by a slug that disagrees. Accept looser forms too (`F1`, `review finding F1`, `according to F1 in the review plan`), but note that **an ID without a path is ambiguous** — finding IDs are module-local, so `F1` exists in every open plan. If more than one plan has an open `F1`, ask rather than picking.
+    1. **An explicit finding reference in the request.** `/b-review` writes its routed commands to end `according to F<n> in docs/modules/<m>/review-plan.md`, so an operator who pasted one has handed you the plan path and the ID outright — open that file and take that finding. This wins over everything else and is never overridden by a slug that disagrees. Accept looser forms too (`F1`, `review finding F1`, `according to F1 in the review plan`), but note that **an ID without a path is ambiguous** — finding IDs are module-local, so `F1` exists in every open plan. If more than one plan has an open `F1`, ask rather than picking.
     2. **The slug** in `Run /b-feature modify <module> <slug>`, across every plan the glob returned.
     3. **A topical match on the gist**, which is a guess — say so when you rely on it.
 
@@ -88,13 +88,13 @@ Mark your recommended approach if there are alternatives.
 
 ## Gate: Confirm or Adjust
 
-Present the proposal to the user via AskUserQuestion. Frame it as:
+Present the proposal to the user at an operator gate. Frame it as:
 
 "Here's what I propose to change and how I'll verify it works. Confirm to proceed, or tell me what to adjust."
 
-Include the acceptance criteria in the question — these are part of the agreement, not an afterthought.
+Include the acceptance criteria in the question — these are part of the agreement, not an afterthought. The choices are: **confirm** (proceed as proposed), **adjust** (free-form changes — revise and re-present the gate), or **cancel**.
 
-**Do not write any code until the user confirms.**
+**Do not write any code until the user confirms.** Stop and wait; proceed only on an explicit applicable answer — silence or an unrelated reply is not acceptance.
 
 ## Step 3: Write the Plan
 
@@ -118,7 +118,7 @@ The plan written here is what survives a crash. Implementation footnotes that em
 
 ## Step 4: Implement (delegated)
 
-After plan.md is written, implementation runs in a **fresh `bower-implementer` subagent**, not in this context. The isolated context is the point: this conversation carries the orientation and proposal history, and none of it is needed to execute the approved plan — the plan is the contract. Do not implement inline when the Agent tool is available.
+After plan.md is written, implementation runs in a **fresh `bower-implementer` subagent**, not in this context. The isolated context is the point: this conversation carries the orientation and proposal history, and none of it is needed to execute the approved plan — the plan is the contract. Do not implement inline when delegation is available.
 
 1. **Assemble the spawn packet.** Pass paths for on-disk content, values only for conversation-only content:
    - The approved `plan.md` path. (For **remove** intent, where Step 3 wrote nothing: the existing `plan.md` of the feature being removed, plus the confirmed list of files to delete.)
@@ -130,12 +130,12 @@ After plan.md is written, implementation runs in a **fresh `bower-implementer` s
    - The names of the relevant `docs/architecture.md` sections (not the whole file).
    - A pointer to `docs/constitution.md`'s testing section (runner command, fixtures, verified-for-✓ rules).
    - The project root.
-2. **Spawn `bower-implementer`** with the packet. It implements, writes and runs tests, and returns an implementation report with fixed sections: `## Outcome`, `## Changed files`, `## Acceptance mapping`, `## Test run`, `## Divergences`, `## Implementation footnotes`, `## Doc implications`.
+2. **Delegate to `bower-implementer`** with the packet. It implements, writes and runs tests, and returns an implementation report with fixed sections: `## Outcome`, `## Changed files`, `## Acceptance mapping`, `## Test run`, `## Divergences`, `## Implementation footnotes`, `## Doc implications`.
 3. **Branch on the report's `## Outcome`:**
    - **COMPLETE** — proceed to Step 5, carrying the report.
-   - **DIVERGED-STOPPED** — the implementer hit a significant divergence and stopped with a coherent tree. Present the divergence to the user via AskUserQuestion — this is the re-gate. On their decision, amend `plan.md` to the agreed direction yourself, then spawn a fresh `bower-implementer` with the amended plan plus the previous report's `## Changed files` as resume context. (Subagents are one-shot; the changed-files list plus the working tree is the continuation state — the same recovery discipline as a crashed session.)
+   - **DIVERGED-STOPPED** — the implementer hit a significant divergence and stopped with a coherent tree. Present the divergence to the user at an operator gate — this is the re-gate. On their decision, amend `plan.md` to the agreed direction yourself, then delegate to a fresh `bower-implementer` with the amended plan plus the previous report's `## Changed files` as resume context. (Subagents are one-shot; the changed-files list plus the working tree is the continuation state — the same recovery discipline as a crashed session.)
    - **BLOCKED** — an environment or tooling failure. Surface it to the user verbatim; do not silently retry.
-4. **Fallback — Agent tool unavailable.** State one deliberate line: "Subagent unavailable; implementing inline (expect higher context usage)." Then implement, test, and handle divergence yourself under the same rules the implementer follows (minor divergence: update `plan.md` and continue; significant: stop and consult the user via AskUserQuestion), and construct the same report sections before Step 5 — Steps 5 and 6 consume one shape regardless of path.
+4. **Fallback — delegation unavailable.** This is the caller's move, per *Runtime bindings → Delegation*: state one deliberate line — "Subagent unavailable; implementing inline (expect higher context usage)." — then implement, test, and handle divergence yourself under the same rules the implementer follows (minor divergence: update `plan.md` and continue; significant: stop and re-gate with the user), and construct the same report sections before Step 5, with `Context: inline` at the top of the report — Steps 5 and 6 consume one shape regardless of path.
 
 ## Step 5: Acceptance Reconciliation
 
@@ -149,8 +149,8 @@ Before marking the feature done, produce an explicit reconciliation of every acc
 
 Handling:
 
-- **MISSING** is a blocker. Either write the test, or return to the user via AskUserQuestion to renegotiate the criterion. Do not proceed with MISSING items.
-- **PENDING USER** — for each manual check, ask the user via AskUserQuestion to confirm it passes. Present all manual checks in a single question. If the user confirms, mark PASS. If the user reports failure, treat as a bug and fix before proceeding. If the user defers ("I'll check later"), leave as PENDING USER and mark the feature 🚧 rather than ✓ (see Step 6).
+- **MISSING** is a blocker. Either write the test, or return to the user at an operator gate to renegotiate the criterion. Do not proceed with MISSING items.
+- **PENDING USER** — present the manual checks to the user at a batch gate, collecting an explicit disposition per check: confirmed (mark PASS), failed (treat as a bug and fix before proceeding), or deferred ("I'll check later" — leave as PENDING USER and mark the feature 🚧 rather than ✓, see Step 6). Do not act on any check's answer until every check has one.
 
 **Decision reconciliation.** After acceptance criteria are reconciled, review the **Decision impact** noted at the gate — and additionally check the report's `## Divergences` and `## Doc implications` for ADR touches that weren't visible at the gate. For each touched ADR:
 
@@ -176,7 +176,7 @@ only `pytest tests/unit`. This feature's tests were written against the unit
 runner instead.
 ```
 
-Then ask via AskUserQuestion whether to edit the file, offering: correct the claim to match reality · move it under `## Not yet in force` (it was an aspiration) · leave it alone. Only on an explicit instruction to change it do you edit `constitution.md` — that instruction is what makes the edit *prompted*, which ownership permits. Silence, a deferral, or "noted" all mean leave it.
+Then ask at an operator gate whether to edit the file, offering: correct the claim to match reality · move it under `## Not yet in force` (it was an aspiration) · leave it alone. Only on an explicit instruction to change it do you edit `constitution.md` — that instruction is what makes the edit *prompted*, which ownership permits. Silence, a deferral, or "noted" all mean leave it.
 
 Three rules that are the point of the step:
 

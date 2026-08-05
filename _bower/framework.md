@@ -69,10 +69,38 @@ ADRs record **cross-cutting commitments** — decisions that constrain more than
 - **Changes made outside `/b-*` commands** still reconcile docs before they're declared complete: code change → update the feature's `status.md` (and `plan.md` if behaviour/components/testing shifted); new feature appearing in code → recommend `/b-feature add`; cross-cutting decision introduced or invalidated → run `/b-adr`. These redirects are *soft* — surface the skill, proceed ad-hoc if the user confirms.
 - **The architectural guard is hard.** Changes to architecture, module structure, or scope — including UI work that swaps frameworks, navigation patterns, or state management — are never made ad-hoc, even on user instruction. Name what makes the change architectural and redirect to `/b-design`. This gate is the reason a project adopts Bower; honouring it is the framework's job. (Rationale: `_bower/rationale.md`, "Holding the Line on Architecture.")
 - **Testing:** e2e for pipelines, integration at module boundaries, unit for complex logic; generate tests alongside implementation. Project-specific runner, fixtures, and verified-for-✓ rules live in `docs/constitution.md`.
-- **Literal-command handoffs.** Every "next move" names the exact slash command to type (`Run /b-integration foundation`), never free prose. If there is genuinely none: `(none — <reason>)`.
+- **Literal-command handoffs.** Every "next move" names the exact command to type (`Run /b-integration foundation`), never free prose. If there is genuinely none: `(none — <reason>)`. The `/b-*` spelling is invariant across runtimes — see *Runtime bindings → Handoff spelling*.
 - **A next move written into a file is feature-scoped; a next move printed to the operator is project-scoped.** A feature's `status.md` may only name work on *that* feature, or `(none — complete)`. What to do next given the whole project — the next feature, integration, review, the next module — is printed by the command that ran and derived at read time by `/b-recap` from the markers. Nothing rewrites every feature's `status.md`, so a project-scoped line stored in one can only go stale.
 - **A ✓ feature's `status.md` compresses to its terminal form** — the marker, a `## Verification` section (dated evidence, plus `Qualification:` for a standing caveat on it), and `Next move: (none — complete)`. Resumption state dies with the feature; the evidence record survives. Schema: `_bower/framework-reference.md`, "status.md — Resumption Framing."
 - **Doc links are repo-root-based.** Write `[ADR-xxxx](/docs/adr/xxxx-yyy.md)`, never `../../../adr/…`. Targets must start with `/`, `#` or a URL scheme.
+
+## Runtime bindings
+
+Bower's workflows are runtime-neutral: they say what must happen — gate, delegate, stop — not which tool does it. This section is the single place those idioms bind to the runtime in use. Workflows name the idiom; this section supplies the mechanics. Never restate a binding inside a workflow.
+
+**Operator gates.** A gate names a decision, what the operator must see to decide it, the available choices, and a resume condition. On every runtime: present the content and the choices, then stop — end the turn without performing any gated action. Proceed only when the operator's reply explicitly maps to one of the offered choices. Silence, an unrelated message, or approval of a runtime permission prompt is never acceptance. If the reply does not map to a choice, deal with it briefly (answer a question if one was asked), then restate the choices and stop again — every time, not just the first.
+
+- *Claude Code:* present the decision and choices through the `AskUserQuestion` tool and wait for its result.
+- *Codex:* present the same content and choices in the ordinary reply and end the turn; interpret the operator's next message against the offered choices.
+
+**Batch gates.** Some gates collect a disposition *per item* (review triage, manual acceptance checks). Never seek one omnibus answer to a long list.
+
+- *Claude Code:* `AskUserQuestion` with structured options; split across several questions when one would not present legibly.
+- *Codex:* walk the items conversationally — small coherent groups (at most 4), an explicit disposition per item before the next group, a running tally ("disposed 4 of 9"), and a final restatement of every disposition, confirmed, before acting on any of them. A partial answer re-asks only the unanswered items; an ambiguous answer names the item and re-asks it.
+
+**Delegation.** "Delegate to the `bower-<role>` subagent" means: run that role in a fresh, isolated context with the stated inputs, and wait for its structured artifact.
+
+- *Claude Code:* the Agent tool with `subagent_type: "bower-<role>"`; definitions in `.claude/agents/`.
+- *Codex:* delegate to the named custom agent; definitions in `.codex/agents/`.
+- *Fallback, any runtime:* if delegation is unavailable, the calling workflow — this conversation, never a spawned agent — follows the role's definition inline, says so in one line, and writes `Context: inline` into the artifact it produces. That marker is written only by the caller on this fallback path; a genuinely delegated role never writes it. Fresh-context isolation is degraded, and the record says so rather than faking it.
+
+**The request.** Workflows call their invocation argument "the request". On Claude Code it is bound by the `$ARGUMENTS` line at the top of the command; on Codex it is the text of the invoking message after the skill mention.
+
+**Handoff spelling.** Literal-command handoffs are written `/b-<name> <args>` on every runtime and in every stored document. On Claude Code the line is typed as-is; on Codex, invoke the same skill (`$b-<name>` or via `/skills`) with the same arguments — and treat a pasted `Run /b-<name> …` line as an invocation of that skill.
+
+**Sessions.** After a scaffold or upgrade rewrites instruction files (`AGENTS.md`, `CLAUDE.md`, `_bower/`, skills, agent definitions), tell the operator to start a new session before further Bower work. Never claim the running session has reloaded them — on some runtimes it has not, and there is no reliable way to verify from inside.
+
+**Permission is not acceptance.** A runtime prompt to approve a command or a sandbox escalation is mechanical permission; a Bower gate is a content decision. Neither substitutes for the other, and a workflow can hit both independently: approving a command does not accept a proposal, and accepting a proposal does not grant an escalation.
 
 ## UI Changes — Paths and the Gate
 
@@ -89,7 +117,7 @@ The gate sits at branching choices, not at structural-ness. Architectural UI cha
 
 Design and change:
 
-- `/b-design` — six-stage design for greenfield and architectural revisions; Stage 0 spawns `bower-analyst` to produce a change brief. Required whenever architecture, decisions, scope, or module structure shift.
+- `/b-design` — six-stage design for greenfield and architectural revisions; Stage 0 delegates to `bower-analyst` for a change brief. Required whenever architecture, decisions, scope, or module structure shift.
 - `/b-feature` — the everyday change command (add / modify / remove within existing architecture): orient → propose → gate → plan → delegated implementation (`bower-implementer` subagent) → reconcile.
 - `/b-ui` — gated path for structural, underspecified UI changes: propose with alternatives → confirm → implement → reconcile `docs/ui.md`.
 - `/b-module` — build all features of a small, well-specified module in one pass; one gate, one integration pass.

@@ -20,7 +20,7 @@ Provided by the caller (typically `/b-analysis` or `/b-design`) in the message y
 ## Behavioural rules
 
 - **Read-only.** No Write, Edit, or git mutation. Your only output is the brief, returned as the final message.
-- **No interaction.** Do not call AskUserQuestion. The gate on the brief belongs to the calling command, not to you.
+- **No interaction.** You cannot ask the operator anything — you have no interaction channel. The gate on the brief belongs to the calling command, not to you.
 - **Schema conformance.** Follow `_bower/brief-schema.md` exactly — section headers, ordering, status sentinels, all of it. `/b-design` parses this; deviation breaks downstream execution. Read the schema before producing the brief if you have not already.
 - **The schema's worked example is illustrative only.** Names, ADR IDs, and module structures in the example are from a fictional project. Do not reuse them in real briefs, and do not treat the example's *shape* (which stages were nothing-to-do, which operations were used) as a hint about the change you are analysing. The example shows schema conformance; it does not constrain content.
 - **Be honest about negative space.** The `## Considered and ruled out` section is essential. An operator catches a missing plan touch by reading what was ruled out and noticing what *isn't* there. Empty negative space on a non-trivial change is a smell.
@@ -37,7 +37,7 @@ Run these phases in order. Phases are guidance for *what to read*; the brief its
 
 Read the project's top-level state. Skip files that don't exist; record what's absent.
 
-1. `<root>/CLAUDE.md` — confirms Bower version and any project-specific conventions.
+1. The project instruction file — `<root>/AGENTS.md`, or `<root>/CLAUDE.md` where the project still uses it — confirms Bower version and any project-specific conventions.
 2. `<root>/docs/index.md` — module map and overall state. If absent, the project is greenfield; record that and most stages will be full-draft rather than delta.
 3. `<root>/docs/scope.md` — current scope, non-goals, success criteria.
 4. `<root>/docs/architecture.md` — system design, ADR cross-references.

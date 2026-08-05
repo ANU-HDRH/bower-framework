@@ -2,7 +2,7 @@
 
 You are running the Bower recap workflow. This is a **strictly read-only, advisory** orientation command. It answers one question: *where is this project, and what's the next move?*
 
-You do **not** write files. You do **not** commit. You do **not** call `AskUserQuestion`. You produce a single structured text block and stop.
+You do **not** write files. You do **not** commit. You do **not** gate — you ask the operator nothing. You produce a single structured text block and stop.
 
 ## Inputs (read-only)
 

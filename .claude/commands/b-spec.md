@@ -2,7 +2,7 @@
 
 You are generating a single specification document from the project's Bower documentation. This document is for sharing with people outside the project — stakeholders, collaborators, reviewers, or other teams.
 
-Optional scope or instructions from the user: $ARGUMENTS
+The request (optional scope or instructions from the user): $ARGUMENTS
 
 ## Step 1: Read Everything
 
@@ -17,7 +17,7 @@ Note which files exist and which don't — the spec should only cover what's doc
 
 ## Step 2: Determine Scope
 
-Use AskUserQuestion to confirm what should be included. Present:
+Confirm what should be included at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*). Present:
 
 - The full list of modules and features you found
 - Whether design context exists (problem-space.md, accepted ADRs)
@@ -72,7 +72,7 @@ Only include if substantive.]
 
 ## Step 4: Present
 
-Write the spec to a file. Use AskUserQuestion to confirm the output path. Suggest `docs/spec.md` by default, but note that if this is a one-off export, the user might prefer a location outside `docs/` so it doesn't get treated as a living document.
+Write the spec to a file. Confirm the output path at an operator gate. Suggest `docs/spec.md` by default, but note that if this is a one-off export, the user might prefer a location outside `docs/` so it doesn't get treated as a living document.
 
 <critical_constraints>
 ## Rules

@@ -4,13 +4,13 @@ You are scaffolding an Architectural Decision Record (ADR) — a single-file, ap
 
 This command produces exactly one deliverable: a new ADR file (and, if superseding or narrowing, a frontmatter update to the ADR being replaced or narrowed). It does not modify code, plans, or status documents — those are the job of the command that called this one (typically `/b-feature` reconcile or `/b-design` Stage 2).
 
-The user's description of the decision: $ARGUMENTS
+The request (the user's description of the decision): $ARGUMENTS
 
 ## Important Behavioural Rules
 
 - **One coherent scope per ADR.** An ADR may bundle several closely-related decisions under an umbrella title (e.g. "sidecar accommodation for patterns" covering artefact layout, build-time merging, and provenance rendering). The split test is whether the title honestly covers the scope — if you find yourself drafting "and also we switched the build tool," that's a second ADR. Naming more than one commitment in the body is fine when the umbrella holds.
 - **Bodies are immutable once accepted.** This command writes a new ADR or amends frontmatter only. It never edits an existing ADR's body.
-- **Consult before writing.** Use AskUserQuestion to confirm the draft before committing it to disk.
+- **Consult before writing.** Confirm the draft at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) before committing it to disk.
 - **Classify applicability.** Every new ADR carries a `scope` field — it decides which future changes load the ADR, so an over-broad scope taxes every `/b-feature` run. `universal` is rare and means "constrains every feature in the project"; most decisions are `module`, `integration`, or `operational`. Add `topics` when the decision is findable by subject-matter keywords (e.g. `[caching, invalidation]`).
 - **Use exact Bower module names.** The `modules` field references directories under `docs/modules/`. Omit the field when no specific module is implicated; do not invent sentinels like `[*]` or `[all]`.
 - **Status is `accepted`.** Bower has no `proposed` workflow — decisions are confirmed at gates before being written to disk.
@@ -99,7 +99,7 @@ Body length: aim for ~150 words across all sections combined, ceiling 300. If yo
 
 ## Gate: Confirm or Adjust
 
-Present the drafted ADR to the user via AskUserQuestion. Show:
+Present the drafted ADR to the user at the operator gate. Show:
 
 - The proposed filename and ID
 - The full frontmatter

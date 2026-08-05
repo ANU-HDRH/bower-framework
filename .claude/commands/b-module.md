@@ -2,11 +2,11 @@
 
 You are running the Bower module-build workflow. This builds all features in a single module in one pass, with one gate up front covering the entire module plan and one acceptance check at the end. Use this when the module is small and well-specified; use `/b-feature` instead for exploratory work or modules that will likely need mid-flight design revision.
 
-The user's target module: $ARGUMENTS
+The request (the target module): $ARGUMENTS
 
 ## Important Behavioural Rules
 
-- **One gate, one acceptance.** You gate the whole module up front. You do not re-gate each feature individually. If an in-flight feature reveals the plan was wrong, stop and consult the user again via AskUserQuestion before continuing — same rule as `/b-feature`.
+- **One gate, one acceptance.** You gate the whole module up front. You do not re-gate each feature individually. If an in-flight feature reveals the plan was wrong, stop and consult the user again at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) before continuing — same rule as `/b-feature`.
 - **Architecture is a hard redirect.** Build only the confirmed module build order; if the module needs an architectural change, stop and recommend `/b-design`.
 - **Respect the build order.** Features are implemented in the order listed in `module-status.md` under `## Build order`.
 - **Read first.** Architecture, scope, and the module's existing `module-status.md` are the foundation.
@@ -55,7 +55,7 @@ Then, at the module level:
 
 ## Gate: Confirm or Adjust
 
-Present the full proposal via AskUserQuestion. Frame as:
+Present the full proposal at the operator gate. Frame as:
 
 "Here's the full plan for module `<name>`: N features plus the module-boundary integration test. Confirm to proceed, or tell me what to adjust."
 
@@ -79,7 +79,7 @@ After confirmation, for each feature in build order:
    - <criterion> — test: <none written> — MISSING
    ```
 
-   MISSING is a blocker — write the test or renegotiate via AskUserQuestion before continuing. Any manual criteria for this feature are deferred to Step 4 and surfaced in a single batch at the end of the module; create `status.md` with a `Pending verification:` line and mark the feature 🚧 (not ✓) for now.
+   MISSING is a blocker — write the test or renegotiate at an operator gate before continuing. Any manual criteria for this feature are deferred to Step 4 and surfaced in a single batch at the end of the module; create `status.md` with a `Pending verification:` line and mark the feature 🚧 (not ✓) for now.
 7. Create `docs/modules/<module>/<feature>/status.md` in the form the feature's marker calls for (schema: `_bower/framework-reference.md`, "status.md — Resumption Framing"). If manual criteria remain, that is the **live form** — resumption snapshot, ≤150 words, `Pending verification:` listing the deferred checks, and a `Next move:` of `Run /b-feature <this feature>`. If nothing remains and the feature lands ✓, write the **terminal form** instead: the marker, a `## Verification` section (date, what was run, what passed, plus `Qualification:` if the evidence carries a standing caveat), and `## Next move` → `(none — complete)`. ~50 words.
 
    Either way the stored `Next move:` names work on *this* feature only — never the next feature in the build order, never `/b-integration` or `/b-review`. This pass will build those next features itself; a stored pointer to them is stale the moment it is written and nothing ever comes back to fix it. The project-scoped next move belongs in the Step 6 handoff.
@@ -91,7 +91,7 @@ After all features are complete:
 
 ## Step 4: Module Acceptance Reconciliation
 
-Collect every manual acceptance check agreed at the gate — both per-feature manual checks and any manual aspect of the module integration test — into a single list. Present them to the user via one AskUserQuestion:
+Collect every manual acceptance check agreed at the gate — both per-feature manual checks and any manual aspect of the module integration test — into a single list. Present them to the user at one batch gate, collecting an explicit disposition per check:
 
 "These manual checks were agreed at the gate. Confirm each, or tell me which failed: [list]."
 

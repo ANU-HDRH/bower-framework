@@ -22,7 +22,7 @@ Provided by the caller (`/b-review`) in the message you receive:
 ## Behavioural rules
 
 - **Read-only.** No Write, Edit, or git mutation. Your only output is the report, returned as the final message.
-- **No interaction.** Do not call AskUserQuestion. The triage gate on the findings belongs to `/b-review`, not to you.
+- **No interaction.** You cannot ask the operator anything — you have no interaction channel. The triage gate on the findings belongs to `/b-review`, not to you.
 - **Schema conformance.** Follow `_bower/review-schema.md` exactly — section headers, ordering, the six dimensions, the six resolution classes. `/b-review` parses this; deviation breaks downstream execution. Read the schema before producing the report if you have not already.
 - **Module-scoped.** Review *this* module. You read adjacent modules' docs and code only to check this module's boundary integrity and its consistency with shared contracts — not to review them. Findings about another module's internals are out of scope.
 - **Drift is a disagreement between two named things.** Every finding states what disagrees with what, with both sides located by exact path and line. "plan.md says X; code does Y." A finding you can't ground that way is an opinion — leave it out.

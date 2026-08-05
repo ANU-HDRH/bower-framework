@@ -4,7 +4,7 @@ You are running the Bower module-review workflow. This reviews **one completed (
 
 The review exists because a sequential, feature-at-a-time build systematically misses properties that only become visible once the module is whole: whether the tests cover the *interactions* between features, whether the docs still match the code, whether features built weeks apart answer the same question the same way. The implementing agent had every rationalisation for the current code in context; this command gets a fresh pair of eyes by delegating diagnosis to the read-only `bower-reviewer` subagent.
 
-The target module: $ARGUMENTS
+The request (the target module): $ARGUMENTS
 
 ## Important Behavioural Rules
 
@@ -41,11 +41,13 @@ Re-diagnosing while a plan is open would discard in-progress work and re-derive 
 
 Review is most valuable when the module is complete (all features ✓, integration ✓), but it does not hard-require completion; if the module is mid-build, note that the review will find expected gaps and let the operator decide whether to proceed.
 
-## Step 1: Diagnose (spawn the subagent)
+## Step 1: Diagnose (delegate)
 
-Spawn the `bower-reviewer` subagent via the Agent tool. Pass it the module name and the project root. The subagent reads the module's `module-status.md`, each feature's `plan.md`/`status.md`, the constitution's testing conventions, the `## Software architecture` entry, the ADRs touching the module, and the code — then returns a **review report** conforming to `_bower/review-schema.md`.
+Delegate to the `bower-reviewer` subagent (binding: `_bower/framework.md` → *Runtime bindings*) and wait for its report. Pass it the module name and the project root. The subagent reads the module's `module-status.md`, each feature's `plan.md`/`status.md`, the constitution's testing conventions, the `## Software architecture` entry, the ADRs touching the module, and the code — then returns a **review report** conforming to `_bower/review-schema.md`.
 
 Do not re-derive the review yourself or second-guess the subagent's findings inline. Its isolation is the point — it sees the code without the implementer's context. Your job is to consume the report, gate it, and execute against it.
+
+**Fallback — delegation unavailable.** This is the caller's move: follow `bower-reviewer`'s definition inline, say so in one line, and mark the report `Context: inline`. Announce the degradation again at the triage gate — "diagnosis ran inline; adversarial freshness is degraded" — because the operator deciding there is entitled to weigh the findings accordingly.
 
 ## Step 2: Present the Findings
 
@@ -60,13 +62,13 @@ Print the report's `## Constitution contradictions` section too, **separately fr
 
 This printed block is transient triage material. The operator reads it here, and the plan (next step) is what makes it survive the session — say so if the finding count is large, because the console is not the record.
 
-## Gate: Triage
+## Gate: Triage (batch gate)
 
-Present one AskUserQuestion asking the operator to confirm disposition. Frame as:
+Triage collects a disposition for the review as a whole — and, when the operator wants finer control, per finding. Present one operator gate framing it as:
 
 "I found N owned reconciliations and M routed findings in module `<module>`. Confirm to open the review — I'll write the plan, apply the owned items, and leave the routed ones tracked for you to run. Or tell me which findings to drop, or cancel."
 
-Offer the disposition choices (e.g. *Open the review and action all owned items* / *Let me deselect some* / *Cancel — just show me the report*). If the operator chooses to deselect, ask them to name the finding numbers to drop; the rest become the plan.
+Offer the disposition choices (*Open the review and action all owned items* / *Let me deselect some* / *Cancel — just show me the report*). If the operator chooses to deselect, the walk that follows is a **batch gate** (binding: *Runtime bindings → Batch gates*): collect an explicit keep/drop disposition per finding, and act on none of them until the full set is confirmed; the kept findings become the plan.
 
 Routed findings are **not** informational at this gate — accepting them puts them in the checklist, where they hold the review open until run or won't-fixed. Say that plainly when asking, so the operator understands they are agreeing to tracked work, not just reading a list. A review whose findings are *all* routed is a normal outcome and still opens a review.
 
@@ -74,7 +76,7 @@ Routed findings are **not** informational at this gate — accepting them puts t
 
 ## Gate: Constitution consent (only if contradictions were reported)
 
-If the report's `## Constitution contradictions` section has entries, ask about them in a **second, separate** AskUserQuestion — never merged into the triage question above, because the triage question authorises *this command* to act, and this one authorises an edit to a file the command does not own.
+If the report's `## Constitution contradictions` section has entries, ask about them at a **second, separate** operator gate — never merged into the triage question above, because the triage question authorises *this command* to act, and this one authorises an edit to a file the command does not own.
 
 Per contradiction, restate the verbatim quote and its `docs/constitution.md:NN` before asking, so the operator can open the file and read the line in context rather than trusting a summary. Offer: correct the claim to match reality · move it under `## Not yet in force` (it was an aspiration) · leave it alone. Edit `docs/constitution.md` only on an explicit instruction to do so — that makes the edit prompted, which ownership permits. Anything else means leave the file untouched.
 
@@ -121,7 +123,7 @@ Shape rules:
 
 - **One `## Findings` checklist, owned and routed together**, each line carrying its class so the reader knows who acts. Order owned-first — those get actioned in this pass — but do not split them into separate sections; a routed item in a second section stops being tracked work, which is the failure this shape fixes.
 - **A routed item names the exact command to run**, including its target module when the fix belongs to a *different* module than the one under review (F6 above). A cross-module finding stays in *this* module's plan — the plan is a review artifact, not a work queue — so the target must be explicit or the reader loses it. **`route:/b-design` items get a slug too** — a bare `/b-design` is not a runnable instruction, and it leaves the operator inventing the change description that Stage 0 hands the analyst.
-- **The command ends `according to F<n> in <path-to-this-plan>`**, and that clause is part of the command, not a note beside it. The whole line is meant to be copied and run verbatim: `$ARGUMENTS` is narrative, and `/b-feature` and `/b-design` read a finding reference in it as an explicit selector that beats every other match. Written any other way — a parenthetical, a second line, a bare `F6` — it depends on the operator reassembling two pieces, and the one that gets dropped is the one that carries the evidence. **The path is required, not decorative:** finding IDs are module-local, so `F6` alone does not identify a finding, and a routed item's command is most often run in a session that has never opened this plan.
+- **The command ends `according to F<n> in <path-to-this-plan>`**, and that clause is part of the command, not a note beside it. The whole line is meant to be copied and run verbatim: the request is narrative, and `/b-feature` and `/b-design` read a finding reference in it as an explicit selector that beats every other match. Written any other way — a parenthetical, a second line, a bare `F6` — it depends on the operator reassembling two pieces, and the one that gets dropped is the one that carries the evidence. **The path is required, not decorative:** finding IDs are module-local, so `F6` alone does not identify a finding, and a routed item's command is most often run in a session that has never opened this plan.
 - **Every routed item carries a three-line brief**, indented beneath it: `Location:`, `Drift:`, `Resolution:`, copied *verbatim* from the report's finding. **All three, each non-empty** — they do different jobs and none substitutes for another: where to look, what disagrees with what, what to do about it. A location-only brief is worse than none, because it looks like a handoff while still leaving the receiving session to infer why the file matters. Never write a bare label to fill the shape; if a field is genuinely unavailable, say so in the field rather than leaving it blank. Do not summarise them — the report is gone after this pass and these lines are the only surviving evidence. **Owned items do not get a brief** and must not be given one: they are actioned in this same pass with the report still in context, so the brief would be write-only weight in a file that is otherwise deleted within the hour.
 
   The asymmetry is the point. A routed item is deferred to a later session, in a fresh context, run by a command that was not present at diagnosis. Its one line has to survive being the whole handoff. Without the brief, the receiving command re-derives the finding from code — which costs a survey, may reach a different conclusion, and may fail to reproduce the finding at all and tick it as looked-at-and-fine.
@@ -171,7 +173,7 @@ When every item in `## Findings` carries a disposition (`[x]` or `[~]`), the rev
 
 Report the result as a line in the gate, always — `routed ticks verified: 5 of 5` — because an unstated check is indistinguishable from a skipped one. If a tick is checked and does not hold, do not present the gate: untick that item, re-classify it if the reason is a `route:/b-design` decision whose code never landed, say plainly what you found, and report progress instead. A review that reopens at the closeout gate has just done its job.
 
-Present one AskUserQuestion:
+Present one operator gate:
 
 "All N findings in module `<module>` are disposed of (`<x> resolved, <y> won't fix`). Close the review? I'll delete the plan and record `Review: ✓ <today>`."
 

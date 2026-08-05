@@ -2,12 +2,12 @@
 
 You are running the Bower module-integration workflow. This builds the integration test that exercises a module's boundary, per the integration prose recorded in `module-status.md`. One gate before any code is written, mirroring `/b-feature`'s shape.
 
-The user's target module: $ARGUMENTS
+The request (the target module): $ARGUMENTS
 
 ## Important Behavioural Rules
 
 - **One deliverable.** This command produces exactly one thing: a runnable integration test for the named module. Do not modify feature code, fix unrelated bugs, or expand scope; an architectural issue routes to `/b-design`.
-- **Consult before building.** Use AskUserQuestion to present your proposal and get confirmation before writing any code.
+- **Consult before building.** Present your proposal at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) and get explicit confirmation before writing any code.
 - **Read first.** The module's `module-status.md` integration prose, every feature's `plan.md`, and `constitution.md`'s testing section are the foundation.
 - **Acceptance is explicit.** What the test asserts is the contract. Manual checks (e.g. inspecting a generated artifact) are agreed at the gate too.
 - **Literal-command handoff.** Every "next move" you emit names the exact slash command to type next, never free prose.
@@ -38,7 +38,7 @@ Mark the recommended approach if there are alternatives (e.g. real DB vs. transa
 
 ## Gate: Confirm or Adjust
 
-Present the proposal via AskUserQuestion. Frame it as:
+Present the proposal at the operator gate. Frame it as:
 
 "Here's the integration test I propose for module `<name>`: <file path>, <N> assertions, <manual checks if any>. Confirm to proceed, or tell me what to adjust."
 
@@ -54,7 +54,7 @@ After confirmation:
 2. Create the test file at the agreed path with the agreed harness and assertions.
 3. Run the test. Confirm it passes.
 
-If the test fails because of a real bug in the module (not a test-side issue), stop. Surface the failure to the user via AskUserQuestion: a feature is broken at the boundary, which means a `/b-feature <name>` recovery cycle is the right next step, not papering over it here.
+If the test fails because of a real bug in the module (not a test-side issue), stop. Surface the failure to the user at an operator gate: a feature is broken at the boundary, which means a `/b-feature <name>` recovery cycle is the right next step, not papering over it here.
 
 ## Step 4: Acceptance Reconciliation
 
@@ -68,8 +68,8 @@ Reconcile every criterion agreed at the gate:
 
 Handling:
 
-- **MISSING** is a blocker. Either add the assertion or renegotiate via AskUserQuestion. Do not proceed.
-- **PENDING USER** — present all manual checks in one AskUserQuestion. PASS → mark ✓. Failure → treat as bug, fix, re-verify. Deferred → leave PENDING USER and mark the module-integration marker 🚧 (not ✓).
+- **MISSING** is a blocker. Either add the assertion or renegotiate at an operator gate. Do not proceed.
+- **PENDING USER** — present the manual checks at a batch gate, one explicit disposition per check. PASS → mark ✓. Failure → treat as bug, fix, re-verify. Deferred → leave PENDING USER and mark the module-integration marker 🚧 (not ✓).
 
 **ADR drift.** If writing the test surfaced a contradiction between an accepted ADR and the code or constitution (e.g. the ADR mandates real-DB but the harness uses an in-memory fixture), flag it in the handoff and recommend `/b-adr` to supersede before flipping the marker to ✓. Do not silently let the drift stand — that's exactly the rot the ADR mechanism exists to prevent.
 

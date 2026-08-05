@@ -4,19 +4,19 @@ You are running the Bower design process. This is a six-stage workflow that prod
 
 Use for greenfield projects and for revisions that cross architectural boundaries (new modules, new technology, cross-cutting decisions, scope shifts). For changes within existing architecture that don't touch cross-cutting commitments, use `/b-feature` instead — it has its own propose-and-confirm gate, and will redirect back here if a request turns out to need design treatment.
 
-The user's description of the change: $ARGUMENTS
+The request (the user's description of the change): $ARGUMENTS
 
 ## Important Behavioural Rules
 
 - **The brief is the contract.** Stage 0 produces a change brief and gates on it. Stages 1–5 execute against the confirmed brief — they do not re-derive applicability. If a stage's brief section is `Status: nothing to do`, that stage emits a one-line acknowledgment and proceeds. The applicability question is settled once, up front, not re-asked five times.
 - **ADR IDs are pre-allocated in the brief.** Stage 2 operations in the brief carry real, pre-allocated IDs (e.g. `new ADR-0034`). Stages 1, 3, and 4 cross-reference these IDs verbatim when drafting edits to `scope.md`, `architecture.md`, or `plan.md` files — **never use `ADR-NNNN` as a literal placeholder** in any draft, because draft content is what gets written to disk on gate confirmation. If the brief lacks pre-allocated IDs for `new`/`supersedes`/`narrows` operations, halt and surface the issue rather than inventing or placeholdering them.
 - **Surface mid-flight discoveries.** If a stage uncovers work that wasn't in the brief, surface it to the user and ask whether to amend the brief or skip it. Do not silently expand scope; do not silently shrink it either.
-- **Consult at every content gate.** Stages with non-nil delta use AskUserQuestion to confirm the **drafted content** (the ADR text, the architecture edit, the plan touches) — not applicability, which Stage 0 has already settled.
+- **Consult at every content gate.** Stages with non-nil delta present the **drafted content** (the ADR text, the architecture edit, the plan touches) at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) — not applicability, which Stage 0 has already settled.
 - **Per-stage writes.** Each stage with delta writes its files immediately after its gate is confirmed. There is no consolidated write step.
 - **Recommend, don't dictate.** When presenting options, mark one as (recommended) with a brief rationale, but make it clear the user chooses.
 - **Literal-command handoff.** The post-design handoff names exact slash commands the operator types next, never free prose.
 - **Write docs, not code.** This workflow produces documentation files and (in Stage 5) scaffolding only. Feature code belongs to `/b-feature` or `/b-module`.
-- **Don't re-spawn the analyst mid-flow.** The brief is locked at Stage 0. If the user wants a re-analysis, that's a new `/b-design` invocation, not an in-flow restart.
+- **Don't re-run the analyst mid-flow.** The brief is locked at Stage 0. If the user wants a re-analysis, that's a new `/b-design` invocation, not an in-flow restart.
 
 ## Stage 0: Change Analysis
 
@@ -24,32 +24,32 @@ The user's description of the change: $ARGUMENTS
 
 **Process:**
 
-0. **Check for a routed review finding first** — before spawning anything. Glob `docs/modules/*/review-plan.md` and scan each for open `route:/b-design` items. Boundary erosion is *always* routed here and never actioned by `/b-review`, so a design run is frequently the discharge of one, and the operator may well have typed `/b-design` bare because the plan told them to.
+0. **Check for a routed review finding first** — before delegating anything. Glob `docs/modules/*/review-plan.md` and scan each for open `route:/b-design` items. Boundary erosion is *always* routed here and never actioned by `/b-review`, so a design run is frequently the discharge of one, and the operator may well have typed `/b-design` bare because the plan told them to.
 
-   - **No open items:** proceed with `$ARGUMENTS` as-is.
-   - **One matches** — in priority order: `$ARGUMENTS` names the finding explicitly, which always wins; or its slug matches; or `$ARGUMENTS` is empty; or it is topically the same concern. `/b-review` writes its routed commands to end `according to F<n> in docs/modules/<m>/review-plan.md`, so a pasted invocation hands you the plan path and the ID outright — open that file and take that finding, without globbing. Looser forms (`F7`, `according to F7 in the review plan`) are fine, but an ID without a path is ambiguous, since finding IDs are module-local; if several open plans carry that ID, ask. A named finding that is not in the plan named, or already disposed of, is worth saying so about rather than guessing. Then: read its indented `Location:` / `Drift:` / `Resolution:` brief and **pass all three verbatim into the analyst prompt** alongside the change description, labelled as a review finding from module `<module>`, finding `<Fn>`. Say in one line that you are doing so.
-   - **Several match, or one exists and `$ARGUMENTS` is unrelated:** ask which (AskUserQuestion), offering the findings and "none of these — proceed with what I typed."
+   - **No open items:** proceed with the request as-is.
+   - **One matches** — in priority order: the request names the finding explicitly, which always wins; or its slug matches; or the request is empty; or it is topically the same concern. `/b-review` writes its routed commands to end `according to F<n> in docs/modules/<m>/review-plan.md`, so a pasted invocation hands you the plan path and the ID outright — open that file and take that finding, without globbing. Looser forms (`F7`, `according to F7 in the review plan`) are fine, but an ID without a path is ambiguous, since finding IDs are module-local; if several open plans carry that ID, ask. A named finding that is not in the plan named, or already disposed of, is worth saying so about rather than guessing. Then: read its indented `Location:` / `Drift:` / `Resolution:` brief and **pass all three verbatim into the analyst prompt** alongside the change description, labelled as a review finding from module `<module>`, finding `<Fn>`. Say in one line that you are doing so.
+   - **Several match, or one exists and the request is unrelated:** ask which at an operator gate, offering the findings and "none of these — proceed with what I typed."
 
    The brief is the surviving evidence of a whole-module survey that has since been discarded. Without it the analyst re-derives a boundary violation from code alone — expensive, and it can quietly conclude there is nothing there, which reads as the finding being wrong rather than as the evidence being missing. Treat it as an input to verify, not a conclusion: if the survey contradicts it, that goes in the brief's `## Considered and ruled out` and the operator decides at the Stage 0 gate.
 
    Never edit `review-plan.md` — `/b-review` owns it. Name the finding in the post-design handoff so the operator knows to run `/b-review <module>` and tick it.
 
-1. **Spawn the `bower-analyst` subagent** using the Agent tool with `subagent_type: "bower-analyst"`. The prompt to the subagent must include:
-   - The change description verbatim (`$ARGUMENTS`).
+1. **Delegate to the `bower-analyst` subagent** (binding: *Runtime bindings → Delegation*) and wait for its brief. The prompt to the subagent must include:
+   - The change description verbatim (the request).
    - The project root (the current working directory).
    - Any routed review-finding brief from step 0, verbatim.
    - An instruction to conform exactly to `_bower/brief-schema.md`.
 
-   Do not attempt the analysis inline. The subagent exists precisely so the analysis happens in isolated context, focused on the survey.
+   Do not attempt the analysis inline while delegation is available. The subagent exists precisely so the analysis happens in isolated context, focused on the survey. If this runtime cannot delegate, that is the one exception: you — the calling workflow — follow `bower-analyst`'s definition inline, say so in one line, and mark the resulting brief `Context: inline` before gating on it.
 
 2. **Read the returned brief** carefully — particularly `## Considered and ruled out` and `## Ambiguities and assumptions`. These sections are the operator's primary safety checks, and you need to surface them at the gate.
 
 3. **Handle the no-op case.** If the brief is `Status: nothing to do` for all five stages and the considered-and-ruled-out section confirms nothing material was found, the change is a no-op. Emit a single line ("Brief: nothing to do — `<reason>`. Stopping.") and stop. The operator can re-run with a refined description if appropriate.
 
-4. **Gate:** Present the brief to the user via AskUserQuestion. Show the `## Summary` section, the `## Ambiguities and assumptions` section, and the `## Considered and ruled out` section as the primary surfaces. Reference the rest as available for inspection. **State step 0's outcome in one line here** — which routed finding was folded in, or that the glob found no open `route:/b-design` items. Say it even when there is nothing: an unstated result is indistinguishable from a skipped check, and this is the operator's only chance to catch a design run that ignored the finding it was meant to discharge. Ask:
+4. **Gate:** Present the brief to the user at an operator gate. Show the `## Summary` section, the `## Ambiguities and assumptions` section, and the `## Considered and ruled out` section as the primary surfaces. Reference the rest as available for inspection. **State step 0's outcome in one line here** — which routed finding was folded in, or that the glob found no open `route:/b-design` items. Say it even when there is nothing: an unstated result is indistinguishable from a skipped check, and this is the operator's only chance to catch a design run that ignored the finding it was meant to discharge. Ask:
    - "Here's the change brief from the analyst. Confirm to proceed, amend it (tell me what to add/remove/change), or stop."
 
-5. **If the user amends the brief**, update it in working memory and proceed. Do not re-spawn the analyst for amendments — incorporate the operator's correction directly. The corrected brief is the contract for Stages 1–5.
+5. **If the user amends the brief**, update it in working memory and proceed. Do not re-delegate to the analyst for amendments — incorporate the operator's correction directly. The corrected brief is the contract for Stages 1–5.
 
 **Brief is now locked.** Proceed to Stage 1.
 
@@ -59,7 +59,7 @@ Each of Stages 1–5 follows the same shape:
 
 1. **Read the brief's stage-N section.**
 2. **If `Status: nothing to do`:** emit one line — `Stage N: nothing to do — <reason from brief>` — and proceed to the next stage. No gate, no drafting, no writes.
-3. **If `Status: delta`** (or any non-nil status): draft the change(s) per the stage's specific rules below, present the drafts at a content gate via AskUserQuestion, write files on confirmation.
+3. **If `Status: delta`** (or any non-nil status): draft the change(s) per the stage's specific rules below, present the drafts at a content gate (an operator gate), write files on confirmation.
 
 Stage-specific drafting and write rules follow.
 

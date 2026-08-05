@@ -2,19 +2,19 @@
 
 You are running the Bower analysis workflow. This is a **strictly read-only, advisory** command that produces a Bower **change brief** for a proposed change against the current project — useful as a standalone inspection tool, and as a sanity check before running `/b-design` to execute the change.
 
-You do **not** write files, run git, invoke downstream commands, or confirm/gate. You spawn the `bower-analyst` subagent, receive its brief, and emit it verbatim.
+You do **not** write files, run git, invoke downstream commands, or confirm/gate. You delegate to the `bower-analyst` subagent, receive its brief, and emit it verbatim.
 
-The user's change description: $ARGUMENTS
+The request (the user's change description): $ARGUMENTS
 
 ## Process
 
 ### Step 1 — Confirm input
 
-If `$ARGUMENTS` is empty or missing, ask the user via AskUserQuestion for a change description and stop. Do not proceed without one.
+If the request is empty or missing, ask the user for a change description and stop — end the turn and wait. Do not proceed without one.
 
-### Step 2 — Spawn the analyst
+### Step 2 — Delegate to the analyst
 
-Spawn the `bower-analyst` subagent using the Agent tool with `subagent_type: "bower-analyst"`. The prompt to the subagent must include:
+Delegate to the `bower-analyst` subagent (binding: `_bower/framework.md` → *Runtime bindings*) and wait for its brief. The prompt to the subagent must include:
 
 - The change description verbatim.
 - The project root (the current working directory).
@@ -31,7 +31,7 @@ Change description:
 <verbatim description>
 ```
 
-Do **not** attempt the analysis in the main agent. The subagent exists precisely so the analysis happens in isolated context, against a focused prompt; running it inline defeats the purpose.
+Do **not** attempt the analysis in the main context while delegation is available. The subagent exists precisely so the analysis happens in isolated context, against a focused prompt; running it inline defeats the purpose. If this runtime cannot delegate, that is the one exception: you — the calling workflow — follow `bower-analyst`'s definition inline, say so in one line, and mark the emitted brief `Context: inline`.
 
 ### Step 3 — Emit the brief
 

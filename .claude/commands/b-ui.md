@@ -4,7 +4,7 @@ You are running the Bower UI change workflow — the gated path for **structural
 
 This skill mirrors `/b-feature`'s propose-confirm-implement-reconcile shape, tuned for the experience surface: lighter reading list, proposal with alternatives, mock-up-or-description rather than component/caller analysis, reconciles `docs/ui.md` rather than feature plans alone.
 
-The user's description of the UI change: $ARGUMENTS
+The request (the user's description of the UI change): $ARGUMENTS
 
 ## Important Behavioural Rules
 
@@ -18,7 +18,7 @@ Before running this skill, ask whether it's the right shape for the request:
 The test for "branching choices": would you have to pick between ≥2 viable shapes (modal vs page, tabs vs accordion, drawer vs dropdown)? If yes, the gate earns its keep. If the operator already named the shape, it doesn't — invented alternatives are noise, not value. The operator can confirm to run the skill anyway, but offering the lighter path first is the right default.
 </lighter_path_check>
 
-- **Consult before building.** Use AskUserQuestion to present your proposal — including at least two viable alternatives where the change has branching choices — and get confirmation before writing code.
+- **Consult before building.** Present your proposal at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) — including at least two viable alternatives where the change has branching choices — and get explicit confirmation before writing code.
 - **Read first.** Read `docs/ui.md` (or note its absence), the relevant feature plans, and the project's design-token / theme / style config. Skim the architecture's UI module entry.
 - **Scope tightly.** Only propose what this request needs. Don't redesign adjacent screens.
 - **Architecture is hard-redirected.** If the request introduces a new top-level navigation pattern, swaps the design system or UI framework, adopts new state-management for the UI layer, or otherwise crosses architectural boundaries, stop and recommend `/b-design`. Surface what's architectural and decline ad-hoc. The hard line is the same as elsewhere in the framework.
@@ -52,7 +52,7 @@ When alternatives are real, present 2-3 — not more. Each should commit the des
 
 ## Gate: Confirm or Adjust
 
-Present the proposal to the user via AskUserQuestion. Frame as:
+Present the proposal to the user at the operator gate. Frame as:
 
 "Here are the options for this UI change. Pick one to proceed, or tell me what to adjust."
 
@@ -78,7 +78,7 @@ For PENDING USER manual checks, frame before asking — the operator does not ye
 
 1. **State what changed visually** in one or two sentences. ("The dashboard now shows three tabs across the top: Inbox, Outbox, Archive. Clicking switches the panel below.")
 2. **Name one or two specific things to look at.** ("Check the active tab indicator and the behaviour at narrow widths.")
-3. **Then present the question** via AskUserQuestion.
+3. **Then present the question** at an operator gate.
 
 Without this framing the operator gets "does it look right?" with no anchor; with it, verification is productive in one round-trip. Mark per response. If the operator defers, leave as PENDING USER and reflect that in the docs in Step 5.
 
@@ -109,4 +109,4 @@ Skip only if Step 2 listed Decision impact as `none`.
 - `Run /b-integration <module>` — if a testable interaction pattern was introduced and the module's integration test needs updating.
 - `(none — UI change complete)` — when there's no follow-up.
 
-If during implementation you discover the approach needs to change significantly, stop and consult the user via AskUserQuestion before continuing.
+If during implementation you discover the approach needs to change significantly, stop and consult the user at an operator gate before continuing.
