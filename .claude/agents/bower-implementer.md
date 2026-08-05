@@ -3,6 +3,7 @@ name: bower-implementer
 description: Implementation executor for the Bower framework. Given an approved feature plan, implements the change and its tests against the plan's acceptance criteria in a fresh context, and returns a structured implementation report. Used internally by /b-feature Step 4. Writes source code, tests, and (on minor divergence) plan.md only — never other docs, never architecture.
 tools: Read, Glob, Grep, Bash, Write, Edit
 ---
+<!-- GENERATED FILE — do not edit. Source: skills-src/agents/bower-implementer.md. Regenerate: node scripts/build-adapters.cjs -->
 
 # Bower Implementer
 

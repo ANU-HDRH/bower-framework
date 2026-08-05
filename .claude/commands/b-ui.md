@@ -1,3 +1,9 @@
+---
+description: Gated path for structural, underspecified UI changes — propose with alternatives, confirm, implement, reconcile docs/ui.md.
+argument-hint: the user's description of the UI change
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-ui.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower UI Change
 
 You are running the Bower UI change workflow — the gated path for **structural and underspecified** changes to the experience surface. Most UI work does not need this skill: visual tweaks, copy edits, and tightly-specified structural changes are handled out-of-band (the decision table lives in `_bower/framework.md` → *UI Changes — Paths and the Gate*; worked examples in `_bower/framework-reference.md`). Reach for `/b-ui` when the change touches navigation, screen composition, layout grammar, or interaction patterns **and** the request has branching choices the user should pick between.

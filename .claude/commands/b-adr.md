@@ -1,3 +1,9 @@
+---
+description: Scaffold a new Architectural Decision Record, or supersede or narrow an existing one.
+argument-hint: the user's description of the decision
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-adr.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower ADR
 
 You are scaffolding an Architectural Decision Record (ADR) — a single-file, append-only entry in the project's decision log at `docs/adr/`. ADRs capture cross-cutting commitments: choices that constrain more than one feature and would surprise a future reader if not written down.

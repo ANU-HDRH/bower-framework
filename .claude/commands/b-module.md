@@ -1,3 +1,9 @@
+---
+description: Build all features of a small, well-specified module in one pass; one gate, one integration pass.
+argument-hint: the target module
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-module.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Module Build
 
 You are running the Bower module-build workflow. This builds all features in a single module in one pass, with one gate up front covering the entire module plan and one acceptance check at the end. Use this when the module is small and well-specified; use `/b-feature` instead for exploratory work or modules that will likely need mid-flight design revision.

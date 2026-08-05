@@ -1,3 +1,9 @@
+---
+description: Upgrade the project to the current framework version by walking the migration notes in _bower/changes.md.
+argument-hint: the user's optional argument
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-upgrade.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Upgrade
 
 You are running the Bower framework upgrade workflow in a **project** (not in the framework repo itself). This command:

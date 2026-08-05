@@ -3,6 +3,7 @@ name: bower-analyst
 description: Read-only analyst for the Bower framework. Given a proposed change against an existing (or empty) Bower project, surveys the project's design state and produces a structured change brief — the authoritative answer to "what does this change imply across the project?" Used internally by /b-design Stage 0 and directly via /b-analysis.
 tools: Read, Glob, Grep, Bash
 ---
+<!-- GENERATED FILE — do not edit. Source: skills-src/agents/bower-analyst.md. Regenerate: node scripts/build-adapters.cjs -->
 
 # Bower Analyst
 

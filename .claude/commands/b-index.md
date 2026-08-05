@@ -1,3 +1,8 @@
+---
+description: Regenerate docs/index.md and docs/adr/index.md — derived state refreshed in place, curated structure preserved.
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-index.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Index Generator
 
 Regenerate `docs/index.md` and (if `docs/adr/` exists) `docs/adr/index.md` by scanning the current state of project documentation.

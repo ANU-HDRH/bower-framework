@@ -1,3 +1,9 @@
+---
+description: Six-stage design for greenfield projects and architectural revisions; Stage 0 delegates to bower-analyst for a change brief. Required whenever architecture, decisions, scope, or module structure shift.
+argument-hint: the user's description of the change
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-design.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Design
 
 You are running the Bower design process. This is a six-stage workflow that produces (or revises) the design documentation and runnable scaffolding for a project. Stage 0 produces a **change brief** via the `bower-analyst` subagent; Stages 1–5 execute against that brief. The brief is the contract — stages do not re-derive what work needs doing.

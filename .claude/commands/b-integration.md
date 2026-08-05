@@ -1,3 +1,9 @@
+---
+description: Build or update the integration test that exercises a module's boundary.
+argument-hint: the target module
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-integration.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Module Integration Test
 
 You are running the Bower module-integration workflow. This builds the integration test that exercises a module's boundary, per the integration prose recorded in `module-status.md`. One gate before any code is written, mirroring `/b-feature`'s shape.

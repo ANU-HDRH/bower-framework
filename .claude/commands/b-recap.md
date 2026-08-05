@@ -1,3 +1,8 @@
+---
+description: Read-only orientation — where is this project, and what is the next move?
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-recap.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Recap
 
 You are running the Bower recap workflow. This is a **strictly read-only, advisory** orientation command. It answers one question: *where is this project, and what's the next move?*

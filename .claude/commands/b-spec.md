@@ -1,3 +1,9 @@
+---
+description: Export a single specification document from the project's Bower documentation, for readers outside the project.
+argument-hint: optional scope or instructions from the user
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-spec.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Spec Export
 
 You are generating a single specification document from the project's Bower documentation. This document is for sharing with people outside the project — stakeholders, collaborators, reviewers, or other teams.

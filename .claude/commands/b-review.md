@@ -1,3 +1,9 @@
+---
+description: Fresh-eyes review of a completed module via the bower-reviewer subagent; reconciles owned drift behind one triage gate and routes the rest.
+argument-hint: the target module
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-review.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Module Review
 
 You are running the Bower module-review workflow. This reviews **one completed (or near-complete) module** with fresh eyes, surfaces where the build diverged from what the docs, decisions, and rest of the module say it should be, and reconciles the divergences it can resolve itself — routing the rest to the commands that own them.

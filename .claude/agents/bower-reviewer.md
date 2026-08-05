@@ -3,6 +3,7 @@ name: bower-reviewer
 description: Read-only fresh-eyes reviewer for the Bower framework. Given a completed (or near-complete) module, surveys its plans, status, ADRs, and code, and produces a structured review report — the authoritative answer to "what did we build here, and where does it diverge from what the docs, decisions, and rest of the module say it should be?" Used internally by /b-review.
 tools: Read, Glob, Grep, Bash
 ---
+<!-- GENERATED FILE — do not edit. Source: skills-src/agents/bower-reviewer.md. Regenerate: node scripts/build-adapters.cjs -->
 
 # Bower Reviewer
 

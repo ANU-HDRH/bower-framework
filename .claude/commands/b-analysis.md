@@ -1,3 +1,9 @@
+---
+description: Read-only change brief from the bower-analyst subagent — what does a proposed change imply across the project?
+argument-hint: the user's change description
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-analysis.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Analysis
 
 You are running the Bower analysis workflow. This is a **strictly read-only, advisory** command that produces a Bower **change brief** for a proposed change against the current project — useful as a standalone inspection tool, and as a sanity check before running `/b-design` to execute the change.

@@ -1,3 +1,9 @@
+---
+description: Brownfield cold-start — reconstruct an orienting docs/ skeleton from an existing codebase and open an adoption phase.
+argument-hint: the user's optional argument
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-adopt.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Adopt
 
 You are running Bower **brownfield adoption** in a project that has an existing codebase but has never been designed with Bower. This command reconstructs an orienting `docs/` skeleton *from the code as it is*, records the decisions it cannot attribute to intent in an **adoption ledger**, and puts the project into an **adoption phase** that ends when the ledger is drained.

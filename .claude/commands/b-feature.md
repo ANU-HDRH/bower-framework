@@ -1,3 +1,9 @@
+---
+description: The everyday change command (add / modify / remove within existing architecture) — orient, propose, gate, plan, delegate implementation, reconcile.
+argument-hint: the user's description of what they want to change
+---
+<!-- GENERATED FILE — do not edit. Source: skills-src/commands/b-feature.md. Regenerate: node scripts/build-adapters.cjs -->
+
 # Bower Change
 
 You are running the Bower change workflow — the everyday command for any work that fits within existing architecture. One gate before any code is written.
