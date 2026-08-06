@@ -18,6 +18,27 @@ A two-module toy codebase (`src/auth`, `src/notes`) with no `docs/` at all, and 
 
 ## Steps
 
+### Precondition probe — unwired instruction files (run first, it is cheap)
+
+The fixture's `AGENTS.md` was *seeded* by the scaffold, so it already carries the router directive. That is not the shape a brownfield repo usually arrives in: an existing codebase typically has instruction files of its own, the scaffold preserves them untouched, and nothing downstream wires them. Reproduce that state and confirm adoption refuses to survey in it:
+
+```
+cd ~/scratch/bower-conformance/c2
+printf '# Notes app\n\nHand-written.\n' > AGENTS.md   # replaces the seeded, wired one
+rm -f CLAUDE.md
+git add -A && git commit -q -m unwired
+```
+
+Invoke `$b-adopt` / `/b-adopt`. It must stop in Phase 0 — before the delegated survey, so this costs almost nothing — name `AGENTS.md`, quote the directive paragraph for pasting, and write nothing. It must **not** add the line itself: those files belong to the project, and adoption writes only under `docs/`.
+
+Then restore the wired baseline before the main walk:
+
+```
+git reset --hard HEAD~1
+```
+
+### The main walk
+
 Run in a session at a terminal (Codex TUI, or Claude Code).
 
 1. Invoke `$b-adopt` (Codex) / `/b-adopt` (Claude Code) with no argument.
@@ -37,6 +58,7 @@ Run in a session at a terminal (Codex TUI, or Claude Code).
 6. **Reality was described, not fixed.** `git status` shows additions under `docs/` only. Not one byte of `src/` changed, and nothing was proposed as an edit mid-adoption — concerns became ledger items.
 7. **Hedged where inferred.** Module purposes and boundaries in `docs/architecture.md` read as observations of the code, not as ratified intent, except where the operator confirmed them in step 2.
 8. **The handoff names a literal command**, and the confidence paragraph is present and candid about what was inferred.
+9. **The probe stopped the run.** With an unwired `AGENTS.md` and no `CLAUDE.md`, Phase 0 halted before the survey, named the file, and quoted the directive. Porcelain empty; no `docs/`; `AGENTS.md` unmodified. A run that repaired `AGENTS.md` itself is a FAIL even though the end state is correct — adoption's write boundary is the contract, and the operator owns their instruction files.
 
 ## Tolerated degradations
 

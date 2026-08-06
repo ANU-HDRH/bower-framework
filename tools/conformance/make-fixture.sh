@@ -9,7 +9,7 @@
 #   brownfield  Toy codebase, no docs/, scaffolded.                            (C2)
 #   bower       Toy codebase + conformant docs/, scaffolded.              (C3/C4/C6/C7)
 #   drift       bower + seven seeded drifts in module auth, Review: reset.     (C8)
-#   pinned      bower, but carrying the v0.32 footprint and VERSION=0.32.      (C5)
+#   pinned      bower, VERSION=0.32, grown CLAUDE.md, no AGENTS.md.            (C5)
 #
 # Every kind ends with a clean working tree (one commit, `git status --porcelain`
 # empty) because the zero-writes assertion in most scenarios is a porcelain
@@ -19,8 +19,7 @@
 # ~/scratch/bower-conformance/<scenario>/ is the convention. Delete it after the
 # run; nothing here is meant to be kept.
 #
-# Zero dependencies beyond bash, git, and this repo's scaffold.sh. `pinned` also
-# needs the v0.32 tag reachable in the framework repo.
+# Zero dependencies beyond bash, git, and this repo's scaffold.sh.
 
 set -euo pipefail
 
@@ -464,15 +463,30 @@ esac
 
 bash "$FRAMEWORK/scripts/scaffold.sh" "$TARGET"
 
-# The scaffold seeds AGENTS.md and CLAUDE.md from the templates. For `pinned` we
-# rewind to what a real pre-v0.33 project looks like: no AGENTS.md, no adapter
-# trees, a CLAUDE.md the project has grown its own content into, and VERSION
-# pinned so /b-upgrade has exactly one version to walk.
+# `pinned` models a pre-v0.33 project *after the mandatory first-runtime
+# bootstrap* — not before it. A project scaffolded before v0.33 has no `.agents/`
+# or `.codex/` at all, so Codex can discover no Bower skill and cannot invoke the
+# upgrade workflow that is under test; Claude Code would load the project's own
+# pre-v0.33 command instead of the current one. Either way the run would score a
+# workflow that is not this framework's. So the fixture carries the current
+# footprint, and pins the three things the upgrade is supposed to move:
+#
+#   VERSION=0.32   one version for /b-upgrade to walk, and the value criterion 8
+#                  checks got bumped only after the migration applied.
+#   grown CLAUDE.md  project-owned content for the judgement migration to move.
+#   no AGENTS.md   the scaffold seeds it only if absent, so holding it back keeps
+#                  the v0.33 judgement step, and criterion 5's "verify the
+#                  scaffold ran", inside the run under test. A real bootstrap
+#                  would have seeded it from the template; the migration work
+#                  (move CLAUDE.md's own content in, verbatim) is the same either
+#                  way. This one is a deliberate contrivance — see c5-upgrade.md.
+#
+# `_bower/` is deliberately *not* rewound to v0.32: the current skills reference
+# `_bower/framework.md` → Runtime bindings for every gate, and running them
+# against a `_bower/` that predates that section would score gate behaviour
+# against a combination the framework never ships.
 if [ "$KIND" = "pinned" ]; then
-  rm -rf "$TARGET/_bower" "$TARGET/.claude" "$TARGET/.agents" "$TARGET/.codex" \
-         "$TARGET/AGENTS.md" "$TARGET/CLAUDE.md"
-  git -C "$FRAMEWORK" archive v0.32 _bower .claude | tar -x -C "$TARGET"
-  rm -f "$TARGET"/_bower/project-*
+  rm -f "$TARGET/AGENTS.md"
   printf '0.32\n' > "$TARGET/_bower/VERSION"
   printf '%s\n' "$FRAMEWORK" > "$TARGET/_bower/SOURCE"
   cat > "$TARGET/CLAUDE.md" <<'EOF'
@@ -500,7 +514,13 @@ if [ "$KIND" = "drift" ]; then
   echo "  drifts:    7 seeded in module auth — catalogue in docs/conformance/c8-batch-gate.md"
 fi
 if [ "$KIND" = "pinned" ]; then
-  echo "  pinned to: v0.32 footprint, SOURCE=$FRAMEWORK (clone is local, no network)"
+  echo "  pinned:    VERSION=0.32 over the current footprint; no AGENTS.md;"
+  echo "             CLAUDE.md grown; SOURCE=$FRAMEWORK (clone is local, no network)"
+  echo
+  echo "  This models a pre-v0.33 project AFTER the mandatory first-runtime"
+  echo "  bootstrap. A real pre-v0.33 project has no .agents/ or .codex/, so Codex"
+  echo "  can discover no Bower skill: the operator must run scaffold.sh once from"
+  echo "  a clone, outside the sandbox, before any \$b-upgrade is possible."
 fi
 echo
 echo "Codex needs to trust this path before it can see anything Bower ships."

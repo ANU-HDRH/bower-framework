@@ -77,7 +77,17 @@ If the list is a single step, skip this question — the user can commit when th
 
 The scaffold writes into `.agents/` and `.codex/`, which some runtimes protect from workspace writes (Codex's `workspace-write` sandbox mounts both read-only, with no approval prompt — the write simply fails). Decide the path **before invoking the scaffold**: never run it in-sandbox hoping to recover, because a partial run refreshes `_bower/` and `.claude/` and then dies at the protected trees, leaving the runtime adapters on different framework versions.
 
-Probe first: `touch .agents/.bower-write-probe && rm .agents/.bower-write-probe` (and the same for `.codex/`). Both succeed → Step 5c. Either fails →
+Probe first, and probe the way the scaffold's own preflight does: **a directory that does not exist yet is judged by its nearest existing ancestor**, which is where the `mkdir` would land. This matters on exactly the upgrade that needs it most — a project scaffolded before the adapter trees existed has no `.agents/` or `.codex/` at all, and *absent is not protected*. A probe that writes straight into the directory fails on absence too, which would send every first upgrade down the operator-run path on a runtime that could have run the scaffold itself.
+
+```
+for d in .agents/skills .codex/agents; do
+  p="$d"; while [ ! -d "$p" ]; do p="$(dirname "$p")"; done
+  if ( : > "$p/.bower-write-probe" ) 2>/dev/null; then rm -f "$p/.bower-write-probe"
+  else echo "PROTECTED: $d"; fi
+done
+```
+
+No `PROTECTED:` line → Step 5c. Any `PROTECTED:` line → Step 5b.
 
 ### 5b. Protected paths: hand the scaffold to the operator
 
@@ -89,7 +99,7 @@ bash <clone>/scripts/scaffold.sh <project-root>
 
 (On Windows: `powershell -File <clone>\scripts\scaffold.ps1 <project-root>`.)
 
-Tell them the clone must stay in place until this is done, wait for their confirmation that the scaffold ran (an operator gate — their explicit word, not an assumption), and verify by checking that a file the new version ships has actually changed before continuing to Step 6. If they decline to run it, abort the upgrade honestly: no migration has been applied, `_bower/VERSION` is untouched, and the clone path is reported for manual cleanup. Never report a partial upgrade as complete.
+Tell them the clone must stay in place until this is done, wait for their confirmation that the scaffold ran (an operator gate — their explicit word, not an assumption), and verify before continuing to Step 6. Verify against *state, not a diff*: check that the footprint is at the new version — `.agents/skills/b-upgrade/SKILL.md` exists, `.codex/agents/bower-*.toml` are present, the project's `_bower/changes.md` carries the new version's `## v<new>` heading. A scaffold run over a footprint some of which was already current changes nothing, and reading "nothing changed" as "it did not run" would strand a correct upgrade. If they decline to run it, abort the upgrade honestly: no migration has been applied, `_bower/VERSION` is untouched, and the clone path is reported for manual cleanup. Never report a partial upgrade as complete.
 
 ### 5c. Run the scaffold
 

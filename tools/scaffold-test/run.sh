@@ -74,6 +74,9 @@ assert_same() {
 assert_contains() {
   if grep -qF -- "$2" <<<"$1"; then pass "$3"; else fail "$3" "output did not contain: $2"; fi
 }
+assert_lacks() {
+  if grep -qF -- "$2" <<<"$1"; then fail "$3" "output unexpectedly contained: $2"; else pass "$3"; fi
+}
 
 sha() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$@"
@@ -160,6 +163,7 @@ else
     "$(diff <(printf '%s\n' "$before") <(printf '%s\n' "$after") | head -20)"
 fi
 assert_contains "$OUT" "preserved (already exists)" "  seeds report as preserved"
+assert_lacks    "$OUT" "ACTION REQUIRED" "  seeded-then-preserved files raise no wiring warning"
 
 # ────────────────────────────────────────────── 3. project-owned files survive
 
@@ -190,6 +194,48 @@ assert "$([[ "$c_before" == "$(cat "$T3/CLAUDE.md")" ]] && echo 0 || echo 1)"  "
 assert "$([[ "$x_before" == "$(cat "$T3/.codex/config.toml")" ]] && echo 0 || echo 1)" "  existing .codex/config.toml untouched"
 assert "$([[ "$s_before" == "$(cat "$T3/.claude/settings.json")" ]] && echo 0 || echo 1)" "  existing .claude/settings.json untouched"
 assert "$([[ "$d_before" == "$(snapshot "$T3/docs")" ]] && echo 0 || echo 1)"  "  docs/ untouched"
+
+# Untouched is right, but silent is not: this target is a codebase newly adopting
+# Bower with instruction files of its own, and nothing downstream will wire them
+# (VERSION was just seeded at the current version, so /b-upgrade has no migration
+# to walk). The warning has to name both files, the exact missing lines, and the
+# fact that the operator owns the fix.
+assert_contains "$OUT" "ACTION REQUIRED"      "  unwired instruction files are named"
+assert_contains "$OUT" "AGENTS.md — add this paragraph" "  the AGENTS.md directive is quoted for pasting"
+assert_contains "$OUT" 'read `_bower/framework.md` in full' "  ...verbatim, matching the template"
+assert_contains "$OUT" "CLAUDE.md — add the missing include line(s)" "  the CLAUDE.md includes are named"
+assert_contains "$OUT" "@_bower/framework.md" "  ...specifically the one this CLAUDE.md lacks"
+assert_lacks    "$OUT" "  @AGENTS.md"         "  ...and not the one it already has"
+assert_contains "$OUT" "Nothing downstream will do this for you" "  a fresh adoption is told nothing will fix it"
+assert_lacks    "$OUT" "You are mid-upgrade"  "  ...and is not misdirected at /b-upgrade"
+
+# ────────────────────────── 3b. correctly wired grown files draw no warning
+
+echo
+echo "3b. a wired project's own instruction files are left in peace"
+
+T3B="$(mktarget)"
+printf '# My project\n\nRead `_bower/framework.md` before any Bower work.\n' > "$T3B/AGENTS.md"
+printf '@AGENTS.md\n@_bower/framework.md\n\n# Claude-specific notes\n'       > "$T3B/CLAUDE.md"
+
+run_scaffold "$T3B"
+assert "$STATUS" "exits 0" "$OUT"
+assert_contains "$OUT" "AGENTS.md                preserved" "  the grown AGENTS.md is preserved"
+assert_lacks    "$OUT" "ACTION REQUIRED" "  no warning when both files carry their wiring"
+
+# A file wired for one runtime but not the other is still a finding: this one
+# reaches the router from AGENTS.md, so Codex is fine, but CLAUDE.md never pulls
+# in the project's own instructions.
+T3C="$(mktarget)"
+printf '# My project\n\nRead `_bower/framework.md` before any Bower work.\n' > "$T3C/AGENTS.md"
+printf '@_bower/framework.md\n'                                             > "$T3C/CLAUDE.md"
+mkdir -p "$T3C/_bower"; printf '0.32\n' > "$T3C/_bower/VERSION"
+
+run_scaffold "$T3C"
+assert "$STATUS" "exits 0" "$OUT"
+assert_contains "$OUT" "ACTION REQUIRED"  "  a half-wired pair still warns"
+assert_lacks    "$OUT" "AGENTS.md — add"  "  the wired AGENTS.md is not flagged"
+assert_contains "$OUT" "You are mid-upgrade" "  an older project is pointed at /b-upgrade instead"
 
 # ───────────────────────────────────────── 4. namespace-scoped replace + prune
 
@@ -258,13 +304,20 @@ echo
 echo "6. scaffold.ps1 produces the same tree"
 
 PWSH=""
-for c in pwsh powershell; do
-  if command -v "$c" >/dev/null 2>&1; then PWSH="$c"; break; fi
-done
+# SCAFFOLD_TEST_NO_PWSH=1 forces the skip path even where PowerShell is present.
+# It exists so the release gate's attestation fallback can be exercised on a box
+# that has pwsh — that branch blocks releases, so it must be testable.
+if [[ -z "${SCAFFOLD_TEST_NO_PWSH:-}" ]]; then
+  for c in pwsh powershell; do
+    if command -v "$c" >/dev/null 2>&1; then PWSH="$c"; break; fi
+  done
+fi
 
+PARITY="skipped"
 if [[ -z "$PWSH" ]]; then
-  echo "  ! no pwsh/powershell on PATH — parity case skipped (run it on a box that has one)" >&2
+  echo "  ! no pwsh/powershell on PATH — parity case skipped (see PS1-PARITY.md)" >&2
 else
+  PARITY="ran"
   T6BASH="$(mktarget)"
   T6PS="$(mktarget)"
   "$SCAFFOLD" "$T6BASH" >/dev/null 2>&1
@@ -282,11 +335,37 @@ else
     fail "  bash and PowerShell trees match" \
       "$(diff <(printf '%s\n' "$b_snap") <(printf '%s\n' "$p_snap") | head -30)"
   fi
+
+  # Tree parity alone never exercises the wiring warning: both targets start
+  # empty, so nothing is preserved and the block cannot fire. It is also the one
+  # part of either script that is pure quoted prose, which is where the two
+  # languages diverge most cheaply. Compare the block itself, on a target whose
+  # instruction files are preserved and unwired. The block carries no paths, so
+  # the two are expected to match byte for byte after CRLF normalisation.
+  T6BW="$(mktarget)"
+  T6PW="$(mktarget)"
+  for d in "$T6BW" "$T6PW"; do
+    printf '# My project\n\nHand-written.\n' > "$d/AGENTS.md"
+    printf '# Notes\n\nNo includes here.\n'  > "$d/CLAUDE.md"
+  done
+  b_warn="$("$SCAFFOLD" "$T6BW" 2>&1 | sed -n '/ACTION REQUIRED/,$p' | tr -d '\r')"
+  p_warn="$("$PWSH" -NoProfile -File "$SCAFFOLD_PS1" "$T6PW" 2>&1 | sed -n '/ACTION REQUIRED/,$p' | tr -d '\r')"
+  assert_contains "$b_warn" "ACTION REQUIRED" "  bash emits the wiring warning"
+  assert_contains "$p_warn" "ACTION REQUIRED" "  PowerShell emits the wiring warning"
+  if [[ "$b_warn" == "$p_warn" ]]; then
+    pass "  the wiring warning is identical in both"
+  else
+    fail "  the wiring warning is identical in both" \
+      "$(diff <(printf '%s\n' "$b_warn") <(printf '%s\n' "$p_warn") | head -30)"
+  fi
 fi
 
 # ────────────────────────────────────────────────────────────────────── result
 
 echo
+# Machine-readable, and read by scripts/release.sh: when parity did not run here,
+# the release falls back to the attestation ledger in PS1-PARITY.md.
+echo "scaffold-test: ps1-parity $PARITY"
 if [[ "$failures" -eq 0 ]]; then
   echo "scaffold-test: $checks checks passed."
   exit 0

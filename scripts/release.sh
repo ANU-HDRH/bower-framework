@@ -9,8 +9,10 @@
 #
 # Aborts if the working tree is dirty, HEAD is not the published main commit,
 # the tag already exists, the changes.md section is missing, the checked-in
-# runtime adapters have drifted from skills-src/, or any of the docs viewer,
-# adapter generator, or scaffold acceptance tests fail.
+# runtime adapters have drifted from skills-src/, any of the docs viewer,
+# adapter generator, or scaffold acceptance tests fail, or there is no
+# PowerShell parity evidence for this version (a real parity run here, or a PASS
+# row in tools/scaffold-test/PS1-PARITY.md).
 set -euo pipefail
 
 DRY_RUN=0
@@ -35,6 +37,7 @@ VIEWER_TEST="$REPO_ROOT/tools/viewer-test/run.cjs"
 ADAPTER_BUILD="$REPO_ROOT/scripts/build-adapters.cjs"
 ADAPTER_TEST="$REPO_ROOT/tools/adapter-test/run.cjs"
 SCAFFOLD_TEST="$REPO_ROOT/tools/scaffold-test/run.sh"
+PS1_PARITY="$REPO_ROOT/tools/scaffold-test/PS1-PARITY.md"
 
 [[ -f "$VERSION_FILE" ]] || { echo "error: $VERSION_FILE not found" >&2; exit 1; }
 [[ -f "$CHANGES_FILE" ]] || { echo "error: $CHANGES_FILE not found" >&2; exit 1; }
@@ -133,11 +136,41 @@ fi
 # footprint behind. Never publish past a failure in it.
 if [[ -f "$SCAFFOLD_TEST" ]]; then
   echo "Checking the scaffold against its fixtures…"
-  if ! bash "$SCAFFOLD_TEST"; then
+  scaffold_status=0
+  SCAFFOLD_OUT="$(bash "$SCAFFOLD_TEST" 2>&1)" || scaffold_status=$?
+  printf '%s\n' "$SCAFFOLD_OUT"
+  if [[ "$scaffold_status" -ne 0 ]]; then
     echo "error: the scaffold's acceptance test failed — see tools/scaffold-test/run.sh." >&2
     echo "       Fix the scaffold, or the test if its footprint genuinely changed," >&2
     echo "       before releasing." >&2
     exit 1
+  fi
+
+  # scaffold.ps1 is maintained by hand against scaffold.sh, and the parity case
+  # is the only thing that proves it — but it needs pwsh on PATH, so on most
+  # boxes it skips and every PowerShell edit would ship unexecuted. Accept either
+  # a real run here or a PASS attestation naming this version.
+  if grep -q 'ps1-parity ran' <<<"$SCAFFOLD_OUT"; then
+    echo "scaffold.ps1 parity: verified in this environment."
+  else
+    VERSION_RE="${VERSION//./\\.}"
+    if [[ -f "$PS1_PARITY" ]] && grep -qE "^\|[[:space:]]*${VERSION_RE}[[:space:]]*\|.*PASS" "$PS1_PARITY"; then
+      echo "scaffold.ps1 parity: attested for v$VERSION in tools/scaffold-test/PS1-PARITY.md."
+    else
+      {
+        echo "error: no PowerShell parity evidence for v$VERSION."
+        echo
+        echo "       The parity case skipped (no pwsh/powershell on PATH), and"
+        echo "       tools/scaffold-test/PS1-PARITY.md has no PASS row for $VERSION. Every"
+        echo "       scaffold.ps1 edit in this release is therefore unexecuted."
+        echo
+        echo "       On a box with bash and PowerShell both on PATH, run:"
+        echo "           bash tools/scaffold-test/run.sh"
+        echo "       confirm 'ps1-parity ran' and 0 failed, then add a row to"
+        echo "       tools/scaffold-test/PS1-PARITY.md and commit it with the release."
+      } >&2
+      exit 1
+    fi
   fi
 fi
 

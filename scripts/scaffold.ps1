@@ -67,6 +67,13 @@
 #   - target's docs\, .claude\settings.local.json, non-framework skills, or
 #     anything else.
 #
+# Warns (but never edits) when a *preserved* AGENTS.md carries no reference to
+# _bower\framework.md, or a preserved CLAUDE.md is missing either include line.
+# An unwired instruction file means the runtime loads no router, and on a fresh
+# adoption nothing downstream repairs it: VERSION is seeded at the current
+# version, so /b-upgrade has no migration to walk. The warning prints last, names
+# the exact lines, and says whether /b-upgrade or the operator should add them.
+#
 # Idempotent: re-running upgrades an existing project to the current framework
 # version by refreshing _bower\ and the runtime adapter trees in place. The
 # project should then run /b-upgrade to apply any per-version migrations and
@@ -314,6 +321,30 @@ if (Test-Path -LiteralPath $sourcePath) {
     }
 }
 
+# 11. Wiring check on *preserved* instruction files. Seeding-if-absent is right —
+#     a grown AGENTS.md or CLAUDE.md is project-owned and this script must never
+#     edit one. But preserving an unwired file silently is not: neither runtime
+#     loads _bower\framework.md, so every gate, runtime binding and document
+#     schema the skills cite is missing from the session, and the commands run
+#     anyway and produce non-conformant work. For a project newly adopting Bower
+#     nothing downstream repairs it either — VERSION is seeded current, so
+#     /b-upgrade has no migration to walk. Name it, with the exact lines, as the
+#     last thing on screen.
+$agentsUnwired = $false
+if ($agentsAction -like 'preserved*') {
+    $agentsBody = Get-Content -LiteralPath $agentsMd -Raw
+    if (($agentsBody -notlike '*_bower/framework.md*') -and
+        ($agentsBody -notlike '*_bower\framework.md*')) {
+        $agentsUnwired = $true
+    }
+}
+$claudeMissing = @()
+if ($claudeAction -like 'preserved*') {
+    $claudeBody = Get-Content -LiteralPath $claudeMd -Raw
+    if ($claudeBody -notlike '*@AGENTS.md*')           { $claudeMissing += '@AGENTS.md' }
+    if ($claudeBody -notlike '*@_bower/framework.md*') { $claudeMissing += '@_bower/framework.md' }
+}
+
 Write-Host "Bower v$frameworkVersion -> $Target"
 Write-Host "  _bower\                  refreshed"
 foreach ($name in $pruned) {
@@ -345,4 +376,54 @@ if ($oldVersion -and $oldVersion -ne $frameworkVersion) {
     Write-Host ''
     Write-Host "Project was at v$oldVersion, framework is now v$frameworkVersion."
     Write-Host 'Run /b-upgrade in the project to apply migration notes and bump VERSION.'
+}
+
+# The wiring warning goes last, so it is what the operator is left looking at.
+if ($agentsUnwired -or $claudeMissing.Count -gt 0) {
+    Write-Host ''
+    Write-Host '================================================================================'
+    Write-Host 'ACTION REQUIRED — your instruction files do not reach the Bower router'
+    Write-Host '================================================================================'
+    Write-Host ''
+    Write-Host 'These files already existed, so they were preserved exactly as they are — this'
+    Write-Host "script never edits a project's own instruction files. What is missing below is"
+    Write-Host 'how a session reaches `_bower/framework.md`, and through it every gate, runtime'
+    Write-Host 'binding and document schema the Bower commands cite. On the runtime whose path'
+    Write-Host 'is broken the commands still run, and produce non-conformant work.'
+    if ($agentsUnwired) {
+        Write-Host ''
+        Write-Host 'AGENTS.md — add this paragraph near the top, as its own paragraph:'
+        Write-Host ''
+        Write-Host '  **Before any Bower work — any `/b-*` or `$b-*` skill, any question about'
+        Write-Host '  project state, any change to `docs/` — read `_bower/framework.md` in full.**'
+        Write-Host '  It is the router for how this project is designed, documented, and changed;'
+        Write-Host '  acting without it produces non-conformant work.'
+        Write-Host ''
+        Write-Host "This is the whole of Codex's path to the router: AGENTS.md is the file it always"
+        Write-Host 'loads, and it has no include mechanism to follow.'
+    }
+    if ($claudeMissing.Count -gt 0) {
+        Write-Host ''
+        Write-Host 'CLAUDE.md — add the missing include line(s), conventionally at the top:'
+        Write-Host ''
+        foreach ($line in $claudeMissing) {
+            Write-Host "  $line"
+        }
+        Write-Host ''
+        Write-Host 'Neither line is redundant: `@AGENTS.md` pulls in the project''s own instructions,'
+        Write-Host '`@_bower/framework.md` loads the router. Claude Code needs both — it is the only'
+        Write-Host 'runtime that reads CLAUDE.md at all.'
+    }
+    if ($oldVersion -and $oldVersion -ne $frameworkVersion) {
+        Write-Host ''
+        Write-Host "You are mid-upgrade, so there is a better path than editing by hand: /b-upgrade's"
+        Write-Host 'migration step does exactly this as a gated edit, moving your own content into'
+        Write-Host 'place rather than overwriting it. The lines above are what it will add.'
+    } else {
+        Write-Host ''
+        Write-Host 'Nothing downstream will do this for you. This project starts at the current'
+        Write-Host 'framework version, so /b-upgrade has no migration to walk. Add the lines above'
+        Write-Host 'before your first Bower command.'
+    }
+    Write-Host ''
 }

@@ -69,6 +69,13 @@
 #   - target's docs/, .claude/settings.local.json, non-framework skills, or
 #     anything else.
 #
+# Warns (but never edits) when a *preserved* AGENTS.md carries no reference to
+# _bower/framework.md, or a preserved CLAUDE.md is missing either include line.
+# An unwired instruction file means the runtime loads no router, and on a fresh
+# adoption nothing downstream repairs it: VERSION is seeded at the current
+# version, so /b-upgrade has no migration to walk. The warning prints last, names
+# the exact lines, and says whether /b-upgrade or the operator should add them.
+#
 # Idempotent: re-running upgrades an existing project to the current framework
 # version by refreshing _bower/ and the runtime adapter trees in place. The
 # project should then run /b-upgrade to apply any per-version migrations and
@@ -270,6 +277,27 @@ if [[ ! -f "$target/_bower/SOURCE" ]]; then
   fi
 fi
 
+# 11. Wiring check on *preserved* instruction files. Seeding-if-absent is right —
+#     a grown AGENTS.md or CLAUDE.md is project-owned and this script must never
+#     edit one. But preserving an unwired file silently is not: neither runtime
+#     loads `_bower/framework.md`, so every gate, runtime binding and document
+#     schema the skills cite is missing from the session, and the commands run
+#     anyway and produce non-conformant work. For a project newly adopting Bower
+#     nothing downstream repairs it either — VERSION is seeded current, so
+#     /b-upgrade has no migration to walk. Name it, with the exact lines, as the
+#     last thing on screen.
+agents_unwired=0
+if [[ "$agents_action" == preserved* ]] \
+   && ! grep -qF '_bower/framework.md' "$target/AGENTS.md" \
+   && ! grep -qF '_bower\framework.md' "$target/AGENTS.md"; then
+  agents_unwired=1
+fi
+claude_missing=()
+if [[ "$claude_action" == preserved* ]]; then
+  grep -qF '@AGENTS.md'           "$target/CLAUDE.md" || claude_missing+=('@AGENTS.md')
+  grep -qF '@_bower/framework.md' "$target/CLAUDE.md" || claude_missing+=('@_bower/framework.md')
+fi
+
 echo "Bower v$framework_version → $target"
 echo "  _bower/                  refreshed"
 if [[ ${#pruned[@]} -gt 0 ]]; then
@@ -308,4 +336,64 @@ if [[ -n "$old_version" && "$old_version" != "$framework_version" ]]; then
   echo
   echo "Project was at v$old_version, framework is now v$framework_version."
   echo "Run /b-upgrade in the project to apply migration notes and bump VERSION."
+fi
+
+# The wiring warning goes last, so it is what the operator is left looking at.
+if [[ $agents_unwired -eq 1 || ${#claude_missing[@]} -gt 0 ]]; then
+  cat <<'EOF'
+
+================================================================================
+ACTION REQUIRED — your instruction files do not reach the Bower router
+================================================================================
+
+These files already existed, so they were preserved exactly as they are — this
+script never edits a project's own instruction files. What is missing below is
+how a session reaches `_bower/framework.md`, and through it every gate, runtime
+binding and document schema the Bower commands cite. On the runtime whose path
+is broken the commands still run, and produce non-conformant work.
+EOF
+  if [[ $agents_unwired -eq 1 ]]; then
+    cat <<'EOF'
+
+AGENTS.md — add this paragraph near the top, as its own paragraph:
+
+  **Before any Bower work — any `/b-*` or `$b-*` skill, any question about
+  project state, any change to `docs/` — read `_bower/framework.md` in full.**
+  It is the router for how this project is designed, documented, and changed;
+  acting without it produces non-conformant work.
+
+This is the whole of Codex's path to the router: AGENTS.md is the file it always
+loads, and it has no include mechanism to follow.
+EOF
+  fi
+  if [[ ${#claude_missing[@]} -gt 0 ]]; then
+    echo
+    echo "CLAUDE.md — add the missing include line(s), conventionally at the top:"
+    echo
+    for line in "${claude_missing[@]}"; do
+      echo "  $line"
+    done
+    cat <<'EOF'
+
+Neither line is redundant: `@AGENTS.md` pulls in the project's own instructions,
+`@_bower/framework.md` loads the router. Claude Code needs both — it is the only
+runtime that reads CLAUDE.md at all.
+EOF
+  fi
+  if [[ -n "$old_version" && "$old_version" != "$framework_version" ]]; then
+    cat <<'EOF'
+
+You are mid-upgrade, so there is a better path than editing by hand: /b-upgrade's
+migration step does exactly this as a gated edit, moving your own content into
+place rather than overwriting it. The lines above are what it will add.
+EOF
+  else
+    cat <<'EOF'
+
+Nothing downstream will do this for you. This project starts at the current
+framework version, so /b-upgrade has no migration to walk. Add the lines above
+before your first Bower command.
+EOF
+  fi
+  echo
 fi

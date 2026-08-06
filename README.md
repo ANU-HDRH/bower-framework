@@ -51,7 +51,7 @@ git clone https://github.com/anu-hdrh/bower-framework /tmp/bower
 rm -rf /tmp/bower
 ```
 
-This copies `_bower/` (the framework guidance; treat it as read-only) and the runtime adapters — `.claude/` for Claude Code, `.agents/skills/` and `.codex/agents/` for Codex — into your project. It seeds `AGENTS.md`, `CLAUDE.md` and `.codex/config.toml` only if they are absent, and never edits them again; an existing `AGENTS.md` or `CLAUDE.md` is left exactly as it is. The two lines Bower needs are `@AGENTS.md` and `@_bower/framework.md` in `CLAUDE.md`, and a directive in `AGENTS.md` telling the agent to read `_bower/framework.md` before any Bower work. It never touches `docs/`. If you’d rather copy the files by hand, the script is short and readable; do what it does.
+This copies `_bower/` (the framework guidance; treat it as read-only) and the runtime adapters — `.claude/` for Claude Code, `.agents/skills/` and `.codex/agents/` for Codex — into your project. It seeds `AGENTS.md`, `CLAUDE.md` and `.codex/config.toml` only if they are absent, and never edits them again; an existing `AGENTS.md` or `CLAUDE.md` is left exactly as it is. The two lines Bower needs are `@AGENTS.md` and `@_bower/framework.md` in `CLAUDE.md`, and a directive in `AGENTS.md` telling the agent to read `_bower/framework.md` before any Bower work. **If your project already had those files and they lack the wiring, the scaffold ends by telling you so and quoting the exact lines** — it will not add them for you, and on a first install nothing else will either, so do it before your first Bower command. It never touches `docs/`. If you’d rather copy the files by hand, the script is short and readable; do what it does.
 
 Then:
 
@@ -155,6 +155,15 @@ Bower doesn’t prescribe a test runner, directory layout or coverage bar; those
 `/b-upgrade` moves a project to the current framework version. It refuses to run on a dirty git tree (so `git reset --hard` is always a clean escape), refreshes `_bower/` and the runtime adapters, then walks each intermediate version’s migration notes from `_bower/changes.md` one version at a time, with a gate before applying each, and finishes with a candid self-assessment.
 
 Under Codex the refresh step is yours to run: `.agents/` and `.codex/` are read-only inside its sandbox, and a partial write there would leave the two adapter trees on different framework versions. So the command probes first, hands you the exact scaffold command, and stops rather than reporting an upgrade it could not finish. Start a new session afterwards — instruction files are read once per session.
+
+**Coming to Codex from a pre-v0.33 project? Bootstrap it once, by hand.** `.agents/` and `.codex/` first ship in v0.33, so a project scaffolded before that contains nothing Codex can discover — no skill, no custom agent, and therefore no `$b-upgrade` to run. Clone the framework and run the scaffold yourself, from an ordinary terminal outside the sandbox:
+
+```
+git clone --depth 1 https://github.com/ANU-HDRH/bower-framework.git /tmp/bower
+/tmp/bower/scripts/scaffold.sh /path/to/your-project
+```
+
+That is the one unavoidable manual step, and it is unavoidable for the obvious reason: the thing that would automate it is the thing that is missing. Your `_bower/VERSION` is left as it was, so start a Codex session afterwards and run `$b-upgrade` to walk the migration notes as usual. Projects on Claude Code need none of this — the existing `/b-upgrade` is already there to run.
 
 It clones from the URL in `_bower/SOURCE`, so forks just work: scaffold from your fork and upgrades pull from your fork; edit `SOURCE` to retarget an existing project. Upgrades track the tip of `main` in whatever repo `SOURCE` names.
 

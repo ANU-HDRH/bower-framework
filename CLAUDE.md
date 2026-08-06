@@ -157,7 +157,9 @@ tools/                     # Framework-repo tooling; NOT scaffolded into project
 │   ├── fixture-adoption/  # A project mid-adoption (🌱 banner + ledger)
 │   └── fixture-obsolete/  # A check gone universal, to prove the tripwire fires
 ├── adapter-test/          # Generator acceptance test + fixture-src/ mini-root
-├── scaffold-test/         # Scaffold acceptance test (bash temp-dir matrix)
+├── scaffold-test/
+│   ├── run.sh             # Scaffold acceptance test (bash temp-dir matrix; case 6 needs pwsh)
+│   └── PS1-PARITY.md      # PowerShell parity: how to run it, and the release-gate attestations
 └── conformance/           # make-fixture.sh (5 fixture kinds) + run-codex.sh exec harness
 docs/                      # Material for the README / external readers (not a Bower project's docs/)
 ├── changes-archive.md     # Archived changelog entries v0.8–v0.19; not scaffolded
@@ -184,6 +186,8 @@ Framework versions are cut as GitHub releases so downstream watchers (Releases-o
 The script reads `_bower/VERSION`, extracts the matching `## vX.Y — DATE` section from `_bower/changes.md`, and creates a GitHub release tagged `vX.Y` with that section as the release notes. It aborts if the tag already exists (locally or on origin) or if the `changes.md` section is missing — both signal that something is out of sync. Use `scripts/release.sh --dry-run` to preview before cutting.
 
 Four acceptance gates run before the tag stage, in order: the viewer test (plus the `SCHEMA_VERSION` equality check), `build-adapters.cjs --check` for adapter drift, the adapter test, and the scaffold test. The three `node` ones warn and skip if `node` is absent; the scaffold test needs only bash and always runs. A release therefore cannot ship hand-edited adapters or a viewer misreading its own framework version.
+
+A fifth gate covers `scripts/scaffold.ps1`, which is maintained by hand against `scaffold.sh` and is only ever *executed* by the scaffold test's parity case — which needs `pwsh` on PATH and otherwise skips, so on most boxes every PowerShell edit would ship unrun. The release now demands either a real parity run in the release environment or a PASS row naming the version in `tools/scaffold-test/PS1-PARITY.md`, and aborts with neither. **Install PowerShell wherever you work on this repo** (it is cross-platform and a package away) and the gate is satisfied automatically; `PS1-PARITY.md` has the details, the limits of a non-Windows run, and `SCAFFOLD_TEST_NO_PWSH=1` for exercising the fallback. Touching either scaffold script means running the parity case — a bash-side addition with no PowerShell counterpart is exactly what it catches.
 
 Tags use the `vX.Y` form (`v0.17`); `_bower/VERSION` itself stays unprefixed (`0.17`) because that's what tooling reads. The script tags `origin/main`'s current HEAD, so push the version-bump commit before running it — and don't push unrelated follow-up commits ahead of the release if you want the tag to land on the version commit specifically.
 
