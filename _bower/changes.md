@@ -65,6 +65,12 @@ Codex has no include mechanism, so the router cannot be `@`-included into it. A 
 - **`docs/conformance/`** — `README.md` (tiers, demotion rule, cost), `c1`–`c8` scenario specs, `runs.md` ledger; **`tools/conformance/`** — fixture builder (5 kinds) and a `codex exec` harness.
 - **`README.md`, `CLAUDE.md`** — the two-runtime summary for readers; the contributor rules for generated adapters and conformance.
 
+### A feature awaiting a manual check is not in-progress build work
+
+`/b-recap`'s next-action ladder treated any feature at `🚧` with a `status.md` as work to continue — but a feature awaiting manual verification is pinned at `🚧` by design, so that signature covers two different states, and the command recommended `/b-feature` on features whose code was already complete. Found on a real project, where the same recap produced different recommendations on two runtimes: the weaker model followed the ladder as written, the stronger one silently inferred the feature was parked. The ladder was the defect, not the model. `/b-recap` also now derives its recommendation rather than adopting a feature's stored `## Next move`, which in this state points back at itself.
+
+- **`b-recap`** — the `Pending verification:` line is the discriminator that the `🚧` marker cannot be: such features are skipped by the continue-in-progress rung, reported as `awaiting verification` rather than active, and surfaced as an `Operator action:` line that neither becomes nor suppresses the recommendation.
+
 ### Migration
 
 This version changes how instructions are *delivered*, not what any document looks like. No `docs/` schema changed.

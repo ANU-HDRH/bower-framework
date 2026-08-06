@@ -30,7 +30,7 @@ From those inputs, compose:
 - **Project name and one-line scope summary** — from `scope.md`
 - **Adoption phase** — if the `🌱` banner is present, state it and the open-ledger count (e.g. "🌱 adoption phase — 6 open questions in adoption-ledger.md"). Omit this line entirely when there is no banner.
 - **Progress overview** — per module, one line each, with status marker and brief state (e.g. "Module B: 🚧 2 of 4 features built"). During the adoption phase, a module's `🚧` reflects as-built-but-unverified features, so phrase it that way (e.g. "Module B: 🚧 4 features as-built, unverified") rather than implying active work.
-- **Currently in progress** — any feature at 🚧 **that has a `status.md`**, with a one-line state from it. In the adoption phase, features at `🚧` with no `status.md` are *not* in progress — they belong under *Adopted (unverified)*.
+- **Currently in progress** — any feature at 🚧 **that has a `status.md`**, with a one-line state from it. In the adoption phase, features at `🚧` with no `status.md` are *not* in progress — they belong under *Adopted (unverified)*. A feature whose `status.md` carries a `Pending verification:` line is code-complete and waiting on the operator, not being built: say so on its line (`awaiting verification`) so it is not read as active work, and see *Awaiting manual verification* below for the checks themselves.
 - **Adopted (unverified)** — adoption-phase only: features at `🚧` with no `status.md` (as-built from existing code, not yet verified to the `✓` bar). List per module, or a one-line count if many. Omit this section when not in the adoption phase.
 - **Degraded or blocked** — any feature at 🟡, 🔴, or 🔧 with the reason
 - **Success criteria** — derived, never read from `scope.md`. A criterion is **satisfied** when every module named in its `*Delivered by:*` clause is complete: all features ✓ **and** the `## Module integration` marker ✓. Otherwise it is outstanding, and you name the modules holding it up. Report the count (`N of M satisfied`) and list the outstanding ones with their blocking modules. Three edge cases, all reported rather than guessed at:
@@ -40,7 +40,9 @@ From those inputs, compose:
 - **Recommended next action** — derived from build order *and* module-integration state. Always emitted as a literal slash command (or the explicit `(none — ...)` form), never as prose:
   - **Adoption phase takes precedence:** if the `🌱` banner is present, the next move is to drain the ledger, not to build — adopted features already exist in code. Emit the ledger as the next action: `Drain docs/adoption-ledger.md (N open) — per item: /b-adr (resolve), /b-feature or /b-design (remediate), or delete the line (dismiss); remove the banner when empty.` Do not recommend `/b-feature <name>` merely because features sit at `🚧` — that `🚧` is as-built, not in-progress.
   - **An open review holding a `/b-design` item outranks all build work.** If any module is `Review: 🚧` and its plan has an open `route:/b-design` finding, recommend `/b-design` — boundary erosion is the one thing the framework does not let accumulate. An open review holding only `/b-feature` items does *not* get this precedence; it competes normally below.
-  - If a module has features in 🚧 **with a `status.md`** (genuine in-progress work), continue via `/b-feature <name>`.
+  - **Derive this, never copy it.** A feature's `status.md` may carry its own `## Next move` line, written by the run that last touched it. It is feature-scoped and can be stale — a feature awaiting manual verification holds one that points back at itself, since a stored next move retires at `✓` and pending verification pins the feature at `🚧`. Read the state and apply this ladder; never adopt a stored `## Next move` as the project's recommended action.
+  - If a module has features in 🚧 **with a `status.md`** (genuine in-progress work), continue via `/b-feature <name>`. **A feature whose `status.md` carries a `Pending verification:` line does not qualify** — its code is done and the outstanding work is the operator's, so recommending `/b-feature` on it sends the workflow to build something already built. `framework-reference.md` pins such a feature at `🚧` by design, which makes the marker alone unable to tell the two states apart; the `Pending verification:` line is the discriminator. Skip it here and fall through to the rungs below.
+  - **Pending verification is surfaced, not blocking.** A feature awaiting a manual check never becomes the recommended next action, and never suppresses one either — nothing about an outstanding operator check prevents building elsewhere. Emit the checks as an additional operator-action line above the recommendation, naming the feature and what the operator must do (e.g. `Operator action: verify cloudflare-config — 2 dashboard changes listed in its status.md`), then give the derived recommendation as normal.
   - Else, if a module is `Review: 🚧`, recommend continuing the review — `/b-review <module>` to resume mediation, or the specific open command if one dominates. Finishing an open review beats starting a new module.
   - Else, if a module has all features ✓ but its `## Module integration` `Test:` marker is ⏸ or 🚧, recommend `/b-integration <module>` — this is the residual case the rule was designed for.
   - Else, the first ⏸ feature in the first not-yet-complete module's build order. Recommend `/b-module <module>` if remaining features are few and unambiguous, else `/b-feature <feature>`.
@@ -71,6 +73,7 @@ Progress:
 
 Currently in progress:
   - <module>/<feature> — <one-line state>
+  - <module>/<feature> — awaiting verification, <one-line state>   (has a Pending verification: line)
 
 Adopted (unverified):                          (adoption phase only; omit otherwise)
   - <module>/<feature> — as-built, not yet verified
@@ -94,6 +97,9 @@ Review state:
 
 Awaiting manual verification:
   - (none) | <module>/<feature> — <pending check>
+
+Operator action:                               (omit unless something awaits manual verification)
+  - verify <module>/<feature> — <what the operator must do, from its Pending verification: line>
 
 Recommended next action:
   - <literal slash command, e.g. /b-feature <name>, /b-module <name>, /b-integration <module>, or "(none — project complete)">
