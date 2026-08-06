@@ -8,6 +8,28 @@ Evidence pointers are paths on the operator's machine or citations into a spike 
 
 ---
 
+## v0.33 — real-project upgrade, off-scenario
+
+**Not a scenario row.** Recorded because it is the first time any of this ran against a real project rather than a built fixture, and because two of its observations have no scenario to belong to. It does not discharge C5, and no tier claim rests on it.
+
+Ran 2026-08-07 on **Lyrebird** — an advanced-development project, ~90-line `constitution.md`, populated `docs/` — copied at framework v0.32 to `~/scratch/lyrebird-033`, `_bower/SOURCE` repointed at a local clone of `codex-support`. `CLAUDE.md` was seeded with grown project content first, to reach the judgement branch of the v0.33 migration rather than its mechanical one. Upgrade run under **Claude Code**; `b-recap` then run under both runtimes. **Model and runtime version were not recorded** — a gap by this ledger's own rule, and the reason this is a note rather than a row.
+
+| Area | Observed | Verdict |
+|---|---|---|
+| Scaffold path selection | `.agents/` and `.codex/` were absent; the Step 5a probe judged them by nearest existing ancestor, found the root writable, and ran the scaffold in-session. *Absent is not protected*, exercised for real on the upgrade that motivated it. | as designed |
+| Footprint installed | 13 `.agents/skills/b-*/SKILL.md`, 3 `.codex/agents/bower-*.toml`, `_bower/` and `.claude/` refreshed, `VERSION` → 0.33. | as designed |
+| Migration Part 2, judgement branch | `CLAUDE.md` reduced to exactly the two include lines; project content moved under `AGENTS.md`'s `## Project-Specific Code Standards`, order preserved. `@_bower/framework.md` correctly **not** moved — the boilerplate misclassification did not occur. | as designed |
+| Verbatim fidelity | 10 of 11 moved lines byte-identical. One line lost its inline code backticks (`` `frontend/src/lib/` `` → `frontend/src/lib/`) and the blank line preceding it, leaving a paragraph flush against a closing fence. Content and meaning intact; markup regenerated from sense rather than reproduced. | **minor defect** |
+| Cross-runtime parity, `b-recap` | `/b-recap` and `$b-recap` produced comparable orientation output over the same real `docs/` tree. A read-only command with no gate to hide behind, on real data rather than a toy fixture. | observation |
+
+**Consequence:** the verbatim clause in v0.33's Migration Part 2 was tightened in the same version to say that verbatim means the characters, not the sense. That is a changelog edit, not gate or delegation text; the demotion rule is not triggered.
+
+**Not established by this run.** Two behaviours are transcript-only and were not verified: whether the migration gate presented the split *before* either file was written, and whether the scaffold's `ACTION REQUIRED` block took its "You are mid-upgrade" branch rather than the fresh-adoption wording. Both are visible on disk only by their absence. Codex's protected-path deny path — C5's interactive probe, and the reason `/b-upgrade`'s Codex flow is inverted — was not exercised at all, because the upgrade ran under Claude Code.
+
+Evidence: `~/scratch/lyrebird-033` (upgrade left uncommitted in the working tree; the baseline is commit `a37824c`).
+
+---
+
 ## v0.33-pre — branch `codex-support` @ `abcc2ff`
 
 The generated adapters, scaffold, and neutralised instruction bodies as of M4, before the v0.33 version bump. These are the rows that establish Codex's **experimental** tier entry: a clean scaffold install plus the C3 core.
