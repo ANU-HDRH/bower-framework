@@ -8,7 +8,7 @@ Evidence pointers are paths on the operator's machine or citations into a spike 
 
 ---
 
-## v0.33 — real-project upgrade, off-scenario
+## v0.33 — real-project run on Lyrebird, off-scenario
 
 **Not a scenario row.** Recorded because it is the first time any of this ran against a real project rather than a built fixture, and because two of its observations have no scenario to belong to. It does not discharge C5, and no tier claim rests on it.
 
@@ -23,6 +23,20 @@ Ran 2026-08-07 on **Lyrebird** — an advanced-development project, ~90-line `co
 | Cross-runtime parity, `b-recap` | `/b-recap` and `$b-recap` produced comparable orientation output over the same real `docs/` tree — but **diverged on the recommended next action**: Codex (gpt-5.6-luna, high) named `cloudflare-config`, Claude Code (Opus) named `per-turn-comment-crud`. Investigated rather than attributed to model strength, and the ladder was at fault — `cloudflare-config` is `🚧` with a `status.md` and a `Pending verification:` line, which matched the continue-in-progress rung exactly, *and* its `status.md` held a stored `## Next move` naming itself. The weaker model followed both written pointers; the stronger one silently overrode them. Fixed in this version. | **defect found** |
 
 **Consequence:** the verbatim clause in v0.33's Migration Part 2 was tightened in the same version to say that verbatim means the characters, not the sense. That is a changelog edit, not gate or delegation text; the demotion rule is not triggered.
+
+### Second session: the first delegated `$b-feature` implementation under Codex
+
+Same project, same runtime, continuing after the `b-recap` fix was refreshed in (which resolved the divergence above — the weaker model then named the correct feature). Delegation was **real**, not the inline fallback, under a `workspace-write` parent, consistent with the C1/C7 fixture rows.
+
+| Area | Observed | Verdict |
+|---|---|---|
+| `b-recap` after the fix | Re-run on the same weaker model that found the defect; recommendation resolved to the correct feature. Confirmed on the model that failed, not on a stronger one. | fix confirmed |
+| Delegation | Real spawn, long-running as expected for an implementation role. | as designed |
+| Caller's wait discipline | The wait primitive returned repeated polling-window timeouts; the caller read elapsed time as a stall and sent an **interrupt** after several polls, against an implementer legitimately running the project's full test suite. `Runtime bindings` → *Delegation* says only "wait for its structured artifact" and offers no waiting policy. | **defect found** |
+| Report provenance | The interrupted subagent returned `COMPLETE` reporting 982 passing; the caller's own re-run found 983 passing, 12 skipped, 0 failed. **Which of "a test was added between the runs" and "the report described an unfinished run" was true was not established.** No marker exists for a report produced under interrupt, so nothing prompted the question — and the caller reconciles docs from that report. | **defect found** |
+| Context isolation | After interrupting, the caller re-ran the full suite on its own thread — defeating the reason implementation is delegated at all. | **defect found** |
+
+**Deferred, not fixed at v0.33.** The waiting policy belongs in `Runtime bindings` → *Delegation*, which the demotion rule names verbatim, so fixing it here would oblige a C3 re-run on both runtimes plus C8 on Codex before v0.33 could repeat its tier claims. The provenance half needs the implementation-report shape changed and the viewer's schema contract checked. Both are recorded in `_bower/roadmap.md` → *A delegated role's elapsed time is not evidence of failure*, to be done together so the re-run is paid once. Codex is `experimental` at this version and v0.33's migration notes invite exactly this class of report against it; a named finding here is the honest disposition, where a release-eve binding edit shipped under an unre-run tier claim would not be.
 
 **Not established by this run.** Two behaviours are transcript-only and were not verified: whether the migration gate presented the split *before* either file was written, and whether the scaffold's `ACTION REQUIRED` block took its "You are mid-upgrade" branch rather than the fresh-adoption wording. Both are visible on disk only by their absence. Codex's protected-path deny path — C5's interactive probe, and the reason `/b-upgrade`'s Codex flow is inverted — was not exercised at all, because the upgrade ran under Claude Code.
 
