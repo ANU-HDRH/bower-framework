@@ -102,6 +102,16 @@ This is the same posture as the viewer's schema contract above, applied to behav
 
 Runs cost real tokens against the operator's key (~13k–60k per exec check), and half the scenarios need an operator at a terminal. Batch them: build one fixture with `tools/conformance/make-fixture.sh`, run everything that fits it, score together. Never run the suite as a smoke test — `tools/adapter-test/` and `tools/scaffold-test/` are for that.
 
+## Filing issues on this repo
+
+Issues and issue comments post under the maintainer's account, so they carry conventions an agent must follow rather than improvise.
+
+- **Draft, show, then post.** Anything outward-facing gets confirmed before it goes out — the wording as much as the decision to file. "File an issue about X" authorises the issue, not a particular text.
+- **Carry the evidence, not the complaint.** The expensive thing to reconstruct months later is *what was observed*: the symptom as it actually appeared, the specific code or instruction that causes it, why that code is the way it is, and the fix options. A description of the problem alone forces the next reader to re-derive all of it.
+- **Attribute agent analysis.** When the investigation came from a session rather than from a human reading the code, end with a line saying so — a reader needs to know which, and the account it posts under does not tell them. Existing form, on issue #4 and issue #6: *"Investigated by Claude Code (Opus 5) in a &lt;repo&gt; session; reviewed and posted by me."* Adjust for where the work happened and where the evidence came from.
+- **The issue tracks; `_bower/roadmap.md` holds the reasoning.** Where a finding is already recorded as a deferred item, the issue summarises and points at it. Do not copy the analysis into both — one home per fact applies to this repo's own material, and an issue body is the copy that goes stale.
+- **A defect found in a downstream project routes upstream as evidence**, not as a local fix to that project's vendored `_bower/`. Patching the copy strands the finding where nobody else will see it.
+
 ## Framework reference (read these before changing framework behaviour)
 
 - `_bower/rationale.md` — **Why Bower works the way it does.** Design principles, comparisons to alternatives, and the reasoning behind structural choices. Consult before changing framework behaviour so the change stays coherent with the design.
