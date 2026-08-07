@@ -81,7 +81,7 @@ Status: <N> operation(s)
 
 Where `NNNN` and `MMMM` in this template are placeholders for real IDs (e.g. `ADR-0034`, `ADR-0011`); the actual brief contains real numbers.
 
-Operation semantics (per CLAUDE.md):
+Operation semantics (full ADR spec in `_bower/framework-reference.md`):
 - `new` — no existing ADR covers this; new file at the pre-allocated ID.
 - `supersedes` — replaces an existing decision; old ADR's frontmatter updated to `status: superseded`, body untouched.
 - `narrows` — scopes an exception to an existing decision whose central commitment still holds; both ADRs remain `accepted`, the new one carries `narrows: [ADR-MMMM]` and the old one gains `narrowed-by`. Choose between this and `supersedes` by asking whether someone implementing the old ADR's main decision today would still be right — yes → `narrows`, no → `supersedes`.

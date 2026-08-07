@@ -297,6 +297,19 @@ const LINT_CASES = [
     expect: /runtime-specific literal/,
   },
   {
+    // The site that motivated this lint read "with the Read tool's offset and
+    // limit" — natural prose, generated verbatim into a Codex skill that has no
+    // such tool. Bare "read" must still pass; the control case covers that.
+    label: 'a named runtime tool in a body',
+    files: { 'skills-src/commands/ok-cmd.md': OK_CMD.replace('Body.', "Read that range with the Read" + " tool's offset and limit.") },
+    expect: /names a runtime tool/,
+  },
+  {
+    label: 'a Claude adapter field named in a body',
+    files: { 'skills-src/agents/ok-agent.md': OK_AGENT.replace('Body.', 'Delegate with sub' + 'agent_type set.') },
+    expect: /names a Claude Code adapter field/,
+  },
+  {
     label: 'unrecognised role',
     files: { 'skills-src/agents/ok-agent.md': OK_AGENT.replace('role: read-only', 'role: mostly-harmless') },
     expect: /role must be one of/,

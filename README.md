@@ -19,7 +19,7 @@ The pattern borrows planning discipline from [SpecKit](https://github.com/github
 
 ## Two runtimes
 
-From v0.33 Bower ships adapters for **Claude Code** and **OpenAI Codex** from one set of sources. Bower's contracts — a gate before every write, one home per fact, roles that only read — are behavioural, so they should carry across; only the delivery differs, and the scaffold installs both footprints by default. Nothing about a Claude-only project changes: the extra directories are a few tens of KiB and are ignored by the runtime that doesn't use them.
+From v0.33 Bower ships adapters for **Claude Code** and **OpenAI Codex** from one set of sources. Bower's contracts — a gate before every write, one home per fact, roles that only read — are behavioural, so they should carry across; only the delivery differs, and the scaffold installs both footprints by default. Nothing about a Claude-only project changes: the extra directories are about 250 KiB and are ignored by the runtime that doesn't use them.
 
 **The two runtimes are not on an equal footing, and the labels below are the claim.** Claude Code is the reference runtime; Codex is *experimental* — shipped because the contracts held everywhere they were tested, with real behaviour still being scored and open findings recorded against it. Treat it as usable and worth reporting on, not as settled.
 

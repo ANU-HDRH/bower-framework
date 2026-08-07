@@ -47,7 +47,7 @@ Editing thirteen commands in four places was never going to hold. `skills-src/` 
 
 - **`skills-src/`** (new, not scaffolded) — 16 canonical sources; **`scripts/build-adapters.cjs`** (new) — `--check` byte-compares and is a release gate.
 - **`.agents/skills/b-*/SKILL.md`, `.codex/agents/bower-*.toml`** (new, generated) — the Codex adapter trees, alongside the existing `.claude/` ones.
-- **`tools/adapter-test/`, `scripts/release.sh`** — golden comparison and TOML round-trip; the release now gates on adapter drift and both new acceptance tests.
+- **`tools/adapter-test/`, `scripts/release.sh`** — golden comparison and TOML round-trip; the release now gates on adapter drift and both new acceptance tests. The tool-name lint matches by *pattern* rather than literal, because the coupling is easy to write by accident in prose that reads naturally ("with the Read tool's offset and limit") — one such site survived the neutralisation pass and was generated into a Codex skill for a tool Codex does not have. Bare verbs still pass; a control case asserts it.
 
 ### `AGENTS.md` is the project instruction file
 
@@ -63,7 +63,7 @@ Codex has no include mechanism, so the router cannot be `@`-included into it. A 
 `docs/conformance/` (framework-repo only) holds eight behavioural scenarios, written pass criteria, and an append-only ledger. A tier states what has been demonstrated, and says so where it is short: Codex is *experimental* on a clean install plus the feature gate holding under an explicit trust waiver; Claude Code's *supported* predates the suite, so both claim sites name what it rests on and which rows are still owed. Degradations are named and scored, never slid past. The demotion rule binds contributors: a version that edits gate or delegation wording re-runs the gate and batch-gate scenarios, for the runtimes each applies to, before repeating a tier claim.
 
 - **`docs/conformance/`** — `README.md` (tiers, demotion rule, cost), `c1`–`c8` scenario specs, `runs.md` ledger; **`tools/conformance/`** — fixture builder (5 kinds) and a `codex exec` harness.
-- **`README.md`, `CLAUDE.md`** — the two-runtime summary for readers; the contributor rules for generated adapters and conformance.
+- **`README.md`, `AGENTS.md`** — the two-runtime summary for readers; the contributor rules for generated adapters and conformance. The framework repo's own contributor instructions moved to `AGENTS.md` with `CLAUDE.md` reduced to an `@AGENTS.md` include, the same arrangement the scaffold gives projects — Codex reads no `CLAUDE.md`, so contributor rules kept there were invisible to it.
 
 ### A feature awaiting a manual check is not in-progress build work
 

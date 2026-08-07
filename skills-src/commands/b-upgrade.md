@@ -119,7 +119,7 @@ For each version in the step list, in order, oldest first:
 
 ### 6a. Extract migration notes for this version
 
-Read **only this version's section** — not the whole changelog. Use the heading line numbers from Step 3: the section runs from this version's `## v<X.Y>` line to the line before the next `## v<X.Y>` heading. For the oldest entry in a file, it runs to the `## Earlier versions` pointer if the file has one, otherwise to end of file. Read that range with the Read tool's `offset` and `limit`:
+Read **only this version's section** — not the whole changelog. Use the heading line numbers from Step 3: the section runs from this version's `## v<X.Y>` line to the line before the next `## v<X.Y>` heading. For the oldest entry in a file, it runs to the `## Earlier versions` pointer if the file has one, otherwise to end of file. **Read only that line range**, by whatever means this runtime offers for reading part of a file — never the whole changelog:
 
 - **Current-era versions (v0.20 and above)** are in the project's now-updated `_bower/changes.md`.
 - **Archived versions (v0.19 and below)** are in `<clone>/docs/changes-archive.md`, which the scaffold does not copy into projects. Read them from the clone. The project's `_bower/changes.md` carries a version index covering them, but not their bodies.

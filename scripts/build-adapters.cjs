@@ -34,6 +34,23 @@ const REGEN_CMD = 'node scripts/build-adapters.cjs';
 // _bower/framework.md's Runtime bindings section and in this generator.
 const DENY_LIST = ['$ARGUMENTS', 'AskUserQuestion'];
 
+// Named runtime tools are the same coupling as the literals above, but they are
+// easy to write by accident because the sentence reads naturally ("read that
+// range with the Read tool's offset and limit") and the generated Codex skill
+// then instructs Codex to use a tool it does not have. Matched as patterns
+// rather than literals because the bare word is legitimate prose — "read the
+// plan" must pass, "the Read tool" must not.
+const DENY_PATTERNS = [
+  {
+    re: /\b(Read|Write|Edit|MultiEdit|Bash|Glob|Grep|Task|Agent|NotebookEdit|WebFetch|WebSearch|TodoWrite)\s+tool\b/,
+    why: 'names a runtime tool — say what must happen, and let _bower/framework.md bind it',
+  },
+  {
+    re: /\bsubagent_type\b|\ballowed-tools\b|\bargument-hint\b/,
+    why: 'names a Claude Code adapter field — those are the generator\'s business, not a body\'s',
+  },
+];
+
 const ARG_MARKER = '<!-- bower:arguments -->';
 
 // Where the argument idiom binds, per runtime.
@@ -110,6 +127,13 @@ function checkBody(body, errors, where) {
     if (body.includes(banned))
       errors.push(
         `${where}: body contains the runtime-specific literal "${banned}" — canonical bodies are runtime-neutral`
+      );
+  }
+  for (const { re, why } of DENY_PATTERNS) {
+    const hit = body.match(re);
+    if (hit)
+      errors.push(
+        `${where}: body contains the runtime-specific literal "${hit[0]}" — ${why}`
       );
   }
 }
@@ -436,6 +460,7 @@ module.exports = {
   ARG_MARKER,
   BANNER_MARK,
   DENY_LIST,
+  DENY_PATTERNS,
   OUTPUT_ROOTS,
   ROLE_SANDBOX,
   ROLE_TOOLS,
