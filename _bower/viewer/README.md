@@ -189,7 +189,7 @@ correct — at closeout the plan is deleted and `Review: ✓` is the whole recor
 The viewer reads Bower's document schemas, so it is coupled to them by
 construction. Four things hold that coupling, in increasing order of teeth:
 
-1. **The contributor rule** in the framework repo's `CLAUDE.md`: a change to a
+1. **The contributor rule** in the framework repo's `AGENTS.md`: a change to a
    document schema checks this README's Schema contract table.
 2. **The table itself**, which names the defining section verbatim — so the
    section you are editing is greppable from the framework repo root.
