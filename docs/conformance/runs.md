@@ -24,6 +24,8 @@ Ran 2026-08-07 on **Lyrebird** — an advanced-development project, ~90-line `co
 
 **Consequence:** the verbatim clause in v0.33's Migration Part 2 was tightened in the same version to say that verbatim means the characters, not the sense. That is a changelog edit, not gate or delegation text; the demotion rule is not triggered.
 
+**The `b-recap` row was checked for a memory confound and cleared.** Claude Code carries persistent project memory and Codex has none, so a cross-runtime comparison on a real project can be decided by an invisible variable. The real project's memory holds an entry (written 2026-07-30) recording that stale `Next move:` lines are a known framework defect and that this project was deliberately left unswept as a test bed — which would have supplied the answer without any reasoning from `status.md` at all. The Claude side of this comparison ran in the **scratch copy**, whose memory directory is empty, so the row stands as written. It stands by luck rather than by design: nothing in the method controlled for this, and any future real-project row must either run the Claude side from a fresh path or list the memory present. Recorded as a roadmap item — *Agent memory is a second home for project state*.
+
 ### Second session: the first delegated `$b-feature` implementation under Codex
 
 Same project, same runtime, continuing after the `b-recap` fix was refreshed in (which resolved the divergence above — the weaker model then named the correct feature). Delegation was **real**, not the inline fallback, under a `workspace-write` parent, consistent with the C1/C7 fixture rows.
