@@ -17,7 +17,8 @@ The review exists because a sequential, feature-at-a-time build systematically m
 - **Diagnosis is read-only; the apply is bounded.** The `bower-reviewer` subagent surveys and reports — it never writes. This command *acts*, but only on the **owned** reconciliation classes (`inline-reconcile`, `test-backfill`, `status-fix`, `adr-supersede`). Everything else is routed to `/b-feature` or `/b-design` as a literal-command next move. The command never makes a behavioural or architectural change itself.
 - **Review is a state, not a single pass.** `## Module review`'s `Review:` marker in `module-status.md` goes ⏸ → 🚧 at the triage gate and 🚧 → ✓ only at closeout, when every accepted finding carries a disposition. Between those points the module is *in review*, the plan is on disk, and the operator can leave and come back across as many sessions as the work takes. Re-invoking `/b-review <module>` while the marker is 🚧 **resumes mediation** — it never re-diagnoses.
 - **The plan tracks every accepted finding, owned and routed alike.** `docs/modules/<module>/review-plan.md` holds one `## Findings` checklist. Owned/routed decides *who acts*, not what is tracked. This is what stops a pile of `/b-feature` findings scrolling off the console with no record. A plan is written whenever there is at least one accepted finding, **including a routed-only review**. Routed items additionally carry the reviewer's `Location`/`Drift`/`Resolution` verbatim (Step 3) — they are deferred into a fresh context, so the plan line is their entire handoff.
-- **A finding is discharged when its drift is gone, not when a command has run.** The two coincide for `/b-feature` and come apart for `/b-design`, which produces a decision rather than a change. Ticks are verified against the code, at the tick and again at closeout.
+- **A finding is discharged when its drift is gone, not when a command has run.** The two coincide for `/b-feature` and come apart for `/b-design`, which produces a decision rather than a change. Ticks are verified against the code.
+- **You are not the only writer of a tick, and you are the only auditor of one.** A `route:/b-feature` item is normally ticked by the command that discharged it, which appends a completion note (`— done YYYY-MM-DD via /b-feature <slug>`). That is the right owner for a task list, and it is self-certification at the moment it happens — so a tick you *find* is a claim, never a fact, and the closeout audit is the framework's only independent check on it. Everything else in the plan is still yours alone: briefs, `[~]` dispositions, re-classification, the `Review:` marker, and the plan's deletion.
 - **The plan is also the recovery anchor.** It is written *before* any reconciliation is applied, so a mid-apply crash leaves that file plus `git status` as the resumption material — same discipline as `/b-feature`'s post-gate `plan.md` write. It is transient: deleted at closeout, when the `Review: ✓` marker replaces it as the durable record.
 - **One gate to start, one to close.** The triage gate authorises the work; the closeout gate confirms the review is finished. You do not re-gate each item in between, except that `adr-supersede` items run through `/b-adr`, whose own gate fires.
 - **No findings log survives closeout.** What was fixed is in the commits; what was not was an operator decision. Do not write a findings history anywhere. The record is `Review: ✓ <date> (<N> of <N> features)` and nothing more.
@@ -57,6 +58,8 @@ Do not re-derive the review yourself or second-guess the subagent's findings inl
 
 ## Step 2: Present the Findings
 
+**Always print this block before the triage gate, in full, in this session.** The gate's options are meaningless to an operator who has not seen the findings: "confirm to action all owned items" is a blank cheque, and "let me deselect some" is impossible to answer about items nobody has read. This is a hard precondition on the gate, not a narrative step — printing a count and going straight to the question is the failure it exists to prevent.
+
 Print the report's findings to the operator as a readable, numbered block — grouped by dimension, ordered by severity, each showing the drift (the two things that disagree), the proposed resolution, and the class. Include the `## Considered and ruled out` and `## Observations (not actionable)` sections — the negative space is how the operator judges whether the review was thorough, and the observations carry signal (e.g. an ADR whose commitments weren't visible from the index) that doesn't become an action.
 
 Separate the findings visually into:
@@ -66,17 +69,25 @@ Separate the findings visually into:
 
 Print the report's `## Constitution contradictions` section too, **separately from both groups and unabridged** — verbatim quote, `docs/constitution.md:NN`, the contradicting evidence, and which findings leaned on the claim. It is neither owned nor routed: `constitution.md` is human-owned, so it gets its own consent gate below and never enters the plan.
 
+**Pre-review findings.** Read `docs/modules/<module>/findings.md` if it exists — the module's findings queue, holding drift recorded outside review (spec: `_bower/framework-reference.md` → *Findings queue*). Print its open items in their own group, labelled **pre-review findings**, after the reviewer's. They were not diagnosed by this review; they are candidates for absorption into it, and the operator decides at the triage gate. Say so plainly, and note where the reviewer's own findings expand on or contradict one — that is the most useful thing you can tell the operator about them, and it is the reason absorption exists rather than the two files simply coexisting.
+
 This printed block is transient triage material. The operator reads it here, and the plan (next step) is what makes it survive the session — say so if the finding count is large, because the console is not the record.
 
 ## Gate: Triage (batch gate)
 
-Triage collects a disposition for the review as a whole — and, when the operator wants finer control, per finding. Present one operator gate framing it as:
+Triage collects a disposition for the review as a whole — and, when the operator wants finer control, per finding.
+
+**Never present this gate until Step 2's numbered findings block has been printed in this session.** If you are resuming, recovering, or otherwise arrived here without having printed it, print it first — the operator cannot deselect findings they have not read, and a confirmation given without them is not informed consent.
+
+Present one operator gate framing it as:
 
 "I found N owned reconciliations and M routed findings in module `<module>`. Confirm to open the review — I'll write the plan, apply the owned items, and leave the routed ones tracked for you to run. Or tell me which findings to drop, or cancel."
 
 Offer the disposition choices (*Open the review and action all owned items* / *Let me deselect some* / *Cancel — just show me the report*). If the operator chooses to deselect, the walk that follows is a **batch gate** (binding: *Runtime bindings → Batch gates*): collect an explicit keep/drop disposition per finding, and act on none of them until the full set is confirmed; the kept findings become the plan.
 
 Routed findings are **not** informational at this gate — accepting them puts them in the checklist, where they hold the review open until run or won't-fixed. Say that plainly when asking, so the operator understands they are agreeing to tracked work, not just reading a list. A review whose findings are *all* routed is a normal outcome and still opens a review.
+
+**Pre-review findings are absorbed at this gate, or not at all.** If Step 2 printed queued items, the confirmation here also authorises moving the accepted ones into the plan — say so in the question, and offer them per item if the operator is deselecting. An absorbed item is renumbered into the `F` sequence, its brief carried verbatim, and removed from the queue in Step 3; from then on the plan's copy is the one that counts, and the review holds it open. An item left unabsorbed stays in the queue untouched, which is a legitimate answer rather than a deferral — the queue holds nothing open and loses nothing by keeping it. This is the only crossing between the two files, and it runs in one direction: a review never pushes a finding down into the queue.
 
 **Do not write the plan, set the marker, or apply anything until the operator confirms.** If they cancel, emit the findings and observations as a read-only handoff, leave `Review:` untouched, and stop — a cancelled triage means no review was opened.
 
@@ -97,7 +108,7 @@ After confirmation, if there is at least one accepted finding **of any class**, 
 ```markdown
 # Review plan: <module>
 
-Open review, diagnosed YYYY-MM-DD against 5 features. **Not living documentation** — this file is deleted at closeout, when `module-status.md`'s `Review: ✓` becomes the record. While it exists the module is in review (`Review: 🚧`): `/b-recap` summarises it, the docs viewer makes its findings readable, and `/b-review <module>` is the only workflow that edits or disposes of them.
+Open review, diagnosed YYYY-MM-DD against 5 features. **Not living documentation** — this file is deleted at closeout, when `module-status.md`'s `Review: ✓` becomes the record. While it exists the module is in review (`Review: 🚧`): `/b-recap` summarises it and the docs viewer makes its findings readable. A command handed a routed finding ticks that one box on discharge, appending `— done <date> via <command>`; every other edit here, and the disposal of any item, belongs to `/b-review <module>` alone, which re-verifies each routed tick against the code before closing.
 
 Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision, with date).
 
@@ -135,8 +146,13 @@ Shape rules:
   The asymmetry is the point. A routed item is deferred to a later session, in a fresh context, run by a command that was not present at diagnosis. Its one line has to survive being the whole handoff. Without the brief, the receiving command re-derives the finding from code — which costs a survey, may reach a different conclusion, and may fail to reproduce the finding at all and tick it as looked-at-and-fine.
 
   Sub-bullets are indented and carry **no checkbox** — one checkbox per finding, or `/b-recap`'s and the viewer's disposition counts double-count. Keep each to one line; if `Drift:` needs a paragraph, the finding should have been split.
+- **A ticked routed item may carry a completion note**, appended after the pointer as `— done YYYY-MM-DD via <command>`. You do not write it — the discharging command does — but it is part of the line schema, so preserve it on any item you edit, and read it as provenance when auditing the tick. It names who to attribute the claim to; it is not evidence the drift is gone.
 - **Record the diagnosis date and the roster count** in the preamble. The count is the length of `## Build order` right now, and it is what gets written into `Review: ✓ (N of N features)` at closeout.
 - `## Observations` is advisory, rides along so an interrupted session sees the whole picture, and never blocks closeout.
+
+**Absorbed pre-review findings enter the plan here, and leave the queue in the same pass.** Give each one the next free `F<n>` — never carry its `Q<n>` across, since IDs are per-file and a `Q` inside a review plan breaks the plan's own reference form — and rewrite its command's trailing clause to `according to F<n> in docs/modules/<module>/review-plan.md`. Copy `Location:` / `Drift:` / `Resolution:` **verbatim**, whatever the item's class: the no-brief-for-owned-items rule above is about not *writing* a brief at diagnosis, and stripping one that already exists destroys evidence nothing can reconstruct. Then remove the item from `docs/modules/<module>/findings.md`, and delete that file if it is now empty.
+
+Do both halves together. An item left in both files is tracked twice and will be discharged twice; an item that left the queue without arriving in the plan is simply lost. Say in one line which items you absorbed and what the queue has left.
 
 Then set the marker: write `Review: 🚧` in `module-status.md`'s `## Module review` section. Plan and marker go together — if you wrote one, write the other, in the same pass.
 
@@ -157,7 +173,9 @@ Walk the `## Findings` checklist. Tick each box as it is disposed of — **updat
 
 If implementation reveals the report was wrong about a finding (the drift doesn't actually exist), don't force the reconcile — mark it `[~]` with `report was wrong: <why>` and move on.
 
-**Routed items — do not action them.** In a single session that usually means you present them and stop; the operator runs `/b-feature`, comes back, and re-invokes `/b-review <module>`, which then checks each one against the rule below. Boundary erosion (`route:/b-design`) is never actioned here under any circumstances.
+**Routed items — do not action them.** In a single session that usually means you present them and stop. The operator runs the routed command, which ticks its own box on discharge; re-invoking `/b-review <module>` is for the findings that are still open and for closeout, not for per-finding bookkeeping. Boundary erosion (`route:/b-design`) is never actioned here under any circumstances, and a design run never ticks — see the re-classification rule below.
+
+**An item you find already `[x]` is left alone here.** It was ticked by the command that discharged it, and the closeout gate audits every routed tick against the code before the plan is deleted. Checking it twice buys nothing; checking it *only* here would put the audit before any later tick rather than after all of them.
 
 **A routed item is ticked when the drift it names is gone — not when the command it names has run.** Those are the same thing for `/b-feature`, which implements, and they are *not* the same thing for `/b-design`, which decides. A design run ends with an ADR and, usually, implementation work that nothing schedules: the decision has landed, the drift has not moved. So before ticking any routed item, open the `Location:` from its brief and confirm the disagreement is actually gone. This is one targeted read per item, not a re-review — the brief exists precisely so it is cheap. Never tick on the operator's report that they ran something, and never on seeing related-looking changes in the tree.
 
@@ -173,7 +191,9 @@ Do **not** offer to write the missing fields yourself. A resumed review does not
 
 ## Gate: Closeout
 
-When every item in `## Findings` carries a disposition (`[x]` or `[~]`), the review is finishable — but **verify the routed ticks before offering the gate.** Closeout deletes the plan, so this is the last moment any of it is recoverable, and a tick may have been made in an earlier session under the weaker rule, or by an operator answering "yes, I ran it." For each `[x]` routed item, read the `Location:` from its brief and confirm the drift is gone. Owned items were applied by this command and need no re-check; `[~]` items are decisions, not claims about code.
+When every item in `## Findings` carries a disposition (`[x]` or `[~]`), the review is finishable — but **verify the routed ticks before offering the gate.** Closeout deletes the plan, so this is the last moment any of it is recoverable. For each `[x]` routed item, read the `Location:` from its brief and confirm the drift is gone. Owned items were applied by this command and need no re-check; `[~]` items are decisions, not claims about code.
+
+**This is the framework's only independent check on a routed tick, and the whole reason the tick may be delegated.** Most routed ticks are written by the command that discharged the finding, in a context nothing here can see, at the moment it declared its own work complete. A completion note (`— done 2026-08-10 via /b-feature <slug>`) is provenance, not evidence: it tells you which command and which date to attribute the claim to, and says nothing about whether the drift is gone. Older ticks may also have been made under the pre-v0.34 rule, or by an operator answering "yes, I ran it." Read the code in every case.
 
 **A legacy plan has no briefs, and that does not block closeout.** A plan written before v0.32 gives a routed tick no `Location:` to check, and re-deriving one here is the hand-reconstruction this command refuses to do. Locate the code from the finding's gist if the gist makes it unambiguous; where it does not, the item is **unverifiable, not failed** — do not untick it, and do not invent a location to check. Count those separately in the gate line and name them, so the operator can eyeball the ones nothing confirmed: `routed ticks: 3 verified, 2 unverifiable (F5, F9 — no brief; plan predates v0.32)`. They may still close the review; an unverifiable tick is the cost of the plan's age, and holding a review open forever over it helps nobody.
 

@@ -19,7 +19,8 @@ Read these and only these, and only if they exist. Trust the documents; do not i
 3. `docs/modules/**/module-status.md` — `## Build order`, `## Module integration`, and `## Module review` state for each module
 4. `docs/modules/**/<feature>/status.md` — only for features currently at 🚧, 🟡, 🔴, or 🔧 (skip ✓ and ⏸). **A `🚧` feature with no `status.md` is an adopted-but-unverified feature, not an in-progress one** (adoption marks features as-built `🚧` and deliberately writes no `status.md`). Do not treat the missing file as an error or an omission — there is simply no session state to summarise; report it under *Adopted (unverified)*, not *Currently in progress*.
 5. `docs/modules/**/review-plan.md` — check *existence* across all modules (one glob; you need it for every module, whatever its marker, to catch marker/plan disagreement). Read the file itself only for modules whose `Review:` marker is 🚧, to count disposed/total from its `## Findings` checklist (`[x]` and `[~]` both count as disposed) and to name the open items' commands. **Count checkbox lines only** — a routed finding carries indented `Location:` / `Drift:` / `Resolution:` sub-bullets that are not items and never affect the count. Ignore those briefs entirely; they are for the command that discharges the finding, not for orientation. Do not read the file for any other purpose — it is a transient work list, not project state.
-6. `docs/adoption-ledger.md` — only if the adoption banner is present. Count its open items (one bullet each) and note a couple of examples; do not otherwise read it line-by-line.
+6. `docs/modules/**/findings.md` — the per-module findings queue: drift recorded outside review, paired with no marker and holding nothing open. One glob for existence, then read each one that exists to count its open `[ ]` items and name their commands. **Count checkbox lines only** — every queue item carries indented `Location:` / `Drift:` / `Resolution:` sub-bullets, which are never items. Read it for nothing else; like `review-plan.md` it is a transient work list, not project state.
+7. `docs/adoption-ledger.md` — only if the adoption banner is present. Count its open items (one bullet each) and note a couple of examples; do not otherwise read it line-by-line.
 
 If `docs/index.md` does not exist, the project has not been designed yet. Say so in one line and recommend `/b-design`. Stop.
 
@@ -46,7 +47,7 @@ From those inputs, compose:
   - Else, if a module is `Review: 🚧`, recommend continuing the review — `/b-review <module>` to resume mediation, or the specific open command if one dominates. Finishing an open review beats starting a new module.
   - Else, if a module has all features ✓ but its `## Module integration` `Test:` marker is ⏸ or 🚧, recommend `/b-integration <module>` — this is the residual case the rule was designed for.
   - Else, the first ⏸ feature in the first not-yet-complete module's build order. Recommend `/b-module <module>` if remaining features are few and unambiguous, else `/b-feature <feature>`.
-  - If everything is ✓ (features and module integration) and every success criterion derives as satisfied, emit `(none — project complete)`. An underivable or stale-pointer criterion blocks this: emit `Reconcile docs/scope.md — <N> success criteria have no resolvable Delivered by: module` instead, since the project cannot be declared complete against criteria nothing owns.
+  - If everything is ✓ (features and module integration) and every success criterion derives as satisfied, emit `(none — project complete)`. An underivable or stale-pointer criterion blocks this: emit `Reconcile docs/scope.md — <N> success criteria have no resolvable Delivered by: module` instead, since the project cannot be declared complete against criteria nothing owns. **An open findings queue blocks it too** — emit that queue's command instead. The queue never competes with the rungs above (deferred work does not outrank planned work), but a project with tracked drift left in it is not one to report as done.
 - **Module integration state** — list any module where features are ✓ but the integration marker is ⏸/🚧/🟡/🔴, with the marker shown
 - **Review state** — one line per module from its `## Module review` `Review:` marker. This is an **orthogonal axis**: never fold it into the module's status marker in the Progress overview, and never let it affect the success-criteria derivation — review is optional, so an unreviewed module is not thereby incomplete. Report:
   - `🚧 in review` — with the plan's disposed/total count and the open items' commands. This **is** outstanding work; it competes for the recommended next action.
@@ -54,6 +55,7 @@ From those inputs, compose:
   - `⏸ never reviewed` — for complete modules only (all features ✓ and integration ✓), since that is the point at which review becomes available and useful. Do not report `⏸` on a mid-build module; it would be noise on every line of a young project.
   - **Missing `## Module review` section** — report as `review state not recorded` for that module, which means the project predates the section and has not run `/b-review` since. Do not infer a past review from anything else.
   - **Marker/plan disagreement** — `🚧` with no `review-plan.md`, or a plan present under `⏸`/`✓`. Report it as a broken review state with `Run /b-review <module>` to resolve; the two are written together, so a mismatch means a run died or something was hand-edited. Do not guess which side is right.
+- **Findings queues** — one line per module that has a `findings.md`, with the open-item count and the commands. This is **not** review state: never fold it into the `Review:` line, the module's status marker, or the success-criteria derivation, because a queue holds nothing open and no module is incomplete for having one. It is real deferred work, so it surfaces here and blocks a `(none — project complete)` recommendation, but it never outranks a rung of the ladder below — the operator deferred these deliberately. Omit the section when no module has one. A `findings.md` that exists with **no open items** is a broken state — report it as `<module> — empty findings.md on disk (delete it)`, mirroring the marker/plan disagreement rule above: whoever disposed of the last item was supposed to delete the file.
 - **Awaiting manual verification** — any feature whose `status.md` contains a `Pending verification:` line, with the checks listed
 - **Open questions / blockers** — anything explicitly flagged in `status.md` files
 
@@ -94,6 +96,10 @@ Review state:
   - <module> — ⏸ never reviewed (complete — Run /b-review <module>)
   - <module> — review state not recorded
   - (nothing to report)
+
+Findings queues:                               (omit the section when no module has one)
+  - <module> — 2 open — Run /b-feature modify <module> <slug> according to Q1 in docs/modules/<module>/findings.md
+  - <module> — empty findings.md on disk (delete it)
 
 Awaiting manual verification:
   - (none) | <module>/<feature> — <pending check>

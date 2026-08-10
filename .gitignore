@@ -1,0 +1,17 @@
+# Per-developer, not per-project.
+
+# Editor state. Peacock and friends write here; nothing the framework ships
+# depends on it.
+.vscode/
+
+# Claude Code's per-developer permission grants. `.claude/commands/` and
+# `.claude/agents/` are generated and checked in; this file is neither, and the
+# scaffold explicitly never touches it.
+.claude/settings.local.json
+
+# Scratch installs. The repo has no package.json and no dependencies — the tools
+# under tools/ are plain .cjs — but a stray `npm i` while poking at the viewer
+# would otherwise land 200MB in the working set.
+node_modules/
+
+.DS_Store

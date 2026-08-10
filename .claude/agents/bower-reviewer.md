@@ -59,6 +59,7 @@ Run these phases in order. Phases are guidance for *what to read*; the report it
 
 1. For each feature in the build order, read its `plan.md` and `status.md` in full. These are the acceptance contract and the resumption record you'll check the code against.
 2. Note every acceptance criterion, every `Pending verification:` line, and every status marker. These feed the spec-drift, test-coverage, and status-honesty dimensions.
+3. **Do not read `findings.md` if the module has one.** It is a queue of drift someone else already noticed, and your value is that you have not seen it — a survey primed with pre-formed conclusions finds those and stops looking. `/b-review` reads it separately and puts its items in front of the operator beside yours, which only works if the two were reached independently. The same goes for an open `review-plan.md`: not yours to read.
 
 ### Phase 3 — Survey decisions
 

@@ -27,8 +27,8 @@ Current claims:
 
 | Runtime | Tier | Basis |
 |---|---|---|
-| Claude Code | supported | The reference runtime. The label **predates this suite and does not yet meet the evidence bar above** — see *What the Claude Code claim rests on* below for what it stands on instead, and which rows are owed. |
-| Codex | experimental | Earned at v0.33: clean scaffold install PASS, C3 core PASS (criteria 1–3, the `experimental` core), pressure variant PASS. Criterion 4 — the permission-prompt probe — is interactive and has no row; it is not part of the `experimental` core but is required for graduation. See `runs.md`. Graduation trigger is a green C1–C8 row set. |
+| Claude Code | supported | The reference runtime. The label **predates this suite and does not yet meet the evidence bar above** — see *What the Claude Code claim rests on* below for what it stands on instead, and which rows are owed. **v0.34 additionally owes C3 under the demotion rule** (`runs.md` → *v0.34*). |
+| Codex | experimental | Earned at v0.33: clean scaffold install PASS, C3 core PASS (criteria 1–3, the `experimental` core), pressure variant PASS. Criterion 4 — the permission-prompt probe — is interactive and has no row; it is not part of the `experimental` core but is required for graduation. See `runs.md`. Graduation trigger is a green C1–C8 row set. **Re-earned at v0.34**: gate text changed, and C3 core + pressure were re-run against it — both PASS, on the same weakest supported model (`runs.md` → *v0.34*). The claim therefore stands at exactly the level it was first earned at, and no higher: C3's interactive probes and C8 remain unrun, and C8's demotion obligation is still outstanding. |
 
 Claude Code runs **C1–C5** as the regression baseline. C6–C8 are written against the Codex bindings — chat-based gates, TOML custom agents — and have no Claude-side analogue worth running, because `AskUserQuestion` forces structurally what those scenarios test behaviourally.
 

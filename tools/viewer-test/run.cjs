@@ -95,6 +95,8 @@ const EXPECTED = [
   'review-plan-not-open',
   'review-stale',
   'review-routed-no-brief',
+  // findings queue (v0.34)
+  'findings-queue-empty',
   // scope criteria (v0.24)
   'criterion-no-owner',
   'criterion-stale-pointer',
@@ -335,6 +337,45 @@ assert(
   'a non-schema section is extracted, not dropped',
   JSON.stringify(bp && bp.sections),
 );
+
+// v0.34: the discharging command ticks its own routed finding and appends a
+// completion note. The note is provenance for the closeout audit, not part of
+// the pointer — and the pointer is a command meant to be copied and run
+// verbatim, so a note left glued to it would make the page's copy wrong.
+const f13 = bp && bp.items.find((i) => i.id === 'F13');
+assert(
+  f13 && f13.completion === 'done 2026-07-29 via /b-feature already-landed',
+  'a completion note is split off the finding line',
+  JSON.stringify(f13 && f13.completion),
+);
+assert(
+  f13 && f13.pointer === 'Run /b-feature modify boldorder already-landed according to F13 in docs/modules/boldorder/review-plan.md',
+  'and the pointer stays a runnable command',
+  JSON.stringify(f13 && f13.pointer),
+);
+assert(f3 && f3.completion === null, 'an unticked finding carries none', JSON.stringify(f3 && f3.completion));
+
+// v0.34: a findings queue is a loose .md at a module root. The old walker
+// registered a route for exactly four names, so a file that existed and was
+// correctly linked still rendered dead — with the drift report agreeing it was
+// fine, because broken-link tests existence and the renderer tests routability.
+// The sweep is now general, so the next invented artifact resolves too.
+assert(
+  g.docRoutes['docs/modules/clean/findings.md'] === `#/doc/${encodeURIComponent('modules/clean/findings')}`,
+  'a loose .md at a module root gets a route',
+  g.docRoutes['docs/modules/clean/findings.md'],
+);
+const fq = g.docs.find((d) => d.rel === 'docs/modules/clean/findings.md');
+assert(fq && fq.renderable && /Findings queue/.test(fq.title), 'and is rendered from its own H1', JSON.stringify(fq && fq.title));
+assert(fq && fq.origin === 'bower', 'findings.md is a Bower artifact, not project material', fq && fq.origin);
+assert(fq && fq.ownership === 'agent-owned (transient)', 'and is transient, like the review plan', fq && fq.ownership);
+
+// Nothing pairs with the queue, so there is one mechanical fact worth
+// reporting: whoever disposed of the last item was supposed to delete the file.
+// `clean` has an open item and is silent; `drifted`'s queue is drained.
+const fqEmpty = g.health.filter((h) => h.kind === 'findings-queue-empty');
+assert(fqEmpty.length === 1 && fqEmpty[0].module === 'drifted', 'a drained queue left on disk is reported', JSON.stringify(fqEmpty.map((h) => h.module)));
+assert(sevOf('findings-queue-empty') === 'warn', 'findings-queue-empty is warn', `got ${sevOf('findings-queue-empty')}`);
 
 // The check is version-gated: on a pre-v0.32 project every routed finding is
 // briefless by construction, which is history, not drift. The gate is the one
@@ -599,6 +640,23 @@ const appSrc = require('fs').readFileSync(path.join(__dirname, '../../_bower/vie
 const readFields = [...new Set([...appSrc.matchAll(/\bG\.([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]))];
 const provided = new Set([...Object.keys(g), 'rev']);
 const unresolved = readFields.filter((f) => !provided.has(f)).sort();
+// Top-level fields are not the whole contract. The review page and the adoption
+// page both render a list of `it`, reaching into per-item fields that no
+// top-level check covers — so renaming one in extract.cjs blanks a cell in
+// silence, which is how `completion` (v0.34) would fail. Both item shapes are
+// fixed key sets, so the union of them is checkable the same way.
+const itemFields = [...new Set([...appSrc.matchAll(/\bit\.([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]))];
+const itemKeys = new Set([
+  ...Object.keys((g.reviewPlans.find((p) => p.module === 'boldorder') || { items: [{}] }).items[0]),
+  ...Object.keys(extract(path.join(FIXTURES, 'fixture-adoption')).adoption.openItems[0]),
+]);
+const unresolvedItem = itemFields.filter((f) => !itemKeys.has(f)).sort();
+assert(
+  unresolvedItem.length === 0,
+  `all ${itemFields.length} per-item fields the client reads are emitted`,
+  unresolvedItem.join(', '),
+);
+
 assert(
   unresolved.length === 0,
   `all ${readFields.length} graph fields the client reads are emitted`,

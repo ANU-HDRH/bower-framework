@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.33';
+const SCHEMA_VERSION = '0.34';
 
 // ---------------------------------------------------------------- helpers
 
@@ -49,7 +49,8 @@ function ownershipOf(rel) {
   if (base === 'constitution.md' || base === 'problem-space.md') return 'human-owned';
   if (base === 'index.md') return 'agent-owned (derived)';
   if (base === 'status.md' || base === 'module-status.md') return 'agent-owned';
-  if (base === 'adoption-ledger.md' || base === 'review-plan.md') return 'agent-owned (transient)';
+  if (base === 'adoption-ledger.md' || base === 'review-plan.md' || base === 'findings.md')
+    return 'agent-owned (transient)';
   if (base === 'plan.md') return 'co-authored';
   if (['architecture.md', 'ui.md', 'scope.md'].includes(base)) return 'co-authored';
   if (rel.startsWith('docs/adr/')) return 'body immutable once accepted';
@@ -84,6 +85,7 @@ function parseFinding(text) {
     pointerFile: null,
     pointerLine: null,
     note: null,
+    completion: null,
   };
   const parts = text.split(/\s+[—–]\s+/).map((s) => s.trim());
   let i = 0;
@@ -99,7 +101,22 @@ function parseFinding(text) {
   out.class = parts[ci];
   out.routed = out.class.startsWith('route:');
   out.gist = parts.slice(i, ci).join(' — ') || text;
-  const tail = parts.slice(ci + 1).join(' — ');
+  // v0.34: the command that discharges a routed finding ticks it and appends a
+  // completion note — `— done YYYY-MM-DD via /b-feature <slug>`. It is
+  // provenance for the closeout audit, not part of the pointer, and the pointer
+  // is a command meant to be copied and run verbatim: left glued on, the page's
+  // copy would be the wrong text. Split it off before the pointer is parsed.
+  let rest = parts.slice(ci + 1);
+  // The date is required, not decorative: matching a bare `done …` segment would
+  // let a pointer that merely starts with the word be eaten silently. A note
+  // written without a date stays visibly in the pointer, which is the better
+  // failure — wrong and visible beats swallowed.
+  const di = rest.findIndex((p) => /^done\s+\d{4}-\d{2}-\d{2}\b/i.test(p));
+  if (di !== -1) {
+    out.completion = rest.slice(di).join(' — ');
+    rest = rest.slice(0, di);
+  }
+  const tail = rest.join(' — ');
   if (!tail) return out;
   // A won't-fix disposition is recorded where a pointer would otherwise sit.
   if (/^won'?t fix\b/i.test(tail)) {
@@ -136,7 +153,17 @@ const BOWER_DOCS = new Set([
   'docs/design/problem-space.md',
   'docs/adoption-ledger.md',
 ]);
-const originOf = (rel) => (BOWER_DOCS.has(rel) ? 'bower' : 'project');
+// Bower artifacts that live under docs/modules/<m>/ and so cannot be named by
+// path. module-status.md, review-plan.md and the per-feature files are handled
+// on their own walkers; findings.md rides the loose-file sweep, where without
+// this it would land under "Project docs" as material the framework does not
+// define — which it does.
+const BOWER_MODULE_DOCS = new Set(['findings.md']);
+const originOf = (rel) =>
+  BOWER_DOCS.has(rel) ||
+  (/^docs\/modules\/[^/]+\/[^/]+$/.test(rel) && BOWER_MODULE_DOCS.has(path.basename(rel)))
+    ? 'bower'
+    : 'project';
 
 // ---------------------------------------------------------------- main
 
@@ -730,6 +757,72 @@ function extract(root) {
         wontFix: items.filter((i) => i.wontFix).length,
         total: items.length,
       });
+    }
+
+    // -- findings queue (v0.34). Nothing pairs with it and it holds nothing
+    // open, so there is exactly one mechanical fact worth reporting: an empty
+    // one left on disk. Whoever disposes of the last item deletes the file, so
+    // a queue with no open items is the residue of a half-finished drain — the
+    // same shape of fact as a plan without its marker, and reported by /b-recap
+    // on the same grounds.
+    const fqAbs = path.join(modDir, 'findings.md');
+    if (exists(fqAbs)) {
+      const fqOpen = read(fqAbs)
+        .split('\n')
+        .filter((l) => /^\s*[-*]\s+\[ \]\s+/.test(l)).length;
+      candidate('findings-queue-empty', fqOpen === 0);
+      if (fqOpen === 0)
+        flag(
+          'warn',
+          'findings-queue-empty',
+          `${name}'s findings.md has no open items, so the queue is drained but the file was left behind — ` +
+            `whoever disposed of the last item should have deleted it. Delete docs/modules/${name}/findings.md.`,
+          `docs/modules/${name}/findings.md`,
+          { module: name },
+        );
+    }
+
+    // -- loose files at the module root. module-status.md and review-plan.md
+    // have dedicated routes above; everything else here — findings.md, and
+    // whatever a later version or a project itself invents — is registered as a
+    // routed page, mirroring the central-docs sweep. The alternative was the
+    // closed whitelist this replaces, under which a file present on disk and
+    // correctly linked still rendered as a dead link, with the drift report
+    // silently agreeing it was fine because it tests existence, not routability.
+    for (const f of lsFiles(modDir)) {
+      if (f === 'module-status.md' || f === 'review-plan.md') continue;
+      const rel = `docs/modules/${name}/${f}`;
+      const id = `modules/${name}/${f.replace(/\.[^.]+$/, '')}`;
+      const ext = path.extname(f).slice(1).toLowerCase();
+      const renderable = ext === 'md';
+      const body = read(path.join(modDir, f));
+      const title =
+        (renderable && (/^#\s+(.*)$/m.exec(body) || [])[1]) || path.basename(f, path.extname(f));
+      const docRoute = `#/doc/${encodeURIComponent(id)}`;
+      docRoutes.set(rel, docRoute);
+      docs.push({
+        id,
+        rel,
+        kind: `modules/${name}`,
+        ext,
+        renderable,
+        title: title.trim(),
+        origin: originOf(rel),
+        ownership: ownershipOf(rel),
+        bytes: Buffer.byteLength(body),
+        headings: renderable ? M.headings(body) : [],
+        body,
+      });
+      if (renderable) {
+        checkTableCells(rel, body);
+        for (const l of M.links(body))
+          linkSources.push({
+            fromRel: rel,
+            fromLabel: title.trim(),
+            fromRoute: docRoute,
+            target: l.target,
+          });
+      }
     }
 
     // -- v0.29 review state vs plan. The marker and the plan are written

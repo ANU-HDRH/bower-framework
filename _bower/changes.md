@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.34 | 2026-08-10 | The command that discharges a routed finding ticks it; drift found outside review gets a per-module findings queue with no state machine | mechanical |
 | v0.33 | 2026-08-05 | The same workflows run on Claude Code and on OpenAI Codex, generated from one set of sources; `AGENTS.md` becomes the project instruction file and `CLAUDE.md` a two-line shim | judgement |
 | v0.32 | 2026-07-31 | A routed review finding carries the reviewer's evidence into the session that discharges it, and is discharged by the code rather than by a command having run | judgement |
 | v0.31 | 2026-07-31 | Open-review findings become readable in the viewer; review contracts and release guards are aligned around the same lifecycle | none |
@@ -28,6 +29,71 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
 
 ---
+
+## v0.34 — 2026-08-10
+
+### The command that discharges a routed finding ticks it
+
+A routed review finding could previously be ticked only by `/b-review`, so discharging one cost an extra round trip: run `/b-feature`, then run `/b-review` again purely to tick a box. The rule existed to stop a command certifying its own work — but the check that does that is the *verification*, and it ran twice: once at a resumed review, once at closeout. Moving the tick to the discharging command loses neither. Closeout's audit is unchanged and is now the sole independent check, and a tick it finds is a claim to verify rather than a fact. `/b-design` keeps the full prohibition: a decision leaves the drift in the code, so ticking there would re-open the failure v0.32 closed. Reasoning in `_bower/rationale.md`, *Findings Outside Review, and Who Ticks the Box*.
+
+- **`b-feature`** — Step 1.10 grants the tick on exactly the finding it was handed, with a completion note (`— done YYYY-MM-DD via /b-feature <slug>`); Step 6.11 performs it, after acceptance reconciled and docs landed; Step 7's handoff names `/b-review` as where mediation continues, not as a bookkeeping trip.
+- **`b-design`** — Stage 0 and the handoff state the asymmetry rather than a bare prohibition.
+- **`b-review`** — a new behavioural rule on who writes and who audits a tick; Step 5 leaves a pre-ticked item to closeout; Step 3's shape rules admit the completion note into the line schema; the closeout gate names itself as the only independent check and rules a completion note as provenance, not evidence.
+- **`_bower/framework-reference.md`** — *Module Review* carries the grant and its limits.
+- **`_bower/viewer/`** — the review page splits a completion note off the pointer, so the routed command stays copyable verbatim, and shows the note as a dated tag.
+
+### A findings queue for drift found outside review
+
+`docs/modules/<module>/findings.md` is an open queue of findings recorded outside a review — most often a `/b-feature` run noticing a problem it was not invoked to fix, which previously had nowhere to go but the console. It reuses the review plan's line schema and its three-line brief, with IDs `Q<n>` so a queue ID can never be read as a plan's `F<n>`, and deliberately has **no state machine**: no marker pairs with it, it holds nothing open, and it is deleted when the last item is disposed. Provenance decides the file; the one crossing is absorb-at-triage, where `/b-review` presents the queue's items alongside the reviewer's and moves the accepted ones into the plan. Schema and the six rules: `_bower/framework-reference.md` → *Findings queue*.
+
+- **`_bower/framework-reference.md`** — new *Findings queue* section: schema, preamble template, the six rules.
+- **`_bower/framework.md`** — one Working Conventions line: out-of-scope drift is offered to the queue at a gate, never written silently. A second: a transient file (`review-plan.md`, `findings.md`) is named by path, never linked — it is deleted by design, so a link into it breaks on a schedule, and a link written into an immutable ADR body could never be repaired.
+- **`b-feature`** — Step 1's glob widens to `docs/modules/*/{review-plan,findings}.md`; Step 1.10 dispatches on which file matched; Step 6.12 offers to record out-of-scope drift; the inputs-selected ledger now reports both kinds.
+- **`b-design`** — Stage 0's glob widens the same way; a queue item may carry `route:/b-design`, and because no `/b-review` owns the queue, the design run **re-classifies** such an item to `route:/b-feature` after its decision lands, rewriting the command and brief to carry the ADR forward. It still never ticks: re-classifying reroutes work that is still owed, ticking would declare it done.
+- **`b-review`** — Step 2 prints open queue items as *pre-review findings*; the triage gate authorises absorbing them; Step 3 renumbers absorbed items into the `F` sequence and removes them from the queue.
+- **`b-recap`** — reads the queues, reports open-item counts, and treats a queue with no open items as a broken state; an open queue blocks a `(none — project complete)` recommendation but never outranks planned work.
+- **`b-index`** — the queue joins `review-plan.md` in the never-indexed list.
+- **`bower-reviewer`** — told not to read the queue (or an open review plan): `/b-review` puts its items beside the reviewer's, which is only worth doing if the two were reached independently.
+
+### `/b-review` prints its findings before the triage gate
+
+Observed on a real review: the gate arrived without the findings block, leaving the operator asked to approve actioning items nobody had shown them — and the *deselect some* option unanswerable. Reinforcement only, no flow change.
+
+- **`b-review`** — Step 2 opens with the print as a hard precondition; the triage gate refuses to present until it has run in this session, and says to reprint on a resume.
+
+### The viewer stops hiding what is on disk
+
+Two render-layer defects, both found on a real project. A module page enumerated features from the filesystem, so a designed-but-unbuilt module — every entry ⏸, no docs directories yet — read as having no features at all, in the state where the roster is the only thing there is to see. And the module walker registered viewer routes for exactly four filenames, so a file that existed and was correctly linked still rendered dead, with the drift report agreeing it was fine because `broken-link` tests existence and the renderer tests routability.
+
+- **`_bower/viewer/lib/extract.cjs`** — any loose `.md` at a module root is registered as a routed page, mirroring the central-docs sweep; `findings.md` is classified as a Bower artifact and as transient; new `findings-queue-empty` check; `SCHEMA_VERSION` → `0.34`.
+- **`_bower/viewer/web/app.js`** — the Build lifecycle stage counts against `## Build order`, not against materialised features; a build-order entry with no docs directory renders as a placeholder row carrying its name, order, marker and `Remaining:` clause, with no links and no invented state.
+- **`_bower/viewer/README.md`** — schema-contract rows for the findings queue and for loose module-root files.
+
+### Also deferred: external obligations have no home
+
+Bower is a research software engineering framework, and the defining feature of RSE is that design must conform to contracts the project did not write and cannot amend — an approved ethics protocol, a data management plan, a funder condition, a data-sovereignty commitment. None of the existing document classes fits: `constitution.md` is normative but self-authored and freely amendable, an ADR records a decision the project *made* rather than a premise it answers to, and `docs/reference/` is read-only but not binding. The missing class is read-only **and** binding, and it inverts *code is truth* — against an approved protocol, contradicting code is the defect. Recorded rather than designed; nothing changes for existing projects.
+
+- **`_bower/roadmap.md`** — new deferred item carrying the misfit analysis, the admission test that keeps it from becoming a drawer of value statements, the provisionality lifecycle, why an audit here could do harm, and its revisit trigger: the first real project constrained by an approved protocol.
+
+### Migration
+
+**Mechanical, and conditional — most projects have nothing to do.**
+
+1. **Improvised `findings.md` files.** Glob `docs/modules/*/findings.md`. If none exist, this step is done — and that is the common case.
+
+   For each one found, conform it to the v0.34 schema, which is a rewrite in place, not a new file. **Do not assume it already has the review plan's line shape.** The one real instance this schema was drawn from had: IDs of the form `F-A`, `F-B`; the gist in bold *inside* the checkbox line; no class field at all; the runnable command on its own indented `Route:` line rather than in the checkbox line; and `Location:` / `Drift:` / `Resolution:` as indented **paragraphs** rather than sub-bullets. All of that is fine and none of it survives — read what the file means, then write the target shape:
+   - Replace the preamble with: a `# Findings queue: <module>` heading, then the paragraph *"Open findings recorded outside review. **Not living documentation** — each item is deleted work: ticked on discharge, and the file is deleted when the last item is disposed. This file implies no review state and holds nothing open."*, then the line *"Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision, with date)."*, then a `## Findings` heading.
+   - Give every item a checkbox and a module-local ID `Q1`, `Q2`, … in file order. Renumber whatever scheme it used. Do not keep or reuse an `F` prefix: that belongs to review plans, and a mixed-up ID in a pasted command sends a command to the wrong file. If a routed command naming an old ID may still be in the operator's hands, say which old ID became which `Q<n>` when you report the upgrade — the renumber is the one part of this that can break a handoff someone is holding.
+   - Write each item as `- [ ] Q<n> — <gist> — <class> — <runnable command>`, where the class is `route:/b-feature` or `route:/b-design` and the command ends `according to Q<n> in docs/modules/<module>/findings.md`. That trailing clause is part of the command, not a note beside it — the whole line is meant to be copied and run.
+   - Give every item an indented, checkbox-free three-line brief: `- Location:`, `- Drift:`, `- Resolution:`. All three, each non-empty. Where a field cannot be reconstructed from what the file already says, **write the gap into the field** (`Location: not recorded when this was logged`) rather than leaving it blank or omitting the line — a partial brief that looks complete is worse than one that admits what is missing.
+   - Delete any item already resolved, and delete the file entirely if that empties it. A queue with no open items is a broken state that `/b-recap` and the viewer will both report.
+   - **Remove any markdown link whose target is the queue**, wherever it lives — `module-status.md`, `architecture.md`, an ADR body, anywhere. Grep for `findings.md` across `docs/` to find them. Replace each link with the bare path in prose (`docs/modules/<m>/findings.md`), keeping the surrounding sentence. The queue is deleted when it drains, so a link into it is a broken link on a schedule — and an ADR body is immutable once accepted, so a link written there could never be repaired afterwards. **If a link is inside an accepted ADR body, do not edit it**: report it to the operator with the ADR path and the line, and let them decide. That file is not yours to change, and the same immutability that makes the link unfixable makes it not an upgrade's business.
+2. **An open `review-plan.md` needs one sentence corrected.** Glob `docs/modules/*/review-plan.md`. If none exist, this step is done. Each plan written before v0.34 carries a preamble claiming that `/b-review <module>` "is the only workflow that edits or disposes of them" — which the tick grant makes false, and which a `/b-feature` run reading the plan would take as an instruction not to tick. Replace that clause so the preamble's second sentence reads:
+
+   > While it exists the module is in review (`Review: 🚧`): `/b-recap` summarises it and the docs viewer makes its findings readable. A command handed a routed finding ticks that one box on discharge, appending `— done <date> via <command>`; every other edit here, and the disposal of any item, belongs to `/b-review <module>` alone, which re-verifies each routed tick against the code before closing.
+
+   Change nothing else in the file. The findings, their IDs, their classes and their briefs are unaffected — the grant is forward-only, `/b-review` resumes against the plan unchanged, and a finding ticked by `/b-review` under the old rule is verified at closeout exactly as before.
+3. **Nothing else changes.** No marker, no schema, no new file is created by this upgrade. Projects with no `findings.md` — the normal case — have no project-side work at all.
 
 ## v0.33 — 2026-08-05
 

@@ -18,7 +18,7 @@ Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision
   - Location: src/boldorder/parse.ts:19
   - Drift:
 - [ ] a finding written as free prose, with no class and no pointer
-- [x] F13 — resolved routed items are not chased for a brief — route:/b-feature — Run /b-feature modify boldorder already-landed
+- [x] F13 — resolved routed items are not chased for a brief — route:/b-feature — Run /b-feature modify boldorder already-landed according to F13 in docs/modules/boldorder/review-plan.md — done 2026-07-29 via /b-feature already-landed
 - [ ] F14 — a routed finding with no brief at all — route:/b-feature — Run /b-feature modify boldorder no-brief-at-all
 
   Re-opened 2026-07-30 — the first fix regressed, kept open pending the follow-up.

@@ -1034,7 +1034,20 @@ function viewReview(name) {
                   it.class
                     ? el('span', { class: it.routed ? 'tag routed' : 'tag', title: it.routed ? 'Routed — another command owns this' : 'Owned — /b-review reconciles this itself' }, it.class)
                     : el('span'),
-                  inline || el('span'),
+                  // v0.34: a routed finding is ticked by the command that
+                  // discharged it, which leaves a completion note. Shown short,
+                  // with the whole note on hover — it is provenance for the
+                  // closeout audit, which still reads the code, not a claim the
+                  // drift is gone. The routed pointer is a command and so has
+                  // dropped to its own row, leaving this cell free.
+                  inline ||
+                    (it.completion
+                      ? el(
+                          'span',
+                          { class: 'tag', title: `${it.completion} — provenance for the closeout audit, not evidence` },
+                          (/^done\s+\d{4}-\d{2}-\d{2}/i.exec(it.completion) || [it.completion])[0],
+                        )
+                      : el('span')),
                 ),
                 ...subs,
               ];
@@ -1240,8 +1253,14 @@ function viewModules() {
 // completion"). Staleness is derived here the same way /b-recap derives it.
 function lifecycle(m) {
   const RANK = ['🔴', '🟡', '🚧', '⏸', '🔧', '✓'];
+  // The Build stage counts against the `## Build order` — the module's only
+  // feature roster — not against what has a docs directory. A ⏸ entry has no
+  // directory until its plan is written, which is normal and deliberately not
+  // flagged; deriving the stage from materialised features made a designed-but-
+  // unbuilt module read "No features yet" in exactly the state where the roster
+  // is the only thing there is to see.
   const feats = G.features.filter((f) => f.module === m.name);
-  const markers = feats.map((f) => f.marker).filter(Boolean);
+  const markers = (m.buildOrder.length ? m.buildOrder.map((b) => b.marker) : feats.map((f) => f.marker)).filter(Boolean);
   const buildMk = markers.length
     ? RANK.find((r) => markers.includes(r)) || null
     : null;
@@ -1313,8 +1332,26 @@ function viewModule(name) {
   if (!m) return notFound(`No module “${name}”`);
   const feats = G.features.filter((f) => f.module === name);
   const byName = new Map(feats.map((f) => [f.name, f]));
+  // Same rule as `lifecycle()`: the build order is the roster, so an entry with
+  // no docs directory gets a placeholder row rather than being filtered out.
+  // `.filter(Boolean)` here is what made an all-⏸ module render as empty — the
+  // extractor knows those entries are legitimate and declines to flag them, and
+  // "not drift" was implemented as "not present". A placeholder carries what the
+  // build-order line holds and nothing else: no plan or status links, no drift
+  // flags, no invented state.
   const ordered = m.buildOrder.length
-    ? m.buildOrder.map((b) => byName.get(b.name)).filter(Boolean)
+    ? m.buildOrder.map(
+        (b) =>
+          byName.get(b.name) || {
+            name: b.name,
+            order: b.order,
+            marker: b.marker,
+            effectiveMarker: b.marker,
+            annotation: b.annotation,
+            remaining: b.remaining,
+            docsOnDisk: false,
+          },
+      )
     : feats;
   const extra = feats.filter((f) => !ordered.includes(f));
 
@@ -1397,8 +1434,11 @@ function viewModule(name) {
           { class: 'rows' },
           [...ordered, ...extra].map((f, i) =>
             el(
-              'a',
-              { class: 'row', href: f.route },
+              // A doc-less entry has nowhere to navigate to, so it is a div.
+              // `a.row:hover` is the only anchor-specific styling, so the row
+              // reads the same minus the affordance — which is accurate.
+              f.docsOnDisk === false ? 'div' : 'a',
+              { class: 'row', href: f.docsOnDisk === false ? null : f.route },
               el('span', { class: 'idx' }, String(f.order ?? i + 1).padStart(2, '0')),
               badge(f.effectiveMarker, { bare: true }),
               el('span', { class: 'ident', style: 'min-width:214px' }, f.name),
@@ -1410,7 +1450,9 @@ function viewModule(name) {
                 // one's scope, so it overstates what is left to build.
                 f.remaining
                   ? el('span', { class: 'shrunk' }, `Remaining: ${plain(f.remaining)}`)
-                  : plain((f.status && f.status.headline) || (f.plan && f.plan.purpose) || ''),
+                  : f.docsOnDisk === false
+                    ? el('span', { class: 'muted' }, 'planned — no docs yet')
+                    : plain((f.status && f.status.headline) || (f.plan && f.plan.purpose) || ''),
               ),
               f.pendingVerification ? el('span', { class: 'tag pend' }, 'checks pending') : null,
             ),

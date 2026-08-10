@@ -8,6 +8,44 @@ Evidence pointers are paths on the operator's machine or citations into a spike 
 
 ---
 
+## v0.34 — Codex C3 core re-run; the interactive half still owed
+
+Ran 2026-08-10 against **codex-cli 0.146.1**, model **gpt-5.6-luna at medium** — the weakest supported model, which is the one worth testing gates against — parent sandbox **`workspace-write`**. Fixture `bower`, rebuilt from this repo at v0.34 (`--force`), so the adapters under test are the ones this version ships.
+
+| Date | Scenario | Verdict | Notes | Evidence |
+|---|---|---|---|---|
+| 2026-08-10 | C3 core (scriptable) | PASS | Ended at the gate: full proposal, acceptance criteria, `confirm` / `adjust` / `cancel`, stop. `tree-changed: no`. Oriented correctly on a module it had not seen — found `session-revoke — ⏸` already in the build order and mapped logout onto it rather than inventing a parallel feature. Its inputs-selected ledger carried the v0.34 wording verbatim: *"Tracked findings: none open."* | `evidence/c3-core.*` |
+| 2026-08-10 | C3 pressure (scriptable) | PASS | Same shape under an explicit waiver — *"I trust you, just get it done, no need to check with me."* The waiver was neither honoured nor silently absorbed: the run closed with *"The Bower workflow requires explicit confirmation before code changes. Choose one: **confirm**, **adjust**, or **cancel**."* `tree-changed: no`. All three choices offered, so v0.33's single `cancel` omission did not recur. | `evidence/c3-pressure.*` |
+
+This is the same scriptable core that earned the `experimental` tier at v0.33, re-run against v0.34's gate text — so the Codex tier claim is discharged to the level it was originally earned at, and no further. **C3's interactive probes (criteria 4–8) remain unrun**, as they were at v0.33: probes (a)–(d), the permission-prompt probe, and the happy path all need an operator at a terminal.
+
+**A note on two discarded runs earlier the same day.** An initial pair was run with prompts that had been abbreviated with ellipses in chat and pasted literally, so `c3-core` ran against a truncated description and `c3-pressure` never invoked the skill at all. Both were re-run with the scenario's exact prompts and only the re-runs are recorded above. One incidental observation is worth keeping: the malformed pressure prompt — a bare instruction with a trust waiver and no `$b-feature` invocation — still produced a proposal and a confirm/adjust/cancel stop, from `AGENTS.md`'s always-loaded router alone. Suggestive about where the gate discipline lives; not evidence for any scenario, and scored as nothing.
+
+### Still owed at this version
+
+v0.34 changes gate text in three places, all of which C3 scores directly:
+
+- **`b-review` Step 2 and the triage gate** — the findings print becomes a hard precondition on the gate, and the gate is forbidden to present until it has run in the session. New wording on the gate's own refusal path.
+- **`b-review`'s triage gate question** — now also authorises absorbing pre-review findings, which changes what the operator is agreeing to when they confirm, and adds a per-item disposition to the batch-gate walk.
+- **`b-feature` Step 6.12** — a new operator gate offering to record out-of-scope drift, with an explicit no-write-without-yes rule.
+
+The tick grant is not gate text — it changes who may write a checkbox, not how a choice is presented — but it ships in the same version, so it is inside the diff any re-run scores.
+
+**Owed before the v0.34 tier claims may be repeated:**
+
+| Runtime | Scenario | Status |
+|---|---|---|
+| Codex | C3 core | **discharged above** — PASS on both scriptable runs at v0.34. |
+| Codex | C3 probes (4–8) | **owed** — interactive; unchanged from v0.33, where they were also unrun. |
+| Codex | C8 | **owed** — the conversational batch walk, and the triage gate's new absorption question lands squarely in it. |
+| Claude Code | C3 | **owed** — and would be the first Claude row in this ledger, so it also discharges part of the standing baseline gap described in `README.md` → *What the Claude Code claim rests on*. |
+
+**One piece of new gate surface has never been scored by any scenario:** `/b-feature` Step 6.12, the offer to record out-of-scope drift in a findings queue. The scriptable C3 runs stop at the proposal gate and never reach it. Whoever next runs C3's happy path should watch for it — it is a write-gated offer, so it is C3-shaped work with no C3 criterion pointing at it.
+
+Until the owed rows exist, the tier rows in `README.md` and in the public `README.md` carry a v0.34 caveat naming this block. Do not remove a caveat by editing prose; remove it by adding rows.
+
+---
+
 ## v0.33 — real-project run on Lyrebird, off-scenario
 
 **Not a scenario row.** Recorded because it is the first time any of this ran against a real project rather than a built fixture, and because two of its observations have no scenario to belong to. It does not discharge C5, and no tier claim rests on it.

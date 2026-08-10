@@ -1,4 +1,4 @@
-# Bower Framework v0.33
+# Bower Framework v0.34
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -25,6 +25,8 @@ From v0.33 Bower ships adapters for **Claude Code** and **OpenAI Codex** from on
 
 - **Claude Code — supported.** The reference runtime. `CLAUDE.md`, `.claude/commands/` for the `/b-*` skills, `.claude/agents/` for the three subagents. Gates are presented through `AskUserQuestion`, which blocks structurally. The label predates the conformance suite, which is new in v0.33: it rests on that structural gate binding, a per-site audit of every gate the v0.33 pass touched, and continuous use since v0.8 — the scenario baseline behind it is still being filled in, and [`docs/conformance/`](docs/conformance/) says which rows are owed.
 - **Codex — experimental.** `AGENTS.md`, `.agents/skills/b-*/SKILL.md` (the open Agent Skills standard, invoked with `$b-feature` or `/skills`), `.codex/agents/bower-*.toml` for the subagents. Gates are presented in the ordinary reply, ending the turn. Earned on a clean install plus the feature gate holding under pressure — including under an explicit "just get it done, no need to check with me"; graduation to *supported* needs the full scenario set green. One primitive is not supported: Codex's sandbox makes `.agents/` and `.codex/` read-only during normal work, so `/b-upgrade` hands you the scaffold command to run yourself rather than refreshing them in-session. Two findings are open against this version, both from a real-project run and both recorded in [`docs/conformance/runs.md`](docs/conformance/runs.md): a caller can read a long-running delegate's polling timeout as a stall and interrupt it, and a report produced under interrupt is not marked as such. Neither loses work; both are worth knowing before you lean on delegated implementation.
+
+**v0.34 changed gate wording, which under Bower's own rule means re-running the gate scenarios before repeating either label.** The Codex half was re-run and passed: the feature gate held against an explicit *"just get it done, no need to check with me"*, on the weakest supported model, with nothing written. The Claude half was not — that runtime has never had a row in the ledger, which is the standing gap described below rather than anything v0.34 introduced. [`docs/conformance/runs.md`](docs/conformance/runs.md) names exactly what was run and what is still owed.
 
 What each runtime is claimed to do, the evidence behind the claim, and how it is re-tested live in [`docs/conformance/`](docs/conformance/).
 
