@@ -32,10 +32,11 @@ Scaffolded projects enforce the project half as configuration rather than guidan
 
 The failure mode is a **descriptive** claim smuggled into a normative doc — a statement about what *exists* ("CI runs the integration suite on every PR", "all modules have contract tests") written in the same register as a rule. Agents read it as fact and act on it, and the ownership norm keeps it from ever being corrected. Aspiration is welcome in a constitution; aspiration wearing the clothes of fact is not.
 
-Two rules follow:
+Three rules follow:
 
 - **Every statement about what exists must be verifiable from the repo** — the file, the config, the command is really there — **or it does not go in the normative body.**
 - **Aspirations live under a `## Not yet in force` heading**, and agents must treat everything under it as **non-existent**: do not rely on it, do not cite it as a convention, do not mark work `✓` on the strength of it. Moving an item out of that section is the human's act of putting it in force.
+- **The section admits rules, not work.** The admission test is the move-out sentence: an entry must read as the rule it will become on the day the human moves it out ("Contract tests at every module boundary"), with the gap named beside it. "Intended, but not true today" is satisfied by any unfinished plan, which is exactly why intention alone is not the test — a task list, a phased plan, or a candidate inventory is work in progress wearing an aspiration's clothes, and it has no constitution slot. A cross-cutting plan currently has no Bower home at all (`_bower/roadmap.md` names the gap); it belongs in project-local working notes, not laundered into a normative doc.
 
 ```markdown
 ## Not yet in force

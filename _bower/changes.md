@@ -48,6 +48,13 @@ The policy is enforced as configuration where the runtime has a lever: the seede
 
 - **`_bower/project-settings.json`** — the template gains the key.
 
+### `## Not yet in force` admits rules, not work
+
+The first migration run promoted a multi-session plan — a phased exercise plus a candidate inventory — into a `## Not yet in force` section, and it passed the agent's own review because the section's stated test, "intended, but not true of the repo today", is satisfied by any unfinished plan. The section now carries an admission test: an entry must read as the rule it will become on the day it moves out. Plans and task inventories are work in progress, not aspirations, and have no constitution slot.
+
+- **`_bower/framework-reference.md`** — *constitution.md — Normative Shape* gains the third rule.
+- **The migration note below** — the promote path names the exclusion, so a plan routes to the unclassifiable report instead of a nearest-looking home.
+
 ### Migration
 
 **Judgement — an audit of a store only the running session can see, disposed entry by entry at a batch gate.**
@@ -58,7 +65,7 @@ Order matters: complete the audit before writing the setting. Disabling memory s
 
    If a store exists, it is unversioned and deletion is irreversible — the only store this migration touches with no git safety net — so first reproduce every entry in full in the conversation, and offer to write a snapshot copy to a path the operator names outside `docs/`. Then classify every entry into exactly one of four dispositions and present the classification as a **batch gate** — a disposition confirmed per entry, never one omnibus approval. Before classifying, check each entry's factual claims against the repository as it is now: the store was written by past sessions and entries go stale silently, and promoting a stale fact into `docs/` is the same defect in a new place.
 
-   - **Promote** — the entry is project state: it fails the test *would a fresh session, on any runtime, on a clean clone, with no memory, get this right?* Name the destination in the proposal: a process convention goes to `docs/constitution.md` — that file is human-owned, so quote the entry, show the evidence, and ask, exactly as the flag-don't-fix duty prescribes; a cross-cutting decision becomes a new ADR; feature or module state goes to the feature's `status.md` or `plan.md`; a boundary fact goes to `architecture.md`.
+   - **Promote** — the entry is project state: it fails the test *would a fresh session, on any runtime, on a clean clone, with no memory, get this right?* Name the destination in the proposal: a process convention goes to `docs/constitution.md` — that file is human-owned, so quote the entry, show the evidence, and ask, exactly as the flag-don't-fix duty prescribes; a cross-cutting decision becomes a new ADR; feature or module state goes to the feature's `status.md` or `plan.md`; a boundary fact goes to `architecture.md`. A multi-session plan or a task inventory is **not** promotable: no Bower document holds one — in particular, `## Not yet in force` admits rules, not work — so it goes to **Unclassifiable** rather than into the nearest-looking home.
    - **Keep** — a fact about the operator or about this one machine, not about the project. Propose relocating it to a user-level store outside the repository (the runtime's user-level memory or instruction file), because step 3 will stop this project's store being read.
    - **Delete as obsolete** — the entry describes a state the project has left, or duplicates what a doc already says. Show what makes it stale or where the doc copy lives.
    - **Unclassifiable** — the entry resists all three. Do not force it into a home; carry it to step 2's report verbatim.
