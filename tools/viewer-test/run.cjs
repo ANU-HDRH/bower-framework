@@ -117,6 +117,7 @@ const EXPECTED = [
   // links
   'broken-link',
   'relative-doc-link',
+  'transient-link',
   // document cost
   'oversized-table-cell',
 ];
@@ -412,6 +413,31 @@ assert(/according to Q1 in/.test(fqOpen[0].message), 'and the runnable pointer, 
 // Severity is the whole argument for this check being on the health page at
 // all: an open queue is conformant, so it must not read as drift.
 assert(sevOf('findings-queue-open') === 'info', 'findings-queue-open is info — it is owed work, not a contradiction', `got ${sevOf('findings-queue-open')}`);
+
+// Nothing may link a transient file (framework.md → Working Conventions): it is
+// deleted when its work is done, so the link breaks on a schedule and disposal
+// cannot clean it up. Observed on a real project as a dead ADR link, written
+// four days before the rule existed and unrepairable ever after.
+const tl = g.health.filter((h) => h.kind === 'transient-link');
+assert(tl.length === 1 && tl[0].path === 'docs/adr/0002-module-decision.md', 'a link to a transient file is reported at the linking document', JSON.stringify(tl.map((h) => h.path)));
+assert(/immutable/.test(tl[0].message), 'and an immutable ADR body is named as unrepairable, not as something to go and fix', tl[0].message);
+// One cause, one finding. The link resolves today, so broken-link is silent
+// anyway; when the queue drains it must stay silent rather than send a reader
+// to repair a link that should never have been written.
+{
+  const fs = require('fs');
+  const drained = path.join(FIXTURES, 'fixture/docs/modules/drifted/findings.md');
+  const kept = fs.readFileSync(drained, 'utf8');
+  try {
+    fs.rmSync(drained);
+    const gone = extract(path.join(FIXTURES, 'fixture')).health;
+    const stillOne = gone.filter((h) => h.kind === 'transient-link');
+    assert(stillOne.length === 1 && /already has/.test(stillOne[0].message), 'once the target is deleted the same check reports it, now as broken', stillOne.map((h) => h.message).join(' | '));
+    assert(!gone.some((h) => h.kind === 'broken-link' && /findings\.md/.test(h.message)), 'and broken-link does not double-report it', gone.filter((h) => h.kind === 'broken-link').map((h) => h.message).join(' | '));
+  } finally {
+    fs.writeFileSync(drained, kept);
+  }
+}
 
 // The check is version-gated: on a pre-v0.32 project every routed finding is
 // briefless by construction, which is history, not drift. The gate is the one

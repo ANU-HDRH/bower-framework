@@ -43,6 +43,12 @@ const lsFiles = (p) =>
         .sort()
     : [];
 
+// Files nothing may link to, per framework.md → Working Conventions. Both are
+// deleted when their work is done. `adoption-ledger.md` is transient too and is
+// deliberately absent: the banner that links it is deleted at the same moment
+// the ledger empties, so that link never outlives its target.
+const TRANSIENT_DOCS = new Set(['review-plan.md', 'findings.md']);
+
 // Document ownership, per _bower/framework.md's Document Authority table.
 function ownershipOf(rel) {
   const base = path.basename(rel);
@@ -1410,6 +1416,32 @@ function extract(root) {
     backlinks.set(resolved, list);
     if (clean.endsWith('.md')) {
       const broken = !exists(path.join(root, resolved));
+      // framework.md → Working Conventions: a transient file is named by path,
+      // never linked. `review-plan.md` and `findings.md` are deleted the day
+      // their work is done, so the link breaks on a schedule and cleaning up on
+      // disposal is not an available fix — which is why this is diagnosed at
+      // the link rather than left to `broken-link`. The two are one cause, so
+      // only this one fires: `broken-link` would send a reader to repair a link
+      // that should not exist.
+      const transient = TRANSIENT_DOCS.has(path.posix.basename(resolved));
+      candidate('transient-link', transient);
+      if (transient) {
+        // An ADR body is immutable once accepted, so no command may repair a
+        // link written into one. Saying so is the whole value of the finding
+        // there: the operator's move is to accept it, not to fix it.
+        const inAdr = /^docs\/adr\//.test(src.fromRel);
+        flag(
+          'warn',
+          'transient-link',
+          `${src.fromRel} links to \`${clean}\`, a transient file — it is deleted when its work is done, ` +
+            `so the link breaks on a schedule${broken ? ', and already has' : ''}. Refer to it by path in prose instead.` +
+            (inAdr
+              ? ' This is an accepted ADR body, which is immutable, so nothing may repair it — a decision for the operator, not a command.'
+              : ''),
+          src.fromRel,
+        );
+        continue;
+      }
       candidate('broken-link', broken);
       if (broken) {
         flag('warn', 'broken-link', `Link to \`${clean}\` does not resolve (from ${src.fromRel})`, src.fromRel);

@@ -10,7 +10,11 @@ topics: [fixtures]
 
 ## Context
 
-Fixture ADR. Conformant module scoping.
+Fixture ADR. Conformant module scoping, except for the link below: it cites the
+evidence that prompted the decision by linking a findings queue
+([Q1](/docs/modules/drifted/findings.md)), which is transient. Written into an
+immutable body, so it is unrepairable by construction — the case `transient-link`
+exists for.
 
 ## Decision
 

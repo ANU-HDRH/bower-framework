@@ -80,6 +80,7 @@ defines it. Changing a row means changing `lib/extract.cjs` and
 | Any other loose `.md` at a module root | — (deliberately open) | a routed page, mirroring the central-docs sweep. A closed whitelist here is what made `findings.md` render as a dead link on a real project while the drift report reported nothing — `broken-link` tests existence, the renderer tests routability |
 | `docs/index.md` Modules table markers | `/b-index` | each module's *declared* status, compared with the derived one |
 | Repo-root-based doc links (`/docs/…`) | `framework.md` Working Conventions | backlinks; broken- and relative-link checks |
+| No link may target a transient file (`review-plan.md`, `findings.md`); `adoption-ledger.md` is excluded, its only linker being the banner deleted alongside it | `framework.md` Working Conventions | `transient-link`, which takes precedence over `broken-link` on the same link |
 | `git log -- docs` | — | recency (optional; degrades if absent) |
 
 Nothing outside this table is guessed at. Feature→feature edges in particular
@@ -118,6 +119,12 @@ document against the filesystem.
 - `architecture.md` still lists a module's features (v0.26 moved the roster)
 - a success criterion has no `Delivered by:` clause, or still carries a marker
 - a doc link does not resolve
+- a doc links a **transient** file — `review-plan.md` or `findings.md`, both
+  deleted when their work is done, so the link breaks on a schedule and disposal
+  cannot clean it up. Reported instead of "does not resolve" once the target is
+  gone: one cause, one finding, and the repair is to unwrite the link rather
+  than to mend it. Where the linking document is an accepted ADR body the
+  finding says so, because immutability means nothing may repair it at all.
 - the adoption ledger is empty but the 🌱 banner is still up
 - a module is `Review: 🚧` with no `review-plan.md` on disk — a review was opened
   and its findings are gone

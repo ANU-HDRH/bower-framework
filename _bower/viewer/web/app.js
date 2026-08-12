@@ -685,6 +685,8 @@ function viewHealth() {
       'Narrowing leaves its target accepted — that is the whole point of the field. A narrowed ADR that is not accepted is the defect narrowing exists to prevent.',
     'broken-link': 'A link between docs does not resolve on disk.',
     'relative-doc-link': 'Doc links are repo-root-based. A relative target breaks the moment either file moves.',
+    'transient-link':
+      'A review plan and a findings queue are deleted when their work is done, so a link into one breaks on a schedule. Name the path in prose instead.',
     'component-missing': "A built feature's plan claims a file that is not there.",
     'arch-feature-roster':
       "architecture.md no longer holds a feature roster — the module's build order is the only one.",

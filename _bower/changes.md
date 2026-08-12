@@ -12,7 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
-| v0.36 | 2026-08-12 | An open findings queue becomes visible in the viewer — rail badge, module strap, one health finding per open item — as owed work beside the completion markers, never inside them; a marker-parse fix stops a reopened feature reading as complete | none |
+| v0.36 | 2026-08-12 | An open findings queue becomes visible in the viewer — rail badge, module strap, one health finding per open item — as owed work beside the completion markers, never inside them; a marker-parse fix stops a reopened feature reading as complete, and a link into a transient file is now reported | none |
 | v0.35 | 2026-08-12 | Project state lives in the repository, never in agent memory; fresh scaffolds disable Claude Code's per-project memory, and a gated migration audits and drains an existing store | judgement |
 | v0.34 | 2026-08-10 | The command that discharges a routed finding ticks it; drift found outside review gets a per-module findings queue with no state machine | mechanical |
 | v0.33 | 2026-08-05 | The same workflows run on Claude Code and on OpenAI Codex, generated from one set of sources; `AGENTS.md` becomes the project instruction file and `CLAUDE.md` a two-line shim | judgement |
@@ -55,9 +55,17 @@ Both readers now take the marker after the separator where there is one — that
 - **`_bower/viewer/lib/md.cjs`** — `firstMarkerIn` (exported) and the shared `AFTER_DASH` separator match; `leadingMarker` reads the H1 ahead of the body, keeping the body-line fallback for hand-written files; `trailingMarker` no longer trusts declaration order.
 - **`tools/viewer-test/run.cjs`** — a direct section for the two readers. The failing shapes are one line each, and carrying one in a fixture would perturb a module's roster, review snapshot and rollup, so they are exercised as units rather than through a fixture.
 
+### A link into a transient file is now reported
+
+v0.34 banned linking `review-plan.md` and `findings.md` — both are deleted when their work is done, so the link breaks on a schedule, and where it was written into an accepted ADR body nothing may ever repair it. The rule was enforced only at the writing end, and its migration note's sweep for existing links sat inside a step gated on a queue file being present, so a project whose queue had already drained skipped it entirely: the one case where the link is already dead is the one the sweep did not reach. `transient-link` (`warn`) closes that, reported at the linking document, naming an immutable ADR body as unrepairable where that is what it is. It takes precedence over `broken-link` on the same link — one cause, one finding, and the repair is to unwrite the link rather than mend it. `adoption-ledger.md` is deliberately excluded: its only linker is the banner deleted alongside it.
+
+- **`_bower/viewer/lib/extract.cjs`** — `TRANSIENT_DOCS` and the check, inside the existing backlink walk.
+- **`_bower/viewer/web/app.js`**, **`_bower/viewer/README.md`** — the health explain entry; the check list and a schema contract row.
+- **`tools/viewer-test/`** — a fixture ADR links a queue, and the target is deleted mid-run to prove the finding survives and `broken-link` stays quiet.
+
 ### Migration
 
-None — no project-side changes required. The viewer is refreshed by the scaffold and nothing in `docs/` changes shape. A project whose findings included a `marker-disagreement` or `next-move-on-complete` against a reopened feature will see those clear once the refreshed viewer is in place; no document needs editing.
+None — no project-side changes required. The viewer is refreshed by the scaffold and nothing in `docs/` changes shape. A project whose findings included a `marker-disagreement` or `next-move-on-complete` against a reopened feature will see those clear once the refreshed viewer is in place; no document needs editing. A project may see a new `transient-link` warning, which is a real link to unwrite — unless it sits in an accepted ADR body, where the finding is a standing note and not work, since that body is immutable.
 
 ---
 
