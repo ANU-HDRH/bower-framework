@@ -665,6 +665,36 @@ assert(
 );
 assert(tripped[0] && tripped[0].severity === 'info', 'it is info — aimed at the viewer, not the project');
 
+// ──────────────────────────── md.cjs: which marker a line asserts
+
+// Markers are read out of prose that routinely *names* markers other than the
+// one it asserts, and getting it wrong is invisible: the extractor reports a
+// disagreement between two documents that in fact agree. A fixture cannot cover
+// this cheaply — the failing shapes are one line each, and adding a sixth
+// feature to a module to carry one perturbs its roster, review snapshot and
+// rollup — so the two helpers are exercised directly.
+//
+// Both were originally written as `for (const mk of MARKERS) if (…)`, which
+// returns whichever glyph is *declared* first rather than the one that appears
+// first. MARKERS lists ✓ first, so every reopened feature ("🚧 … complete and
+// previously ✓") read as ✓ and drew a false error-level marker-disagreement on
+// a real project.
+console.log('\nmd.cjs — the marker a line asserts, not the ones it mentions');
+const REOPENED = '# evaluation-view-ui — 🚧\n\nComplete and previously ✓; reopened by a rendering fix.\n';
+assert(M.leadingMarker(REOPENED) === '🚧', 'a reopened feature asserts the heading marker, not the ✓ its prose recalls', M.leadingMarker(REOPENED));
+assert(M.leadingMarker('# feature-a — ✓\n\nAll criteria met.\n') === '✓', 'the ordinary heading form still reads');
+assert(M.leadingMarker('# no-marker — status\n\nProse with no glyph.\n') === null, 'a markerless status doc still returns null');
+// The heading wins outright where it carries a marker; a body line opening with
+// one is the fallback that reads a hand-written status.md, and it must survive.
+assert(M.leadingMarker('# hand-written — status\n\n🚧 mid-build.\n') === '🚧', 'a marker opening a body line still reads when the heading has none');
+// The separator is what makes a marker an assertion; anything past it is
+// annotation. Checked on the shapes the extractor actually feeds this.
+assert(M.trailingMarker('5. evaluation-view-ui — 🚧 (complete and previously ✓, reopened)') === '🚧', 'a build-order entry asserts the marker after its dash', M.trailingMarker('5. evaluation-view-ui — 🚧 (complete and previously ✓, reopened)'));
+assert(M.trailingMarker('🚧 (complete and previously ✓, reopened)') === '🚧', 'and the same entry with the dash already consumed', M.trailingMarker('🚧 (complete and previously ✓, reopened)'));
+assert(M.trailingMarker('Review: ✓ 2026-08-04 (13 of 13 features)') === '✓', 'a Review: line carries no dash and still reads');
+assert(M.trailingMarker('`x/integration.test.ts` — ✓ (2026-08-11)') === '✓', 'an integration Test: line reads past the backticked path');
+assert(M.trailingMarker('') === null && M.trailingMarker(null) === null, 'an empty or absent line is null, never a marker');
+
 // ──────────────────────────── the extractor → client contract
 
 // The client reaches the graph through top-level fields only. Renaming one in

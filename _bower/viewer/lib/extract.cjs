@@ -478,8 +478,8 @@ function extract(root) {
         if (!name) continue;
         // A `Review:` clause is stripped before scanning: the review marker is
         // a separate axis (its own column per /b-index), but an index that
-        // wrongly appended it inside the Status cell must not have its ✓ read
-        // as the module's declared status — MARKERS checks ✓ first.
+        // wrongly appended it inside the Status cell must not have its marker
+        // read as the module's declared status.
         const mk = row.map((c) => M.trailingMarker((c || '').replace(/Review:.*$/i, ''))).find(Boolean);
         if (mk) declaredStatus.set(name, mk);
       }

@@ -12,7 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
-| v0.36 | 2026-08-12 | An open findings queue becomes visible in the viewer — rail badge, module strap, one health finding per open item — as owed work beside the completion markers, never inside them | none |
+| v0.36 | 2026-08-12 | An open findings queue becomes visible in the viewer — rail badge, module strap, one health finding per open item — as owed work beside the completion markers, never inside them; a marker-parse fix stops a reopened feature reading as complete | none |
 | v0.35 | 2026-08-12 | Project state lives in the repository, never in agent memory; fresh scaffolds disable Claude Code's per-project memory, and a gated migration audits and drains an existing store | judgement |
 | v0.34 | 2026-08-10 | The command that discharges a routed finding ticks it; drift found outside review gets a per-module findings queue with no state machine | mechanical |
 | v0.33 | 2026-08-05 | The same workflows run on Claude Code and on OpenAI Codex, generated from one set of sources; `AGENTS.md` becomes the project instruction file and `CLAUDE.md` a two-line shim | judgement |
@@ -46,9 +46,18 @@ The queue is also parsed by the same checklist parser as `review-plan.md` rather
 - **`_bower/viewer/README.md`** — schema contract row rewritten; the owed-work axis and the v0.35 correction recorded.
 - **`tools/viewer-test/run.cjs`** — assertions for the parse, both checks, and the module fields the client reads. `findings-queue-open` is the sole permitted exclusion from the conformant-module assertion, since the fixture's `clean` module carries a well-formed open queue by construction.
 
+### A reopened feature read as complete, and drew three false errors for it
+
+Both marker readers in `md.cjs` scanned in `MARKERS` declaration order — `for (const mk of MARKERS) if (line.includes(mk))` — so they returned whichever glyph is *listed* first, not the one the line asserts. `MARKERS` lists `✓` first. `leadingMarker` compounded it by blanking the heading before the scan, discarding the marker's canonical home, so every `status.md` fell through to that order-dependent fallback. The class of file this breaks is exactly one: a feature reopened after completion, whose opening paragraph says so (`# f — 🚧` over "complete and previously ✓; reopened…"). It parsed as ✓ and then disagreed with its own conformant build order. On a real project this produced three `marker-disagreement` errors and three `next-move-on-complete` warnings, six findings from one misread, all against documents that agreed.
+
+Both readers now take the marker after the separator where there is one — that is what makes a marker an assertion rather than a mention — and the earliest by position otherwise; `leadingMarker` reads the heading first and lets it win outright over the prose beneath it.
+
+- **`_bower/viewer/lib/md.cjs`** — `firstMarkerIn` (exported) and the shared `AFTER_DASH` separator match; `leadingMarker` reads the H1 ahead of the body, keeping the body-line fallback for hand-written files; `trailingMarker` no longer trusts declaration order.
+- **`tools/viewer-test/run.cjs`** — a direct section for the two readers. The failing shapes are one line each, and carrying one in a fixture would perturb a module's roster, review snapshot and rollup, so they are exercised as units rather than through a fixture.
+
 ### Migration
 
-None — no project-side changes required. The viewer is refreshed by the scaffold and nothing in `docs/` changes shape.
+None — no project-side changes required. The viewer is refreshed by the scaffold and nothing in `docs/` changes shape. A project whose findings included a `marker-disagreement` or `next-move-on-complete` against a reopened feature will see those clear once the refreshed viewer is in place; no document needs editing.
 
 ---
 

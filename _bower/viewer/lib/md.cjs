@@ -150,26 +150,57 @@ function links(md) {
   return out;
 }
 
+/**
+ * Earliest-occurring marker in a string, by position in the text.
+ *
+ * Never scan in MARKERS order. Prose routinely names a marker other than the
+ * one the line asserts — "🚧 … complete and previously ✓" is how a reopened
+ * feature is written — and declaration order hands back whichever glyph is
+ * listed first, which is ✓. That reads a reopened feature as done and reports
+ * its agreement with its own build order as a marker disagreement.
+ */
+function firstMarkerIn(text) {
+  let best = null;
+  for (const mk of MARKERS) {
+    const i = (text || '').indexOf(mk);
+    if (i !== -1 && (best === null || i < best.i)) best = { i, mk };
+  }
+  return best ? best.mk : null;
+}
+
+// The asserted marker sits just past the separator; anything after it is
+// annotation and may name others.
+const AFTER_DASH = new RegExp(`[—–-]\\s*(${MARKERS.join('|')})`);
+
 /** Leading status marker in the first few lines of a status doc. */
 function leadingMarker(md) {
   const lines = md.split('\n').slice(0, 12);
+  // The canonical home first (framework-reference.md → "status.md — Resumption
+  // Framing"): `# <feature> — <marker>`. The heading is the claim; the paragraph
+  // under it is prose that may mention any number of other markers, so the
+  // heading wins outright rather than competing with the body.
+  const heading = lines.find((l) => /^#\s/.test(l));
+  if (heading) {
+    const mk = (AFTER_DASH.exec(heading) || [])[1] || firstMarkerIn(heading);
+    if (mk) return mk;
+  }
   for (const line of lines) {
     const stripped = line.replace(/^#+\s.*$/, '').replace(/\*\*[^*]*\*\*/g, '').trim();
     for (const mk of MARKERS) {
       if (stripped.startsWith(mk)) return mk;
     }
   }
-  // Fall back to a marker anywhere in the opening paragraph block.
-  const head = lines.join('\n');
-  for (const mk of MARKERS) if (head.includes(mk)) return mk;
-  return null;
+  // Fall back to the earliest marker anywhere in the opening paragraph block.
+  return firstMarkerIn(lines.join('\n'));
 }
 
 /** Trailing status marker on a line, e.g. `Test: foo.ts — ✓`. */
 function trailingMarker(line) {
   if (!line) return null;
-  for (const mk of MARKERS) if (line.includes(mk)) return mk;
-  return null;
+  // Take the separator's marker when there is one (`Test: foo.ts — ✓`,
+  // `5. feature — 🚧 (…)`), earliest otherwise — `Review: ✓ 2026-08-04 (13 of
+  // 13 features)` carries no dash.
+  return (AFTER_DASH.exec(line) || [])[1] || firstMarkerIn(line);
 }
 
 /**
@@ -295,6 +326,7 @@ module.exports = {
   sections,
   firstTable,
   links,
+  firstMarkerIn,
   leadingMarker,
   trailingMarker,
   labelled,
