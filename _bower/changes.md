@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.35 | 2026-08-12 | Project state lives in the repository, never in agent memory; fresh scaffolds disable Claude Code's per-project memory, and a gated migration audits and drains an existing store | judgement |
 | v0.34 | 2026-08-10 | The command that discharges a routed finding ticks it; drift found outside review gets a per-module findings queue with no state machine | mechanical |
 | v0.33 | 2026-08-05 | The same workflows run on Claude Code and on OpenAI Codex, generated from one set of sources; `AGENTS.md` becomes the project instruction file and `CLAUDE.md` a two-line shim | judgement |
 | v0.32 | 2026-07-31 | A routed review finding carries the reviewer's evidence into the session that discharges it, and is discharged by the code rather than by a command having run | judgement |
@@ -29,6 +30,44 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
 
 ---
+
+## v0.35 — 2026-08-12
+
+### Project state has one home, and agent memory is not it
+
+Some runtimes give the agent a persistent per-project memory store. A memory entry holding project state is a second home for that state: not in git, no schema, invisible to the viewer, unreachable by `/b-review`, lost on a change of runtime — and none of the ownership norms reach it, so nothing ever contradicts it. Audited on a real project: every memory entry about the operator or their machine had stayed accurate; every entry about the project had gone stale, contradicted a doc, or duplicated one. The rule is one-directional — *every fact required to work on this project is in the repository; an agent may hold facts about the operator and their environment wherever its runtime provides, and nothing about the project there* — with a decidable test: would a fresh session, on any runtime, on a clean clone, with no memory, get this right? Reasoning in `_bower/rationale.md`, *Agent Memory Is a Second Home for Project State*.
+
+- **`_bower/framework-reference.md`** — *Document Layers and Ownership* carries the rule, the fresh-clone test, the two-kind residual class (operator facts, machine facts), and the mechanism note.
+- **`_bower/framework.md`** — one Working Conventions line, since the rule binds every session.
+- **`_bower/rationale.md`** — new section: the evidence run and the reasoning.
+- **`_bower/roadmap.md`** — the deferred item is replaced by what the audit surfaced: three memory-shaped facts with no Bower home (open questions on an accepted ADR, per-document trust annotation, cross-cutting multi-session plans).
+
+### Fresh scaffolds ship per-project agent memory disabled
+
+The policy is enforced as configuration where the runtime has a lever: the seeded `.claude/settings.json` now sets `"autoMemoryEnabled": false`. **Project-local only** — it stops Claude Code reading and writing its per-project memory for this project; user-level memory and every other project are untouched, and an individual re-enables for themselves via `.claude/settings.local.json`, which overrides the checked-in file. The template is seeded only if absent, so no existing project's settings change on a scaffold refresh — existing projects get the gated migration below. Codex keeps no per-project memory store; there is nothing to disable.
+
+- **`_bower/project-settings.json`** — the template gains the key.
+
+### Migration
+
+**Judgement — an audit of a store only the running session can see, disposed entry by entry at a batch gate.**
+
+Order matters: complete the audit before writing the setting. Disabling memory stops *recall* as well as writes, so an entry left behind is not deleted but stranded — invisible to every future session while still on disk, which is worse than either keeping or deleting it.
+
+1. **Audit the per-project agent memory store, if this runtime keeps one.** Report whatever per-project memory store you can see for this project. If this runtime keeps none, or the project already has memory disabled, say so explicitly, declare steps 1–2 a no-op, and go to step 3.
+
+   If a store exists, it is unversioned and deletion is irreversible — the only store this migration touches with no git safety net — so first reproduce every entry in full in the conversation, and offer to write a snapshot copy to a path the operator names outside `docs/`. Then classify every entry into exactly one of four dispositions and present the classification as a **batch gate** — a disposition confirmed per entry, never one omnibus approval. Before classifying, check each entry's factual claims against the repository as it is now: the store was written by past sessions and entries go stale silently, and promoting a stale fact into `docs/` is the same defect in a new place.
+
+   - **Promote** — the entry is project state: it fails the test *would a fresh session, on any runtime, on a clean clone, with no memory, get this right?* Name the destination in the proposal: a process convention goes to `docs/constitution.md` — that file is human-owned, so quote the entry, show the evidence, and ask, exactly as the flag-don't-fix duty prescribes; a cross-cutting decision becomes a new ADR; feature or module state goes to the feature's `status.md` or `plan.md`; a boundary fact goes to `architecture.md`.
+   - **Keep** — a fact about the operator or about this one machine, not about the project. Propose relocating it to a user-level store outside the repository (the runtime's user-level memory or instruction file), because step 3 will stop this project's store being read.
+   - **Delete as obsolete** — the entry describes a state the project has left, or duplicates what a doc already says. Show what makes it stale or where the doc copy lives.
+   - **Unclassifiable** — the entry resists all three. Do not force it into a home; carry it to step 2's report verbatim.
+
+2. **Act on the confirmed dispositions only.** Write each promotion into its named home, relocate each kept entry, then delete from the store every entry that was promoted, relocated, or ruled obsolete — a promoted fact left in memory is a second copy with no reconciler. Report the unclassifiable entries **verbatim** in the upgrade summary, so they exist in the operator's scrollback and not only in a store about to go dark.
+
+3. **Offer — never impose — the project-local disable.** Present a gate: add `"autoMemoryEnabled": false` to `.claude/settings.json`, editing the existing project-owned file in place (add the key alongside its current content; never replace the file). State plainly what it does before asking: from the next session, Claude Code neither reads nor writes per-project memory *for this project only*; user-level memory and other projects are unaffected; any individual can re-enable for themselves with `"autoMemoryEnabled": true` in `.claude/settings.local.json`, which overrides the checked-in file. If the operator declines or defers, stop there — the policy stands as guidance, nothing records the refusal, and the setting can be added by hand later. This step applies on every runtime: the file governs Claude Code sessions on the project regardless of which runtime runs the upgrade.
+
+A project with no memory store has only step 3 to answer; the audit is the whole cost, and it exists only where a store does.
 
 ## v0.34 — 2026-08-10
 

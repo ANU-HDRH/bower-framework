@@ -1,4 +1,4 @@
-# Bower Framework v0.34
+# Bower Framework v0.35
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -13,6 +13,7 @@ Bower is a set of files you drop into a project that uses [Claude Code](https://
 - **Docs that don’t rot.** Every document has one writer, a word budget, and an end state. A fact lives in exactly one place, anything derivable is recomputed instead of stored, and a finished feature’s notes compress to the evidence that it passed. Documents that only ever grow stop being read — by agents first.
 - **Modules.** Logical groupings that persist as system boundaries. Changing them is gated, never ad-hoc.
 - **Agent-efficient context.** One small always-loaded router; specs, schemas and ADRs are pulled in only when a command needs them, and ADRs are selected by facet rather than read wholesale.
+- **Project state lives in the repo — including what an agent would otherwise remember.** The scaffold ships Claude Code's per-project auto-memory disabled (in the seeded `.claude/settings.json`; project-local only, and personally reversible via `.claude/settings.local.json`). Every fact needed to work on the project belongs in `docs/`, where any session on any runtime can reach it; what the agent may keep elsewhere is facts about *you* and *your machine*, never the project.
 - **A project state viewer.** A zero-dependency local viewer renders the whole project and reports drift: forty-odd checks that compare documents against each other and against the files on disk.
 
 The pattern borrows planning discipline from [SpecKit](https://github.com/github/spec-kit) and living documentation from [OpenSpec](https://github.com/Fission-AI/OpenSpec), tuned for small research teams and the full prototype-to-infrastructure lifecycle.
