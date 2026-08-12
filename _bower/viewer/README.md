@@ -76,7 +76,7 @@ defines it. Changing a row means changing `lib/extract.cjs` and
 | `review-plan.md` finding line — `F<n> — <gist> — <class> — <pointer>`, optionally `— done YYYY-MM-DD via <command>` on a ticked routed item, the closed class vocabulary, the preamble's date and roster count, `## Observations` | `/b-review` Step 3 (the plan shape); the tick grant in `framework-reference.md` → *Module Review* | the review page: what each finding is, who owns it, where it points, and who ticked it. The completion note is split off the pointer — the pointer is a command meant to be copied verbatim |
 | `review-plan.md` routed-finding brief — indented, checkbox-free `- Location:` / `- Drift:` / `- Resolution:` sub-bullets under a `route:*` item, all three required and non-empty | `/b-review` Step 3 (shape rules) | the brief shown under its finding; the incomplete-brief check. Indentation is load-bearing: a brief line matching the checkbox pattern would inflate the disposed/total counts |
 | `review-plan.md` anything else — indented prose under a finding, sections beyond `## Findings` / `## Observations` | — (operator material, not schema) | carried through and rendered: links to the plan resolve to the review page rather than a raw view, so the page must never show less than the file |
-| `docs/modules/<m>/findings.md` — the findings queue: same line and brief shape as a routed review finding, IDs `Q<n>`, no marker pairs with it | `framework-reference.md` → *Findings queue* | the `findings-queue-empty` check (a queue with no open items is residue). The file is rendered as a routed page by the loose-file rule below, not parsed into a structured view. Nothing links to it — the route exists so the queue is readable in the rail, the file index and search, and so that a stale link from before it drained resolves rather than reading dead |
+| `docs/modules/<m>/findings.md` — the findings queue: same line and brief shape as a routed review finding, IDs `Q<n>`, no marker pairs with it | `framework-reference.md` → *Findings queue* | parsed by the same checklist parser as the review plan. Two checks: `findings-queue-empty` (a drained queue left on disk is residue) and `findings-queue-open`, one `info` per open item. The page itself is the loose-file render below — the queue is operator prose first, and a bespoke page would read worse |
 | Any other loose `.md` at a module root | — (deliberately open) | a routed page, mirroring the central-docs sweep. A closed whitelist here is what made `findings.md` render as a dead link on a real project while the drift report reported nothing — `broken-link` tests existence, the renderer tests routability |
 | `docs/index.md` Modules table markers | `/b-index` | each module's *declared* status, compared with the derived one |
 | Repo-root-based doc links (`/docs/…`) | `framework.md` Working Conventions | backlinks; broken- and relative-link checks |
@@ -185,6 +185,27 @@ gist, its class, and where it points — a file, openable, or the literal comman
 that discharges it. A count of disposed findings is not something an operator can
 act on; the findings are. The page exists only as long as the plan does, which is
 correct — at closeout the plan is deleted and `Review: ✓` is the whole record.
+
+**Owed work is a fourth axis, and not a lifecycle one.** An open findings queue
+means remedial work has been recorded and not yet discharged. No marker anywhere
+says so — rule 1 of the queue is that nothing pairs with it — and a module can be
+✓ on build, integration and review while carrying one. So it is surfaced beside
+the markers, never folded into them: an ochre `!` on the module's rail entry, an
+`N owed` chip on the module graph, and a strap above the fold on the module page
+linking to the queue. On the health page it is one `info` per open item, carrying
+the item's gist and the literal command that discharges it, because that page is
+the only place the project's owed work aggregates.
+
+That check is the one entry on the health page that does not report drift — an
+open queue is the queue working — which is why it is `info`, why the page's
+framing says so, and why the fixture's conformant module fires it and only it.
+The v0.35 shape was to give the queue a route and nothing else, on the stated
+grounds that this made it readable "in the rail, the file index and search". Two
+of those three were never true: the rail lists Bower documents from a fixed set
+and project documents by `origin`, and the queue is in neither, while the file
+index covers files claimed by feature plans, not documents. Search alone reached
+it, so on a real project two queues sat open and unseen. A route is reachability;
+it is not a surface.
 
 ## Keeping it honest when the framework changes
 

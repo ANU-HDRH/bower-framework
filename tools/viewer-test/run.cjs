@@ -95,8 +95,9 @@ const EXPECTED = [
   'review-plan-not-open',
   'review-stale',
   'review-routed-no-brief',
-  // findings queue (v0.34)
+  // findings queue (v0.34), open-item surfacing (v0.36)
   'findings-queue-empty',
+  'findings-queue-open',
   // scope criteria (v0.24)
   'criterion-no-owner',
   'criterion-stale-pointer',
@@ -145,8 +146,17 @@ assert(
 
 // The conformant module is the other half of the negative assertion: a schema
 // change that makes a check fire on correct docs shows up here first.
+//
+// `findings-queue-open` is excluded, and it is the one exclusion this assertion
+// permits. Every other check here reports drift, so firing on `clean` would mean
+// the check is wrong. That one reports conformant state — `clean` carries a
+// correctly-formed queue with an open item, which is the queue working — so it
+// fires here by construction and its absence would be the failure. Do not add a
+// second exclusion to make a red test green; see the header.
 const cleanFindings = g.health.filter(
-  (h) => /modules\/clean/.test(h.path || '') || /\bclean\//.test(h.message) || h.module === 'clean',
+  (h) =>
+    h.kind !== 'findings-queue-open' &&
+    (/modules\/clean/.test(h.path || '') || /\bclean\//.test(h.message) || h.module === 'clean'),
 );
 assert(
   cleanFindings.length === 0,
@@ -376,6 +386,32 @@ assert(fq && fq.ownership === 'agent-owned (transient)', 'and is transient, like
 const fqEmpty = g.health.filter((h) => h.kind === 'findings-queue-empty');
 assert(fqEmpty.length === 1 && fqEmpty[0].module === 'drifted', 'a drained queue left on disk is reported', JSON.stringify(fqEmpty.map((h) => h.module)));
 assert(sevOf('findings-queue-empty') === 'warn', 'findings-queue-empty is warn', `got ${sevOf('findings-queue-empty')}`);
+
+// v0.36. Through v0.35 the queue reached no surface but full-text search — the
+// rail groups Bower docs by a fixed list and project docs by `origin`, and the
+// queue is in neither — so recorded remedial work was invisible unless you knew
+// it was there. Three surfaces now carry it: the module object (rail badge and
+// module-page strap), and one health finding per open item.
+const cleanQ = g.modules.find((m) => m.name === 'clean').findings;
+assert(cleanQ && cleanQ.total === 2 && cleanQ.open === 1, 'the queue is parsed, disposed items included', JSON.stringify(cleanQ && { total: cleanQ.total, open: cleanQ.open }));
+assert(cleanQ && cleanQ.items[0].id === 'Q1' && cleanQ.items[1].id === 'Q2', 'Q-space IDs parse — the plan parser only knew F', JSON.stringify(cleanQ && cleanQ.items.map((i) => i.id)));
+assert(cleanQ && cleanQ.items[1].completion === 'done 2026-07-24 via /b-feature consolidate-fixture-loader', 'a discharged item keeps its completion note out of the pointer', JSON.stringify(cleanQ && cleanQ.items[1].completion));
+assert(cleanQ && !!(cleanQ.items[0].brief || {}).resolution, 'the three-line brief is attached, not counted as items', JSON.stringify(cleanQ && cleanQ.items[0].brief));
+assert(cleanQ && cleanQ.route === g.docRoutes['docs/modules/clean/findings.md'], 'the module carries the queue route, so the rail and module page have somewhere to point', JSON.stringify(cleanQ && cleanQ.route));
+// The extractor → client contract below checks top-level and per-item fields;
+// nothing covers reads off a module, because `m` is also every regex match in
+// app.js and the sweep would be all false positives. So the three keys the rail
+// badge and the module-page strap reach for are asserted by name here.
+assert(cleanQ && ['open', 'route', 'rel'].every((k) => k in cleanQ), 'the queue emits the keys the rail badge and module strap read', JSON.stringify(Object.keys(cleanQ || {})));
+// A drained queue reports `findings-queue-empty` and nothing else — the two
+// checks are mutually exclusive by construction.
+assert(g.modules.find((m) => m.name === 'drifted').findings.open === 0, 'a drained queue has no open items', 'drifted');
+const fqOpen = g.health.filter((h) => h.kind === 'findings-queue-open');
+assert(fqOpen.length === 1 && fqOpen[0].module === 'clean' && fqOpen[0].id === 'Q1', 'one finding per open item, carrying its ID', JSON.stringify(fqOpen.map((h) => `${h.module}/${h.id}`)));
+assert(/according to Q1 in/.test(fqOpen[0].message), 'and the runnable pointer, which is what an operator acts on', fqOpen[0].message);
+// Severity is the whole argument for this check being on the health page at
+// all: an open queue is conformant, so it must not read as drift.
+assert(sevOf('findings-queue-open') === 'info', 'findings-queue-open is info — it is owed work, not a contradiction', `got ${sevOf('findings-queue-open')}`);
 
 // The check is version-gated: on a pre-v0.32 project every routed finding is
 // briefless by construction, which is history, not drift. The gate is the one

@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.35';
+const SCHEMA_VERSION = '0.36';
 
 // ---------------------------------------------------------------- helpers
 
@@ -71,6 +71,53 @@ const REVIEW_OWNED = ['inline-reconcile', 'test-backfill', 'status-fix', 'adr-su
 const BRIEF_FIELDS = ['location', 'drift', 'resolution'];
 const isReviewClass = (s) => REVIEW_OWNED.includes(s) || /^route:\/b-[a-z-]+$/.test(s);
 
+// The checklist body shared by `review-plan.md` and `findings.md` — v0.34 gave
+// the queue the plan's line schema deliberately, so it is parsed by the same
+// code rather than by a second regex that could drift away from it.
+//
+// `[x]` resolved and `[~]` won't-fix both count as disposed of; only `[ ]` holds
+// an item open. Won't-fix is an operator decision recorded in the file and
+// deliberately left no other trace. Checkbox lines are the findings; indented
+// label sub-bullets beneath one are its brief (v0.32) and are attached to it
+// rather than counted — a brief line that looked like an item would inflate both
+// the total and the "still open" count.
+function parseChecklist(text) {
+  const items = [];
+  for (const line of text.split('\n')) {
+    const box = /^\s*[-*]\s+\[( |x|X|~)\]\s+(.*)$/.exec(line);
+    if (box) {
+      items.push({
+        done: box[1] !== ' ',
+        wontFix: box[1] === '~',
+        ...parseFinding(box[2].trim()),
+      });
+      continue;
+    }
+    const sub = /^\s+[-*]\s+(Location|Drift|Resolution):\s*(.*)$/.exec(line);
+    if (sub && items.length) {
+      const it = items[items.length - 1];
+      (it.brief || (it.brief = {}))[sub[1].toLowerCase()] = sub[2].trim();
+      continue;
+    }
+    // Any other indented content under an item is operator prose — a re-opened
+    // note, a caveat — and the review page is the plan's only rendering (links
+    // to it resolve there, not to a raw file view), so dropping it would make
+    // the page a lossier read than the file. Kept verbatim and shown under the
+    // finding. Indentation-gated so a malformed plan with no ## Findings
+    // heading doesn't swallow its other sections into the last item.
+    if (/^\s+\S/.test(line) && items.length) {
+      const it = items[items.length - 1];
+      (it.annotations || (it.annotations = [])).push(line.trim().replace(/^[-*]\s+/, ''));
+    }
+  }
+  // A label with nothing after it is not a field. Collapsing an all-empty brief
+  // back to null keeps `brief` meaning "there is something here", which is what
+  // the renderer and the brief checks both assume.
+  for (const it of items)
+    if (it.brief && !BRIEF_FIELDS.some((k) => it.brief[k])) it.brief = null;
+  return items;
+}
+
 function parseFinding(text) {
   const out = {
     text,
@@ -89,7 +136,10 @@ function parseFinding(text) {
   };
   const parts = text.split(/\s+[—–]\s+/).map((s) => s.trim());
   let i = 0;
-  if (/^F\d+$/i.test(parts[0])) {
+  // `F<n>` in a review plan, `Q<n>` in a findings queue. Two ID spaces, one line
+  // schema — the prefix exists so a queue ID can never be mistaken for a plan's
+  // in a pasted command, and both are parsed here because both feed this parser.
+  if (/^[FQ]\d+$/i.test(parts[0])) {
     out.id = parts[0].toUpperCase();
     i = 1;
   }
@@ -640,47 +690,7 @@ function extract(root) {
       const rpRoute = `#/review/${encodeURIComponent(name)}`;
       docRoutes.set(rpRel, rpRoute);
       const rpSecs = M.sections(body);
-      // `[x]` resolved and `[~]` won't-fix both count as disposed of; only `[ ]`
-      // holds the review open. Won't-fix is an operator decision recorded in the
-      // plan and deliberately left no other trace.
-      // Checkbox lines are the findings; indented label sub-bullets beneath one
-      // are its brief (v0.32) and are attached to it rather than counted. Only
-      // checkboxes dispose of anything, so a brief line that looked like an item
-      // would inflate both the total and the "still open" count.
-      const items = [];
-      for (const line of (rpSecs['Findings'] || body).split('\n')) {
-        const box = /^\s*[-*]\s+\[( |x|X|~)\]\s+(.*)$/.exec(line);
-        if (box) {
-          items.push({
-            done: box[1] !== ' ',
-            wontFix: box[1] === '~',
-            ...parseFinding(box[2].trim()),
-          });
-          continue;
-        }
-        const sub = /^\s+[-*]\s+(Location|Drift|Resolution):\s*(.*)$/.exec(line);
-        if (sub && items.length) {
-          const it = items[items.length - 1];
-          (it.brief || (it.brief = {}))[sub[1].toLowerCase()] = sub[2].trim();
-          continue;
-        }
-        // Any other indented content under an item is operator prose — a
-        // re-opened note, a caveat — and this page is the plan's only rendering
-        // (links to it resolve here, not to a raw file view), so dropping it
-        // would make the page a lossier read than the file. Kept verbatim and
-        // shown under the finding. Indentation-gated so a malformed plan with
-        // no ## Findings heading doesn't swallow its other sections into the
-        // last item.
-        if (/^\s+\S/.test(line) && items.length) {
-          const it = items[items.length - 1];
-          (it.annotations || (it.annotations = [])).push(line.trim().replace(/^[-*]\s+/, ''));
-        }
-      }
-      // A label with nothing after it is not a field. Collapsing an all-empty
-      // brief back to null keeps `brief` meaning "there is something here",
-      // which is what the renderer and the check below both assume.
-      for (const it of items)
-        if (it.brief && !BRIEF_FIELDS.some((k) => it.brief[k])) it.brief = null;
+      const items = parseChecklist(rpSecs['Findings'] || body);
       // A routed finding is deferred into a fresh session, so its Location/Drift/
       // Resolution brief is the whole handoff — without it the receiving command
       // re-derives the finding from code and may fail to reproduce it at all.
@@ -759,26 +769,62 @@ function extract(root) {
       });
     }
 
-    // -- findings queue (v0.34). Nothing pairs with it and it holds nothing
-    // open, so there is exactly one mechanical fact worth reporting: an empty
-    // one left on disk. Whoever disposes of the last item deletes the file, so
-    // a queue with no open items is the residue of a half-finished drain — the
-    // same shape of fact as a plan without its marker, and reported by /b-recap
-    // on the same grounds.
+    // -- findings queue (v0.34). Nothing pairs with it, so it carries no state
+    // machine to cross-check. Two facts come out of it, and they are different
+    // in kind:
+    //
+    // `findings-queue-empty` is drift in the ordinary sense — whoever disposed
+    // of the last item deletes the file, so a queue with no open items is the
+    // residue of a half-finished drain, the same shape of fact as a plan
+    // without its marker, and reported by /b-recap on the same grounds.
+    //
+    // `findings-queue-open` (v0.36) is not drift at all: a queue holding open
+    // items is the queue working. It is reported because the alternative
+    // proved worse. Through v0.35 the queue reached no surface but full-text
+    // search — the rail groups Bower documents by a fixed list and project
+    // documents by `origin`, and the queue is in neither — so recorded remedial
+    // work was invisible to an operator who did not already know it existed.
+    // Completeness markers answer "is it built"; this answers "is anything
+    // owed", which no marker anywhere records.
+    let findings = null;
     const fqAbs = path.join(modDir, 'findings.md');
     if (exists(fqAbs)) {
-      const fqOpen = read(fqAbs)
-        .split('\n')
-        .filter((l) => /^\s*[-*]\s+\[ \]\s+/.test(l)).length;
-      candidate('findings-queue-empty', fqOpen === 0);
-      if (fqOpen === 0)
+      const fqRel = `docs/modules/${name}/findings.md`;
+      const fqItems = parseChecklist(M.sections(read(fqAbs))['Findings'] || read(fqAbs));
+      const fqOpen = fqItems.filter((i) => !i.done);
+      findings = {
+        rel: fqRel,
+        // Set by the loose-file sweep below; read by the module page and the
+        // rail, both of which need somewhere to send the operator.
+        route: null,
+        items: fqItems,
+        open: fqOpen.length,
+        wontFix: fqItems.filter((i) => i.wontFix).length,
+        total: fqItems.length,
+      };
+      candidate('findings-queue-empty', fqOpen.length === 0);
+      if (fqOpen.length === 0)
         flag(
           'warn',
           'findings-queue-empty',
           `${name}'s findings.md has no open items, so the queue is drained but the file was left behind — ` +
-            `whoever disposed of the last item should have deleted it. Delete docs/modules/${name}/findings.md.`,
-          `docs/modules/${name}/findings.md`,
+            `whoever disposed of the last item should have deleted it. Delete ${fqRel}.`,
+          fqRel,
           { module: name },
+        );
+      // One finding per item, not a count per module: the count is not what an
+      // operator acts on, and the pointer is a command meant to be copied and
+      // run. Deliberately not registered with the obsolescence tripwire — a
+      // queue that exists normally has every item open, so firing on every
+      // candidate is this check's healthy state rather than evidence of decay.
+      for (const it of fqOpen)
+        flag(
+          'info',
+          'findings-queue-open',
+          `${name}${it.id ? ` ${it.id}` : ''} — ${it.gist}` +
+            (it.pointer ? ` · ${it.pointer}` : ''),
+          fqRel,
+          { module: name, id: it.id || null },
         );
     }
 
@@ -800,6 +846,10 @@ function extract(root) {
         (renderable && (/^#\s+(.*)$/m.exec(body) || [])[1]) || path.basename(f, path.extname(f));
       const docRoute = `#/doc/${encodeURIComponent(id)}`;
       docRoutes.set(rel, docRoute);
+      // The queue's page is this generic render — it is operator prose first and
+      // a checklist second, and a bespoke page would be a lossier read. All the
+      // rail and the module page need from it is somewhere to point.
+      if (findings && rel === findings.rel) findings.route = docRoute;
       docs.push({
         id,
         rel,
@@ -1170,6 +1220,10 @@ function extract(root) {
       hasArch: !!arch,
       integration,
       review,
+      // Never folded into `status` or into the lifecycle axes — the queue pairs
+      // with no marker and opens no state (framework-reference.md → Findings
+      // queue, rule 1). It sits beside them, as review does.
+      findings,
       buildOrder,
       featureNames: modFeatures.map((f) => f.name),
       status: rollup,

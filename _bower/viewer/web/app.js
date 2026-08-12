@@ -707,6 +707,9 @@ function viewHealth() {
       'A table cell holding a paragraph. A formatter aligns every sibling row out to match it, so the cost multiplies across a file agents read on every session.',
     'check-may-be-obsolete':
       'Aimed at the viewer, not the project: a check matching every candidate is usually testing a dropped convention.',
+    'findings-queue-open':
+      'Not drift — a queue holding open items is the queue working. Listed because nothing else aggregates ' +
+      'what a project owes: no marker records it, and completion markers answer a different question.',
   };
 
   return el(
@@ -715,10 +718,12 @@ function viewHealth() {
     pageHead(
       [el('a', { href: '#/' }, 'Overview'), el('span', {}, '·'), el('span', {}, 'Health')],
       'Documentation health',
-      'Drift checks: every one compares a document against another document, or against the ' +
-        'files on disk. These are claims the docs make that the repository no longer supports. ' +
+      'Mostly drift checks: each compares a document against another document, or against the ' +
+        'files on disk, and reports claims the docs make that the repository no longer supports. ' +
         'An `error` is a contradiction — two documents that cannot both be right. A `warn` is ' +
-        'something to look at, not a verdict.',
+        'something to look at, not a verdict. An `info` may be neither: `findings-queue-open` ' +
+        'reports work a project has correctly recorded as owed, which is conformant state rather ' +
+        'than drift, and is here because this is the only page that aggregates it.',
     ),
     G.health.length === 0
       ? el('div', { class: 'panel' }, el('div', { class: 'panel-body' }, el('p', {}, 'No drift found.')))
@@ -1238,6 +1243,11 @@ function viewModules() {
                   `review ${m.review.marker}`,
                 )
               : null,
+            // Third axis, and the only one that is not a lifecycle state: work
+            // recorded as owed. A ✓ module can carry it.
+            m.findings && m.findings.open
+              ? el('span', { class: 'tag owed' }, `${m.findings.open} owed`)
+              : null,
           ),
         ),
       ),
@@ -1394,6 +1404,23 @@ function viewModule(name) {
         ),
       },
     ),
+    // Above the fold and outside the Lifecycle panel, both deliberately. The
+    // queue is not a lifecycle axis — it pairs with no marker and opens no state
+    // — but it is the one thing on this page that says work is owed, and a
+    // module can be ✓ on every axis while carrying it.
+    m.findings && m.findings.open
+      ? el(
+          'a',
+          { class: 'strap owed', href: m.findings.route || '#/health' },
+          el(
+            'b',
+            {},
+            `${m.findings.open} open finding${m.findings.open === 1 ? '' : 's'} recorded outside review.`,
+          ),
+          ` Remedial work queued in ${m.findings.rel}, not a build state — nothing pairs with it, ` +
+            'it holds no marker open and blocks no closeout. Each item carries the command that discharges it.',
+        )
+      : null,
     el(
       'div',
       { class: 'panel', style: 'margin-bottom:18px' },
@@ -2029,13 +2056,26 @@ function buildRail() {
   nav.textContent = '';
   $('#rail-project').textContent = G.project.name;
 
-  const navLink = ({ href, name, idx, mk }) =>
+  // `owed` is deliberately not a marker. Markers answer "is it built" — a module
+  // can be ✓ on every axis and still carry recorded remedial work, and folding
+  // the two together would make one of those two facts unreadable.
+  const navLink = ({ href, name, idx, mk, owed }) =>
     el(
       'a',
       { class: 'nav', href, 'data-href': href },
       idx ? el('span', { class: 'idx' }, idx) : null,
       mk ? el('span', { class: 'idx', title: markerMeta(mk).label }, mk) : null,
       el('span', { class: 'name' }, name),
+      owed
+        ? el(
+            'span',
+            {
+              class: 'owed',
+              title: `${owed} open finding${owed === 1 ? '' : 's'} recorded outside review — not a build state`,
+            },
+            '!',
+          )
+        : null,
     );
 
   const group = (label, items) =>
@@ -2085,6 +2125,7 @@ function buildRail() {
         name: m.name,
         idx: String(i + 1).padStart(2, '0'),
         mk: m.status,
+        owed: m.findings ? m.findings.open : 0,
       })),
     ),
   );

@@ -279,6 +279,15 @@ a:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Work owed, not a build state. Sits after the name rather than beside the
+   status marker on purpose: the two glyph slots to the left are lifecycle, and
+   a ✓ module can carry this. Ochre, as `.tag.pend` uses for the same sense. */
+.rail a.nav .owed {
+  font: 700 12px var(--f-mono);
+  color: var(--ochre);
+  padding-left: 4px;
+  flex: none;
+}
 
 .rail-foot {
   margin-top: auto;
@@ -1057,6 +1066,12 @@ html[data-theme='dark'] .tag.narrowed {
   border-color: var(--bower);
   border-style: dashed;
 }
+/* An open findings queue. Same ochre as `.tag.pend` — same fact, work owed —
+   but on a module row, where every other chip is a lifecycle marker. */
+.tag.owed {
+  color: var(--ochre);
+  border-color: var(--ochre);
+}
 
 /* ── banners: transient project states that are themselves the next move ── */
 .banner {
@@ -1161,6 +1176,9 @@ a.strap:hover {
   border-left-color: var(--bower);
 }
 .strap.nyif {
+  border-left-color: var(--ochre);
+}
+.strap.owed {
   border-left-color: var(--ochre);
 }
 
