@@ -105,7 +105,7 @@ Prepare a proposal covering:
   - Edge cases to consider
 - **What you won't change:** Explicitly note anything adjacent that you're leaving alone
 
-Mark your recommended approach if there are alternatives.
+**Where the approach has genuine branching choices, present them as options rather than as one recommendation.** The test is `/b-ui`'s: would you have to pick between two or more viable shapes that neither the docs nor the request has already settled? If the operator named the approach, or only one shape is viable, propose that one and mark it — invented alternatives are noise. If two or more are real, letter them, give each its reasoning and trade-offs, and mark one as recommended. That makes the gate below a choice gate, which changes what it asks and what the change can later record.
 
 ## Gate: Confirm or Adjust
 
@@ -114,6 +114,8 @@ Present the proposal to the user at an operator gate. Frame it as:
 "Here's what I propose to change and how I'll verify it works. Confirm to proceed, or tell me what to adjust."
 
 Include the acceptance criteria in the question — these are part of the agreement, not an afterthought. The choices are: **confirm** (proceed as proposed), **adjust** (free-form changes — revise and re-present the gate), or **cancel**.
+
+**Where Step 2 lettered alternatives, the letters are choices at this gate too**, presented in the binding's prose form (`_bower/framework.md` → *Runtime bindings*): the operator names one — and may, but need not, say why — or adjusts, or cancels. Without this the alternatives are unselectable and the gate can only take a free-form adjustment, which discards a real choice and leaves a synthetic account of it to be manufactured downstream. Naming a letter *is* a confirmation, of that option. Record which one, resolved to its content rather than its letter, and their reason verbatim if they gave one; Step 3 writes both into `plan.md`.
 
 **Do not write any code until the user confirms.** Stop and wait; proceed only on an explicit applicable answer — silence or an unrelated reply is not acceptance.
 
@@ -134,6 +136,8 @@ After the user confirms at the gate, write `plan.md` *before* any code is touche
 **For modify intent:** rewrite the affected sections of the existing `plan.md` to reflect the *intended end state*. Delete claims that no longer hold; the doc represents current state, not history. The file becomes briefly aspirational (reflects the change before the code does) — this is intentional. It is the recovery anchor.
 
 **For remove intent:** no plan.md work at this step; the file is deleted in Step 6.
+
+**On any intent, carry the operator's choice into the plan.** If the gate offered lettered alternatives and the operator named one, write one or two lines recording which option — resolved to its content, not the letter — and their reason in their own words where they gave one. `plan.md` is already the durable record of intent, written immediately after the gate, and reconcile already reads it; this is the only thing that carries the operator's wording across Step 2 → Step 5, which is the framework's longest gap (a delegated implementation plus a possible PENDING-USER wait, so a compaction in between is plausible). Never write your own recommendation rationale here as though it were theirs. On **remove** intent there is no plan to write it into — hold it in this conversation and pass it at Step 5 instead.
 
 The plan written here is what survives a crash. Implementation footnotes that emerge during Step 4 (a workaround for a specific bug, a hand-edited migration, a non-obvious cast) and the `Confirmed YYYY-MM-DD` stamp are appended at Step 6.
 
@@ -179,6 +183,10 @@ Handling:
 - **Contradicted / drifted** (change violates an accepted ADR, or the ADR was already stale relative to the code) — invoke `/b-adr` to write a new ADR superseding the old one. Pass the rationale and the ADR-ID being superseded in the description.
 - **Narrowed** (change scopes an exception without invalidating the original) — invoke `/b-adr` to write a narrowing ADR. Pass the rationale and the ADR-ID being narrowed. The new ADR carries `narrows: [ADR-NNNN]`, the old one gains `narrowed-by` and keeps `status: accepted`.
 - **New cross-cutting decision** (change introduces a commitment that didn't have an ADR) — invoke `/b-adr` to record it.
+
+**Carry the operator's choice to `/b-adr`.** Where Step 3 recorded a decision line in `plan.md`, pass it with every `/b-adr` invocation above: the resolved option and, where they gave one, their reason marked as the operator's own words. That is the only provenance the ADR can honestly carry, and the gate where it was said is many turns back. Do **not** pass your own recommendation rationale as theirs. Where no choice gate ran, pass nothing — the ADR records no attribution, which is the common and correct outcome.
+
+An **implementation divergence is deliberately not a choice**, even when it exposed a branch nobody had seen. The implementer is a subagent with no channel to the operator, so the branch could not be chosen when it happened, and asking here — after the code exists, at the lowest-attention point in the workflow — would relocate the fiction rather than remove it. The report names it under `## Divergences` as it already does, and the ADR stays unattributed: no citable durable artefact, no ratification claim.
 
 Skip only if no Decision impact was identified at the gate (Step 2 listed it as `none`). Otherwise this is not optional — silent decision drift is exactly what the ADR mechanism exists to prevent.
 

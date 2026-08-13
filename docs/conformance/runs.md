@@ -8,6 +8,32 @@ Evidence pointers are paths on the operator's machine or citations into a spike 
 
 ---
 
+## v0.37 — gate text changed; nothing re-run
+
+**No runs.** This block exists because the demotion rule requires the obligation to be visible before the tier claims are repeated, and v0.37 repeats them. It amends the operator-gate binding itself, which makes it the broadest gate change since v0.33.
+
+What changed, all of it inside the demotion rule's definition of *gate or delegation text*:
+
+- **`_bower/framework.md` → *Runtime bindings*, the operator-gate entry.** A new qualifier: where a gate offers a choice among competing options, the options are presented as prose on **every** runtime — lettered, with the reasoning and trade-offs spelled out — and the reply names one and may optionally say why. This converges the runtimes rather than splitting them, since the Codex binding already worked this way; on Claude Code it changes how a whole class of gate is presented, from a structured picker to prose. The stop condition, the non-answer handling, and the maps-to-an-offered-choice rule are untouched.
+- **Four skills' gate wording.** `/b-ui`'s pick-one gate gains the optional-why clause; `/b-feature`'s and `/b-module`'s gates accept a lettered option alongside confirm/adjust/cancel; `/b-design`'s Stage 0 gate turns a material ambiguity into a lettered choice.
+- **`/b-adr`'s gate is retargeted.** It still prints the whole ADR but asks about a named list — the quoted intent, the Decision sentence, `scope`/`modules`/`topics`, supersede-versus-narrow, the ledger line — rather than seeking approval of the prose as a whole. The no-write-before-confirmation rule is unchanged.
+- **`bower-analyst`'s definition** gains a rule about the provenance of its own rationale. Not an interaction constraint — the role still has no channel — but it is agent-definition text and sits inside the diff any re-run scores.
+
+**Owed before the v0.37 tier claims may be repeated:**
+
+| Runtime | Scenario | Status |
+|---|---|---|
+| Claude Code | C3 | **owed** — and the most relevant row this suite has ever owed on this runtime; see the note below. Also still the first Claude row the ledger would carry, so it discharges part of the standing baseline gap. |
+| Codex | C3 core | **owed** — discharged at v0.34, which says nothing about v0.37's text. |
+| Codex | C3 probes (4–8) | **owed** — interactive; unrun since the suite was written. |
+| Codex | C8 | **owed** — the conversational batch walk, unrun since the suite was written, and a choice-gate reply is exactly the shape it scores. |
+
+**One consequence is flagged rather than buried.** Claude Code's `supported` label rests in part on its gate binding being *structural*: `AskUserQuestion` cannot be talked past, because the turn does not continue without a result. v0.37 makes one class of gate — a choice among competing options — prose on Claude Code as well, so that class is now held by instruction rather than by the runtime. The stop is still written down, and every other gate is unaffected; but the strongest of the three grounds behind the Claude claim is narrower at v0.37 than it was at v0.36, and C3 is the scenario that would say by how much. Whoever runs it should score the choice-gate form specifically: does a choice-gate presentation actually end the turn, and does a non-answer produce a restatement rather than a guess at which letter the operator meant?
+
+**Maintainer's position, recorded at v0.37:** the fixtures are experimental, were primarily motivated by validating Codex, and are expensive enough that in practice they do not get run. That is a legitimate call about a suite the maintainer owns, and nothing in v0.37 depends on it. The rule's floor still binds, and this block is what discharges it — **a tier whose evidence set is incomplete says so where the tier is claimed.** A caveat is removed by adding rows, never by editing prose.
+
+---
+
 ## v0.34 — Codex C3 core re-run; the interactive half still owed
 
 Ran 2026-08-10 against **codex-cli 0.146.1**, model **gpt-5.6-luna at medium** — the weakest supported model, which is the one worth testing gates against — parent sandbox **`workspace-write`**. Fixture `bower`, rebuilt from this repo at v0.34 (`--force`), so the adapters under test are the ones this version ships.

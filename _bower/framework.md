@@ -1,4 +1,4 @@
-# Bower Framework v0.36
+# Bower Framework v0.37
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
@@ -85,6 +85,8 @@ Bower's workflows are runtime-neutral: they say what must happen — gate, deleg
 
 - *Claude Code:* present the decision and choices through the `AskUserQuestion` tool and wait for its result.
 - *Codex:* present the same content and choices in the ordinary reply and end the turn; interpret the operator's next message against the offered choices.
+
+**Where a gate offers a choice among options** — competing shapes for the same change, not confirm/adjust/cancel — present them **as prose on every runtime**, including Claude Code: lettered, each with the reasoning and the trade-offs spelled out, one marked as recommended, and a closing line asking the operator to name one **and, if they wish, say why**. Then stop as above and read the reply against the letters. The reasoning is a prompt, never a requirement: a bare letter is a complete answer. A structured picker is space-constrained, which compresses exactly the material that makes a choice real down into labels, and its result is a selection with nowhere for a "why" to land — and the why is what the record can honestly carry (`_bower/framework-reference.md` → *ADRs*). Everything else about the gate is unchanged.
 
 **Batch gates.** Some gates collect a disposition *per item* (review triage, manual acceptance checks). Never seek one omnibus answer to a long list.
 

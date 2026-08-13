@@ -67,19 +67,21 @@ Either `Status: nothing to do` or a numbered list of ADR operations. One operati
 Status: <N> operation(s)
 
 1. new ADR-NNNN — <decision title>
-   Rationale: <one short paragraph>
+   Analyst rationale: <one short paragraph>
 
 2. supersedes ADR-MMMM (new ADR-NNNN) — <decision title>
-   Rationale: ...
+   Analyst rationale: ...
 
 3. narrows ADR-MMMM (new ADR-NNNN) — <decision title>
-   Rationale: ...
+   Analyst rationale: ...
 
 4. confirms ADR-MMMM — <decision title>
-   Rationale: ... (no new ADR written; no ID consumed)
+   Analyst rationale: ... (no new ADR written; no ID consumed)
 ```
 
 Where `NNNN` and `MMMM` in this template are placeholders for real IDs (e.g. `ADR-0034`, `ADR-0011`); the actual brief contains real numbers.
+
+**`Analyst rationale:` is named for its author, and the label is load-bearing.** The prose is the analyst's own reasoning about the project state, produced in an isolated context by a role with no channel to the operator. Downstream, `/b-design` Stage 2 drafts ADR bodies from this brief, and an ADR may record *what the operator said* but never a weighing that did not occur — so the field carries its provenance with it rather than relying on a prohibition in another file. Write it as analysis, never in a register that implies intent the analyst was told, and never as a set of options put to anyone. Where the analyst finds the decision genuinely open, that belongs in `## Ambiguities and assumptions`, which is what `/b-design` Stage 0's gate turns into a real choice.
 
 Operation semantics (full ADR spec in `_bower/framework-reference.md`):
 - `new` — no existing ADR covers this; new file at the pre-allocated ID.
@@ -196,6 +198,7 @@ Feature plans (loaded in full):
 
 - Assumed the seasonal data source is a separate module rather than a feature inside ingredient-search. Justification: it has its own data concerns (external feed, staleness window, refresh cadence) and would be integration-tested independently. If the operator wants it as an ingredient-search feature instead, Stage 4 changes shape: no new module, one extra plan touch in ingredient-search.
 - Assumed the "one week" staleness tolerance is firm enough to drive the refresh-cadence decision in the new ADR. If it's a soft target, the ADR may need to defer that constraint and record it as a configurable knob instead.
+- The feed itself is unsettled and both viable options reshape ADR-0010's operational half. A public crop calendar is free and coarse — country-level windows, no per-variety data, and no availability guarantee, so the fallback path carries real weight. A commercial seasonal API is per-region and per-variety with an uptime commitment, at a recurring cost and a vendor dependency the project does not otherwise have. This is a live choice rather than an assumption to flag: whichever is picked, the staleness budget and the fallback behaviour go in the same ADR.
 
 ## Stage 1 — Problem framing
 
@@ -207,10 +210,10 @@ Reason: scope.md already lists "ingredient-aware meal planning" as in-scope, and
 Status: 2 operations
 
 1. new ADR-0010 — Seasonal-availability data source and staleness policy
-   Rationale: introducing a new external data source is cross-cutting — it touches at least two modules and constrains operational behaviour via the refresh cadence. The choice of feed (a public crop calendar vs a third-party seasonal API) needs to be recorded alongside the one-week staleness budget and the fallback behaviour when the feed is stale or unavailable.
+   Analyst rationale: introducing a new external data source is cross-cutting — it touches at least two modules and constrains operational behaviour via the refresh cadence. The feed itself is not settled by the change description, so the decision is open rather than merely unrecorded; that is flagged under Ambiguities for the Stage 0 gate. Whatever is chosen, the ADR must carry the one-week staleness budget alongside it and the fallback behaviour when the feed is stale or unavailable.
 
 2. confirms ADR-0007 — Search query syntax
-   Rationale: the change adds a seasonal-preference filter to ingredient-search, but the existing query syntax already supports preference modifiers. No new syntax required; ADR-0007 is reaffirmed, no file written. Listed so the operator can see this was considered.
+   Analyst rationale: the change adds a seasonal-preference filter to ingredient-search, but the existing query syntax already supports preference modifiers. No new syntax required; ADR-0007 is reaffirmed, no file written. Listed so the operator can see this was considered.
 
 ## Stage 3 — Architecture
 

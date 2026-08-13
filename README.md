@@ -1,4 +1,4 @@
-# Bower Framework v0.36
+# Bower Framework v0.37
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -24,10 +24,10 @@ From v0.33 Bower ships adapters for **Claude Code** and **OpenAI Codex** from on
 
 **The two runtimes are not on an equal footing, and the labels below are the claim.** Claude Code is the reference runtime; Codex is *experimental* — shipped because the contracts held everywhere they were tested, with real behaviour still being scored and open findings recorded against it. Treat it as usable and worth reporting on, not as settled.
 
-- **Claude Code — supported.** The reference runtime. `CLAUDE.md`, `.claude/commands/` for the `/b-*` skills, `.claude/agents/` for the three subagents. Gates are presented through `AskUserQuestion`, which blocks structurally. The label predates the conformance suite, which is new in v0.33: it rests on that structural gate binding, a per-site audit of every gate the v0.33 pass touched, and continuous use since v0.8 — the scenario baseline behind it is still being filled in, and [`docs/conformance/`](docs/conformance/) says which rows are owed.
+- **Claude Code — supported.** The reference runtime. `CLAUDE.md`, `.claude/commands/` for the `/b-*` skills, `.claude/agents/` for the three subagents. Gates are presented through `AskUserQuestion`, which blocks structurally — the one exception, from v0.37, is a gate offering a choice among competing options, which is prose on every runtime so that the reasoning, the trade-offs, and the operator's own "why" have somewhere to live. The label predates the conformance suite, which is new in v0.33: it rests on that structural gate binding, a per-site audit of every gate the v0.33 pass touched, and continuous use since v0.8 — the scenario baseline behind it is still being filled in, and [`docs/conformance/`](docs/conformance/) says which rows are owed.
 - **Codex — experimental.** `AGENTS.md`, `.agents/skills/b-*/SKILL.md` (the open Agent Skills standard, invoked with `$b-feature` or `/skills`), `.codex/agents/bower-*.toml` for the subagents. Gates are presented in the ordinary reply, ending the turn. Earned on a clean install plus the feature gate holding under pressure — including under an explicit "just get it done, no need to check with me"; graduation to *supported* needs the full scenario set green. One primitive is not supported: Codex's sandbox makes `.agents/` and `.codex/` read-only during normal work, so `/b-upgrade` hands you the scaffold command to run yourself rather than refreshing them in-session. Two findings are open against this version, both from a real-project run and both recorded in [`docs/conformance/runs.md`](docs/conformance/runs.md): a caller can read a long-running delegate's polling timeout as a stall and interrupt it, and a report produced under interrupt is not marked as such. Neither loses work; both are worth knowing before you lean on delegated implementation.
 
-**v0.34 changed gate wording, which under Bower's own rule means re-running the gate scenarios before repeating either label.** The Codex half was re-run and passed: the feature gate held against an explicit *"just get it done, no need to check with me"*, on the weakest supported model, with nothing written. The Claude half was not — that runtime has never had a row in the ledger, which is the standing gap described below rather than anything v0.34 introduced. [`docs/conformance/runs.md`](docs/conformance/runs.md) names exactly what was run and what is still owed.
+**v0.34 and v0.37 both changed gate wording, which under Bower's own rule means re-running the gate scenarios before repeating either label.** At v0.34 the Codex half was re-run and passed: the feature gate held against an explicit *"just get it done, no need to check with me"*, on the weakest supported model, with nothing written. The Claude half was not — that runtime has never had a row in the ledger, which is the standing gap described below rather than anything v0.34 introduced. **v0.37 is unre-run on both.** It amends the gate binding itself: where a gate offers a choice among competing options, those options are now put as prose on every runtime, so on Claude Code that one class of gate is held by instruction rather than by `AskUserQuestion` — which is one of the three grounds the Claude label stands on. Every other gate is unaffected and the stop is still written down, but the claim is narrower than it was at v0.36 and nothing has yet scored the difference. [`docs/conformance/runs.md`](docs/conformance/runs.md) names exactly what was run and what is still owed.
 
 What each runtime is claimed to do, the evidence behind the claim, and how it is re-tested live in [`docs/conformance/`](docs/conformance/).
 
@@ -174,7 +174,7 @@ It clones from the URL in `_bower/SOURCE`, so forks just work: scaffold from you
 
 ## Where the detail lives
 
-- [`_bower/rationale.md`](_bower/rationale.md): why Bower works the way it does
+- [`_bower/rationale.md`](_bower/rationale.md): why Bower works the way it does (it's long, but agents can use it to answer questions about the framework)
 - [`_bower/changes.md`](_bower/changes.md): versioned log of framework changes (v0.20 onward; earlier entries are archived verbatim in [`docs/changes-archive.md`](docs/changes-archive.md))
 - [`_bower/roadmap.md`](_bower/roadmap.md): deferred improvements and their triggers
 - [`_bower/framework-reference.md`](_bower/framework-reference.md): document schemas and detailed specs

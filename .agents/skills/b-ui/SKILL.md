@@ -58,9 +58,11 @@ When alternatives are real, present 2-3 — not more. Each should commit the des
 
 ## Gate: Confirm or Adjust
 
-Present the proposal to the user at the operator gate. Frame as:
+Present the proposal to the user at the operator gate. Where Step 2 produced alternatives this is a gate offering a **choice among options**, so the binding's prose form applies (`_bower/framework.md` → *Runtime bindings*): lettered, each with its reasoning and trade-offs, one marked as recommended. Frame as:
 
-"Here are the options for this UI change. Pick one to proceed, or tell me what to adjust."
+"Here are the options for this UI change. Name the one you want — and if you like, say why. Or tell me what to adjust."
+
+The "why" is a prompt, not a second question: a bare letter is a complete answer, and this gate is the only place in the workflow where an operator's reason for a UI shape can be captured at all. Record which option they named, resolved to its content rather than its letter, and their reason verbatim if they gave one — Step 4 carries both to `/b-adr`.
 
 **Do not write any code until the user confirms.**
 
@@ -94,6 +96,8 @@ Without this framing the operator gets "does it look right?" with no anchor; wit
 - **Contradicted / drifted** — invoke `/b-adr` to write a superseding ADR.
 - **Narrowed** — invoke `/b-adr` to write a narrowing ADR. Pass the rationale and the ADR-ID being narrowed. The new ADR carries `narrows: [ADR-NNNN]`, the old one gains `narrowed-by` and keeps `status: accepted`.
 - **New cross-cutting decision** — invoke `/b-adr` to record it.
+
+**Carry the operator's choice to `/b-adr`.** Pass the option they named at the gate — resolved to its content, never the letter — and their reason if they gave one, marked as the operator's own words. `/b-adr` records it as attribution in `## Context` and has no other way to reach it: the gate is where it existed, and this conversation is the only thing that still holds it. Do **not** pass your own `(Recommended)` rationale as theirs — it is your argument, and attributing it to a person is precisely what `/b-adr`'s attribution rules forbid. Where the operator gave no reason, pass the choice alone.
 
 Skip only if Step 2 listed Decision impact as `none`.
 

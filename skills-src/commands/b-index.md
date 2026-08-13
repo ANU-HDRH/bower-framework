@@ -97,7 +97,11 @@ Frontmatter fields:
 | `narrows` | no | List of ADR IDs this entry scopes an exception to; those ADRs stay `accepted` |
 | `narrowed-by` | no | List of ADR IDs that narrowed this entry — it remains `accepted` and in force |
 
-Body sections (in order): `## Context`, `## Decision`, `## Consequences`, `## Alternatives considered`.
+Body sections (in order): `## Context`, `## Decision`, `## Consequences`.
+
+`## Context` may carry one sentence of attribution — what the operator said, or what evidence was cited and what the operator did with it. **Silence means none was recorded**, which is the common case; an ADR with no attribution sentence is complete.
+
+`## Alternatives considered` was retired at framework v0.37: no ADR-authoring route weighed options before the decision existed, so the section's content was reconstructed after the fact unless the operator dictated it. Sections predating the retirement stay on disk — bodies are immutable — and are **not guaranteed to be operator-attributed**. Some are; nothing in the record distinguishes them.
 
 Filter by `status: accepted` for "what's true now." Older statuses are historical. Only `scope: universal` ADRs apply to every change; commands select the rest by module, topic, or title relevance.
 

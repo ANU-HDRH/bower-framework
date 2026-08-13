@@ -41,4 +41,5 @@ Newest first. Append-only; never edit a row after the fact. **Verdict** is PASS 
 
 | Version | Date | Environment | Verdict | By |
 | --- | --- | --- | --- | --- |
+| 0.37 | 2026-08-13 | PowerShell 7.x (Core) on WSL2 / Ubuntu, x64 — Linux run, so no Windows path or CRLF coverage | PASS | Mat Bettinson |
 | 0.33 | 2026-08-05 | PowerShell 7.6.4 (Core) on WSL2 / Ubuntu, x64 — Linux run, so no Windows path or CRLF coverage | PASS | Mat Bettinson |

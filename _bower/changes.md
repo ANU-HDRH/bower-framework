@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.37 | 2026-08-13 | An ADR records what the operator said and what evidence was cited, never deliberation that did not occur: `## Alternatives considered` is retired in favour of attribution, a gate offering a choice among options is prose on every runtime, and `/b-adr` drains the adoption ledger it was already the exit for | mechanical |
 | v0.36 | 2026-08-12 | An open findings queue becomes visible in the viewer — rail badge, module strap, one health finding per open item — as owed work beside the completion markers, never inside them; a marker-parse fix stops a reopened feature reading as complete, and a link into a transient file is now reported | none |
 | v0.35 | 2026-08-12 | Project state lives in the repository, never in agent memory; fresh scaffolds disable Claude Code's per-project memory, and a gated migration audits and drains an existing store | judgement |
 | v0.34 | 2026-08-10 | The command that discharges a routed finding ticks it; drift found outside review gets a per-module findings queue with no state machine | mechanical |
@@ -31,6 +32,75 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
 
 ---
+
+## v0.37 — 2026-08-13
+
+### An ADR records what was said, not deliberation that never happened
+
+`## Alternatives considered` asserted weighing that no authoring route performs. Every route to an ADR starts at the decision — `/b-design` Stage 2 drafts from a brief that already names the ADR, `/b-feature` and `/b-module` reconcile write one after the code has merged, and adoption, review and integration each arrive holding evidence rather than a choice — so the section's content was reconstructed after the fact unless the operator happened to dictate it, and nothing on the page distinguished the two. It is retired. What `## Context` may carry instead is **attribution**: at most one sentence recording either what the operator said or what evidence was cited and what they did with it, and nothing at all when neither applies. Silence means none was recorded, stated once in `docs/adr/index.md`'s schema block rather than as per-file boilerplate. Reasoning: `_bower/rationale.md` → *What an ADR Can Honestly Claim*.
+
+Three prohibitions carry the weight. The model's own recommendation rationale is never re-attributed to the operator — it sits a few lines above the choice at the gate, which is what makes the mistake available. Nothing is mined from the surrounding conversation: the admissible sources are the ones whose boundaries the agent did not choose, which is the request, a typed choice at a gate, and an explicit correction at a gate. And *ratified* is reserved for a per-item decision against a citable artefact; a batch triage disposition yields *accepted at review triage* and claims no more.
+
+A gate offering a **choice among options** is now prose on every runtime, Claude Code included — a qualifier on the existing operator-gate binding rather than a third idiom. A structured picker compresses the reasoning and the trade-offs into labels and returns a selection, so the "why" has nowhere to land, which is how the framework ended up with a menu-shaped gate producing no rationale and a manufactured rationale downstream. The reply names one option and *may* say why; a bare letter is a complete answer. `/b-adr`'s own gate narrows to what is immutable and acted upon plus what drives machine behaviour — the quoted intent, the Decision sentence, `scope`/`modules`/`topics`, supersede versus narrow, and the survival of narrowing pointers — and shows the rest without asking approval of it.
+
+- **`_bower/framework.md`** — the operator-gate binding gains the choice-among-options qualifier.
+- **`skills-src/commands/b-adr.md`** — the section leaves the template and the length budget; a new *Attribution* subsection carries the three forms and their prohibitions; *records, never deliberates* becomes a behavioural rule; the gate is retargeted, keeping the narrowing-pointer check.
+- **`skills-src/commands/b-ui.md`** — the existing pick-one gate gains the optional-why clause and carries the resolved choice to `/b-adr`.
+- **`skills-src/commands/b-feature.md`** — the proposal letters alternatives where the choice is real; the gate accepts a letter alongside confirm/adjust/cancel; the choice and any reason land in `plan.md` at Step 3 and reach `/b-adr` at Step 5. An implementation divergence is explicitly *not* a choice — the implementer has no operator channel, so re-gating at reconcile would relocate the fiction rather than remove it.
+- **`skills-src/commands/b-module.md`** — the same, with the alternatives line an addition rather than an amendment; it matters more here because the command gates once for the whole module.
+- **`skills-src/commands/b-design.md`** — Stage 0's gate turns a material ambiguity into a real choice and folds the outcome into the working-memory brief, which is the contract Stage 2 drafts from; Stage 2's ADR spec loses the section and draws Context's attribution from the brief or leaves it silent.
+- **`skills-src/commands/b-adopt.md`** — a promoted attribution is recorded as ratification of the cited commit, never as a choice.
+- **`skills-src/commands/b-review.md`** — `adr-supersede` passes the finding ID and its brief as cited evidence; the verb is *accepted at review triage*.
+- **`skills-src/commands/b-integration.md`** — the boundary test is the cited evidence.
+- **`skills-src/agents/bower-analyst.md`** — its rationale is analyst-authored and inadmissible as operator intent.
+- **`_bower/brief-schema.md`** — `Rationale:` → `Analyst rationale:` at all six sites, so the label travels with the value where a prohibition in another file does not. The worked example's Stage 2 rationale was itself alternatives-shaped and now names the open choice for the Stage 0 gate instead.
+- **`_bower/framework-reference.md`** — ADR body sections; the retirement, the attribution forms, and the silence rule.
+- **`skills-src/commands/b-index.md`** — the body-sections line; the schema block records the retirement, the silence rule, and the legacy caveat.
+- **`_bower/viewer/lib/extract.cjs`** — `sections.alternatives` dropped, having been parsed and read by nothing. `SCHEMA_VERSION` → 0.37.
+- **`_bower/rationale.md`** — the claim that the section "earns growth" is replaced; *What an ADR Can Honestly Claim* added.
+- **`_bower/roadmap.md`** — the revisit trigger: if attributed reasons stay rare across a few dozen ADRs, the gate is not earning the change.
+
+### `/b-adr` drains the adoption ledger it was already the exit for
+
+A pre-existing bug, independent of the change above. `/b-adopt` offers `/b-adr <slug>` as the ledger's *resolve* exit, and both its own drain rules and `framework-reference.md` require the line to be deleted on resolve — but `/b-adr` had no ledger awareness anywhere in the skill, so nothing deleted it. The ledger shrinks monotonically and its emptiness is what ends the adoption phase, so one orphaned line kept a project in adoption phase permanently, banner and all. `/b-adr` now reads the ledger in Step 1, matches the request against its lines, shows the matched line at its gate, and deletes it on confirmation — deleting the file and offering to remove the banner when that line was the last. The precedent for a discharging command editing a queue it does not own is the findings queue: writing the ADR is the entirety of that exit, and a handoff the operator has to remember is the mechanism that produced the bug. Because resolve recovers the intent *from the operator*, the new ADR's Context records demarcated operator wording rather than ratification of a commit — citing the commit would understate the provenance.
+
+- **`skills-src/commands/b-adr.md`** — Step 1 reads and matches the ledger; Step 4 drains it; the gate quotes the line it will delete; the handoff reports what remains.
+- **`skills-src/commands/b-adopt.md`** — the Phase 4 drain rules and the handoff say `/b-adr` deletes the line.
+- **`_bower/framework-reference.md`** — *Adoption phase* → *Draining the ledger*, the same correction.
+
+### Migration
+
+Two mechanical edits plus one conditional check. **Nothing about existing ADR bodies changes** — bodies are immutable, so `## Alternatives considered` sections already on disk stay exactly where they are and are never rewritten, deleted, or annotated in place.
+
+**1. Fix the body-sections line in `docs/adr/index.md`.** Skip if the project has no `docs/adr/index.md`.
+
+`/b-index` treats that file's `## Schema` block as **curated** on regeneration, and its one exception covers a missing *frontmatter field row* only — so no command will ever correct this line. Find it under `## Schema`; it reads:
+
+```
+Body sections (in order): `## Context`, `## Decision`, `## Consequences`, `## Alternatives considered`.
+```
+
+Replace that one line with:
+
+```
+Body sections (in order): `## Context`, `## Decision`, `## Consequences`.
+
+`## Context` may carry one sentence of attribution — what the operator said, or what evidence was cited and what the operator did with it. **Silence means none was recorded**, which is the common case; an ADR with no attribution sentence is complete.
+```
+
+If the project has elaborated its schema block (expanded field notes, added lifecycle or access-pattern prose), leave every bit of that intact. This is a one-line replacement plus one added paragraph, not a re-seed of the block.
+
+**2. Add the legacy caveat — but only if the project actually has legacy sections.** Grep `docs/adr/*.md` for the literal string `## Alternatives considered`. If **no** file carries it, stop here: the caveat would describe a cohort that does not exist. If one or more do, append this paragraph immediately after the text written in step 1:
+
+```
+`## Alternatives considered` was retired at framework v0.37: no ADR-authoring route weighed options before the decision existed, so the section's content was reconstructed after the fact unless the operator dictated it. Sections predating the retirement stay on disk — bodies are immutable — and are **not guaranteed to be operator-attributed**. Some are; nothing in the record distinguishes them.
+```
+
+This is the same move the framework made for `scope`-less pre-v0.20 ADRs: mark a legacy cohort as lower-trust rather than rewrite a corpus. **Do not attempt to classify individual ADRs** as genuine or reconstructed. That judgement is exactly what the record cannot support, and making it here would be the defect this version exists to remove.
+
+**3. If `docs/adoption-ledger.md` exists, check for the old bug's symptom — and report rather than fix.** There is no file edit owed here; the change is to `/b-adr`'s behaviour from now on. But because nothing previously deleted a resolved ledger line, a line may be sitting open whose choice already has an accepted ADR in `docs/adr/`. Read the ledger, read `docs/adr/index.md`, and for each ledger line ask whether an accepted ADR already records that choice. Where one does, tell the operator, quoting the ledger line and naming the ADR ID, and ask whether to delete the line. **Do not delete it unprompted** — the match is a judgement about whether two descriptions of a choice are the same choice — and **do not write a new ADR** for a decision the log already holds. If the ledger empties as a result, the adoption phase's exit condition is met: say so, and offer to remove the 🌱 banner from `docs/index.md`. If there is no ledger, or no line matches an ADR, say `adoption ledger: no orphaned resolutions` and move on.
+
+Steps 1 and 2 are mechanical. Step 3 uses judgement but writes nothing without an explicit instruction, which is why this version's class is `mechanical`.
 
 ## v0.36 — 2026-08-12
 

@@ -79,6 +79,8 @@ Handling:
 
 **ADR drift.** If writing the test surfaced a contradiction between an accepted ADR and the code or constitution (e.g. the ADR mandates real-DB but the harness uses an in-memory fixture), flag it in the handoff and recommend `/b-adr` to supersede before flipping the marker to ✓. Do not silently let the drift stand — that's exactly the rot the ADR mechanism exists to prevent.
 
+**Pass the test as the cited evidence.** When `/b-adr` runs from here, give it the boundary test — its path and the assertion that exposed the contradiction — and name the operator's act, which is accepting that finding at this gate. The ADR's attribution cites the test; it never says the operator *chose* the new decision, because nobody offered them options.
+
 ## Step 5: Update Documentation
 
 1. Update `module-status.md` `## Module integration`:

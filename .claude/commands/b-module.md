@@ -58,6 +58,7 @@ Then, at the module level:
 - **Scope impact** — whether this build moves the scope boundary, changes a non-goal, or reveals that a success criterion is missing, wrongly worded, or points at the wrong module. Name the criteria this module is responsible for (those naming it under `Delivered by:`) as context for the plan, but do not treat satisfying them as a `scope.md` edit — criteria carry no status
 - **Decision impact** — list any accepted ADR loaded in Step 1 that this module's build *touches*: confirms, contradicts (must supersede), narrows (a narrowing ADR — the old decision stays `accepted`), or surfaces as drifted. Note any new cross-cutting decision the module introduces that needs an ADR.
 - **What you won't touch** — explicitly note adjacent areas left alone
+- **Alternatives, where the plan has genuine branching choices** — two or more viable shapes that neither the module's docs nor the request has settled (the test is `/b-ui`'s). Letter them, give each its reasoning and trade-offs, mark one as recommended. Do not invent them to fill the slot; where the shape is already settled, propose it and say so. This matters more here than in `/b-feature`: this command gates **once** for the whole module, so a choice not offered at that gate is not offered at all.
 
 ## Gate: Confirm or Adjust
 
@@ -67,6 +68,8 @@ Present the full proposal at the operator gate. Frame as:
 
 Include per-feature acceptance criteria and the integration test — these are the contract.
 
+**Where the proposal lettered alternatives, the letters are choices at this gate too**, presented in the binding's prose form (`_bower/framework.md` → *Runtime bindings*): the operator names one — and may, but need not, say why — or adjusts. A bare letter is a complete answer. Record which option, resolved to its content rather than its letter, and their reason verbatim where they gave one; write both into the affected feature's `plan.md` at Step 3.2, and carry them to `/b-adr` in Step 4.
+
 **Do not write any code until the user confirms.**
 
 ## Step 3: Implement
@@ -74,7 +77,7 @@ Include per-feature acceptance criteria and the integration test — these are t
 After confirmation, for each feature in build order:
 
 1. Mark the feature 🚧 in `module-status.md` `## Build order`.
-2. Create `docs/modules/<module>/<feature>/plan.md` — purpose, components, testing, trajectory (if multi-session, else skip the section).
+2. Create `docs/modules/<module>/<feature>/plan.md` — purpose, components, testing, trajectory (if multi-session, else skip the section). **If the gate settled a lettered choice affecting this feature**, add one or two lines recording the option the operator named, resolved to its content, and their reason in their own words where they gave one. Never write your own recommendation rationale there as though it were theirs.
 3. Implement the feature per the agreed approach.
 4. Write/update tests per the agreed acceptance criteria.
 5. Run the tests; confirm they pass.
@@ -108,6 +111,8 @@ For each check:
 - **Deferred** — leave the feature 🚧 with `Pending verification:` intact. `/b-recap` will surface it later.
 
 **Decision reconciliation.** Review the **Decision impact** noted at the gate. For each touched ADR: confirmed → no action; contradicted/drifted → invoke `/b-adr` with the ADR-ID being superseded; narrowed → invoke `/b-adr` for a narrowing ADR (the narrowed ADR keeps `status: accepted`); new cross-cutting decision → invoke `/b-adr` to record it.
+
+**Carry the operator's choice to `/b-adr`.** Where the gate settled a lettered choice, pass the resolved option and — where they gave one — their reason in their own words. That is the only provenance the ADR can honestly carry, and the gate is now a whole module's work behind you. Do **not** pass your own recommendation rationale as theirs, and where no choice was offered, pass nothing.
 
 Skip only if no Decision impact was identified at the gate. If the user rejects the drafted ADR at `/b-adr`'s gate, redraft with their adjustments rather than skipping; if they want to abandon ADR creation entirely, re-classify the impact (likely "confirmed") — do not silently skip. Complete any ADR work before continuing to Step 5.
 
