@@ -8,6 +8,14 @@ Evidence pointers are paths on the operator's machine or citations into a spike 
 
 ---
 
+## v0.39 — new gate wording (`/b-merge`); nothing re-run
+
+**No runs.** v0.39 adds a fourteenth command, `/b-merge`, with four gates of its own — the per-file conflict gate (a batch gate when a file holds several conflict blocks), the slug-collision gate, the coherence-findings queue gate, and the stop-on-code-conflicts stop. All are new text inside the demotion rule's definition of *gate or delegation text*, so the obligation is recorded here before the tier claims are repeated. Nothing in `_bower/framework.md` → *Runtime bindings*, no existing skill's gate wording, and no agent definition changed.
+
+Owed: **C3** on both runtimes and **C8** on Codex, per the rule — and **C9** (`c9-merge.md`), written at this version because none of C1–C8 invokes `/b-merge` — re-running the suite scores the shared gate idiom, not the command. C9's `merge` fixture builder is not yet in `make-fixture.sh`; the fixture's shape is specified in the scenario so the builder and the criteria agree. Until rows exist, the tier claims stand at the v0.37 level with this version added to the owed list.
+
+---
+
 ## v0.37 — gate text changed; nothing re-run
 
 **No runs.** This block exists because the demotion rule requires the obligation to be visible before the tier claims are repeated, and v0.37 repeats them. It amends the operator-gate binding itself, which makes it the broadest gate change since v0.33.

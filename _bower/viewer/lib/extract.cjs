@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.38';
+const SCHEMA_VERSION = '0.39';
 
 // ---------------------------------------------------------------- helpers
 

@@ -17,7 +17,7 @@ This file is the contributor instructions for **both runtimes** — Codex reads 
 
 ## Skills are generated — edit `skills-src/` only
 
-Sixteen sources (13 commands, 3 agents), each a runtime-neutral body plus a metadata header. `node scripts/build-adapters.cjs` emits 32 files:
+Seventeen sources (14 commands, 3 agents), each a runtime-neutral body plus a metadata header. `node scripts/build-adapters.cjs` emits 34 files:
 
 | Generated | From | Transformation |
 |---|---|---|
@@ -105,7 +105,7 @@ Read before changing framework behaviour:
 ## Repository layout
 
 ```
-skills-src/        CANONICAL, hand-edited, not scaffolded — commands/ (13) + agents/ (3)
+skills-src/        CANONICAL, hand-edited, not scaffolded — commands/ (14) + agents/ (3)
 _bower/            Scaffolded into projects. Router, reference, schemas, changelog,
                    roadmap, rationale, VERSION, project-* templates, viewer/
 .claude/           GENERATED — commands/ + agents/

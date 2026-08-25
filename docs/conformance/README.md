@@ -27,8 +27,8 @@ Current claims:
 
 | Runtime | Tier | Basis |
 |---|---|---|
-| Claude Code | supported | The reference runtime. The label **predates this suite and does not yet meet the evidence bar above** — see *What the Claude Code claim rests on* below for what it stands on instead, and which rows are owed. **v0.34 and v0.37 each additionally owe C3 under the demotion rule** (`runs.md`). v0.37 is the sharper of the two: it makes a gate offering a choice among competing options prose on *this* runtime, so that class of gate is no longer held by `AskUserQuestion` — which is the first of the three grounds this claim rests on. |
-| Codex | experimental | Earned at v0.33: clean scaffold install PASS, C3 core PASS (criteria 1–3, the `experimental` core), pressure variant PASS. Criterion 4 — the permission-prompt probe — is interactive and has no row; it is not part of the `experimental` core but is required for graduation. See `runs.md`. Graduation trigger is a green C1–C8 row set. **Re-earned at v0.34**: gate text changed, and C3 core + pressure were re-run against it — both PASS, on the same weakest supported model (`runs.md` → *v0.34*). The claim therefore stands at exactly the level it was first earned at, and no higher: C3's interactive probes and C8 remain unrun, and C8's demotion obligation is still outstanding. **v0.37 changed gate text again and nothing was re-run**, so the obligation is outstanding on this runtime too — C3 core included this time (`runs.md` → *v0.37*). |
+| Claude Code | supported | The reference runtime. The label **predates this suite and does not yet meet the evidence bar above** — see *What the Claude Code claim rests on* below for what it stands on instead, and which rows are owed. **v0.34, v0.37 and v0.39 each additionally owe C3 under the demotion rule** (`runs.md`); v0.39 adds `/b-merge`, whose gates no scenario yet exercises. v0.37 is the sharper of the two: it makes a gate offering a choice among competing options prose on *this* runtime, so that class of gate is no longer held by `AskUserQuestion` — which is the first of the three grounds this claim rests on. |
+| Codex | experimental | Earned at v0.33: clean scaffold install PASS, C3 core PASS (criteria 1–3, the `experimental` core), pressure variant PASS. Criterion 4 — the permission-prompt probe — is interactive and has no row; it is not part of the `experimental` core but is required for graduation. See `runs.md`. Graduation trigger is a green C1–C8 row set. **Re-earned at v0.34**: gate text changed, and C3 core + pressure were re-run against it — both PASS, on the same weakest supported model (`runs.md` → *v0.34*). The claim therefore stands at exactly the level it was first earned at, and no higher: C3's interactive probes and C8 remain unrun, and C8's demotion obligation is still outstanding. **v0.37 changed gate text again and nothing was re-run**, so the obligation is outstanding on this runtime too — C3 core included this time (`runs.md` → *v0.37*). **v0.39 adds `/b-merge` with new gates and nothing was re-run** (`runs.md` → *v0.39*). |
 
 Claude Code runs **C1–C5** as the regression baseline. C6–C8 are written against the Codex bindings — chat-based gates, TOML custom agents — and have no Claude-side analogue worth running, because `AskUserQuestion` forces structurally what those scenarios test behaviourally.
 
@@ -64,6 +64,7 @@ bash tools/conformance/make-fixture.sh <kind> ~/scratch/bower-conformance/<scena
 | `brownfield` | Toy two-module codebase, no `docs/` | C2 |
 | `bower` | Toy codebase + conformant `docs/` | C3, C4, C6, C7 |
 | `drift` | `bower` + seven seeded drifts in module `auth` | C8 |
+| `merge` | `bower` + branch `feature/export`, one seeded conflict of each class on both sides, one slug collision, one `Q-` collision, one code conflict, one cross-file contradiction. **Builder not yet written** — shape specified in `c9-merge.md` | C9 |
 | `pinned` | Current footprint, `VERSION` at 0.32, grown `CLAUDE.md`, no `AGENTS.md` — a pre-v0.33 project *after* the operator bootstrap, which is the earliest state in which the upgrade workflow is discoverable at all. `c5-upgrade.md` explains what that costs and what it buys | C5 |
 
 Each kind ends with **one commit and a clean working tree**. That matters twice over: `git status --porcelain` being empty is the zero-writes assertion in most scenarios, and `/b-upgrade` refuses to run on a dirty tree.
@@ -116,5 +117,6 @@ C-runs cost real tokens against the operator's key, and the full-workflow ones a
 | [C6](c6-delegation.md) | Codex custom-agent selection — real spawn, or inline fallback correctly marked | exec | Codex |
 | [C7](c7-readonly-roles.md) | Codex read-only roles under each parent permission mode | exec | Codex |
 | [C8](c8-batch-gate.md) | Codex batch-gate triage — groups, tally, partial re-ask, zero writes | interactive | Codex |
+| [C9](c9-merge.md) | `/b-merge` — `docs/` resolved by class, stops on code and by-hand paths, slug collisions repaired from the stages, curated index prose survives | interactive | both |
 
 Results: [runs.md](runs.md).

@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.39 | 2026-08-25 | Merging for small teams: `/b-merge` wraps every merge in either direction — pre-merge conflict-risk report, post-merge `docs/` resolution by class (rule or gate), slug-collision repair, `/b-index`, and a coherence pass over both sides' doc changes; *Working in parallel* rules in the reference and a *Working as a team* section in the README. Second of two versions for multi-writer projects | none |
 | v0.38 | 2026-08-25 | Identifiers are names, never counts: new ADRs are `ADR-<slug>` in `<slug>.md` and new findings-queue items `Q-<slug>`, legacy ordinals permanent; `docs/ui.md` screens become headed regions owned by one module; a numbered-migration convention names who renumbers. First of two versions for multi-writer projects | judgement |
 | v0.37 | 2026-08-13 | An ADR records what the operator said and what evidence was cited, never deliberation that did not occur: `## Alternatives considered` is retired in favour of attribution, a gate offering a choice among options is prose on every runtime, and `/b-adr` drains the adoption ledger it was already the exit for | mechanical |
 | v0.36 | 2026-08-12 | An open findings queue becomes visible in the viewer — rail badge, module strap, one health finding per open item — as owed work beside the completion markers, never inside them; a marker-parse fix stops a reopened feature reading as complete, and a link into a transient file is now reported | none |
@@ -31,6 +32,26 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.39 — 2026-08-25
+
+### `/b-merge` — every merge, in either direction, through one command
+
+A team merging without an assumed PR review needs the part of a merge git cannot do: resolve `docs/` by Bower's rules rather than by whoever takes `--theirs` first. `/b-merge <other>` reads its state from git (`MERGE_HEAD`), stores nothing, and wraps both the sync merge (main into a branch — where two lines of work first meet, and which moves the merge-base) and the integration. *Pre*: computes A = `base..HEAD`, B = `base..<other>`, reports A∩B classified per path (derived / ID namespace / headed unit / genuinely shared), slug collisions, distance, and a migration-directory hint, then emits `git merge --no-ff --no-commit <other>` — no writes. *Post*: lists code conflicts and stops until the operator resolves them; resolves `docs/` conflicts by class — derived indexes taken either side and regenerated, namespaced files and items both land, additive headed units keep both, everything else at an operator gate with both hunks in view and ownership as a hint; repairs slug collisions at a gate (rename with a complete reference rewrite over that side's `base..<side>`, or keep one and re-point); runs `/b-index`; reads the **union** of both sides' `docs/` diffs for merge-introduced contradictions and queues accepted ones as `Q-<slug>` findings, stating its miss rate; hands off to `git commit` and `/b-recap`. Never commits, never rebases, never touches code. Reasoning: `_bower/rationale.md` → *The Merge Is Where Two Lines of Work Meet*.
+
+- **`skills-src/commands/b-merge.md`** — new; adapters regenerated (14 commands, 34 files). `SCHEMA_VERSION` → 0.39 with the fixture `VERSION`s (release-gate equality; no viewer behaviour changed).
+- **`_bower/framework.md`** — command entry; one *Working in parallel* pointer under *Working Conventions*.
+
+### Working in parallel, written down
+
+- **`_bower/framework-reference.md`** — new *Working in parallel*: branch per work item, every merge through `/b-merge`, the per-class resolution table so the rule survives without the command, three never-by-hand rules, migrations pointer, coherence scope, no position on PR review.
+- **`README.md`** — new *Working as a team* for the people doing the merging; the v0.38 forward reference is retired. Command table gains `/b-merge`.
+
+### Migration
+
+None — no project-side changes required.
 
 ---
 

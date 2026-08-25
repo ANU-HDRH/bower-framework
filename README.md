@@ -1,4 +1,4 @@
-# Bower Framework v0.38
+# Bower Framework v0.39
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -112,6 +112,7 @@ Review is a state, not a pass. Every accepted finding — including the ones rou
 | `/b-index` | Regenerate `docs/index.md` and `docs/adr/index.md` |
 | `/b-spec` | Export a single specification document for sharing |
 | `/b-upgrade` | Move the project to the current framework version |
+| `/b-merge` | Wrap a merge in either direction: resolve `docs/` by rule or gate, regenerate indexes, check coherence |
 
 A note on UI work, which has a different cadence: most UI iteration (visual tweaks, copy edits, small changes you can specify cleanly) happens without any skill at all, and the agent reconciles `docs/ui.md` if the change was structural. `/b-ui` exists for the middle ground where there are real branching choices (tabs, accordion or modal?), and architectural UI shifts, like swapping the framework, still route through `/b-design`.
 
@@ -137,7 +138,23 @@ docs/
         └── review-plan.md     # Open-review findings; transient, absent when closed
 ```
 
-Identifiers in these files are **names, never counts**: a new ADR is `ADR-<slug>` in `docs/adr/<slug>.md`, a findings-queue item is `Q-<slug>`. Two people on two branches can each write an ADR without silently taking the same number — and ADRs written before v0.38 keep their four-digit IDs for good. `docs/index.md` and `docs/adr/index.md` are derived: if they ever conflict in a merge, take either side and run `/b-index`. A fuller account of working as a team arrives with the merge command in v0.39.
+Identifiers in these files are **names, never counts**: a new ADR is `ADR-<slug>` in `docs/adr/<slug>.md`, a findings-queue item is `Q-<slug>`. Two people on two branches can each write an ADR without silently taking the same number — and ADRs written before v0.38 keep their four-digit IDs for good.
+
+## Working as a team
+
+If you work alone, skip this section; nothing in it costs you anything. It is for a small team sharing one repository through branches, without assuming anyone reviews pull requests, and it is written for people who are newer to collaborative git than to their own field.
+
+**One piece of work, one branch.** The unit of parallel work is a `/b-feature` or `/b-module` run on its own branch, named for the feature. Two people on two branches rarely touch the same documentation, and when they do the framework knows which files merge by rule and which need a human.
+
+**Sync often, through `/b-merge`, in both directions.** Bringing `main` into your branch is a merge too — it is where two lines of work first meet — so run `/b-merge main` on your branch regularly, and `/b-merge <branch>` on `main` when the work comes home. The command first reports what the two sides both touched and hands you the exact `git merge` line to type; run it, then run `/b-merge` again.
+
+**What it does, and what it refuses.** On the second run it resolves `docs/` conflicts by Bower's rules — derived indexes are regenerated rather than merged, two ADRs or two regions added side by side both land, and anything genuinely shared is shown to you with both versions in view. It repairs two ADRs that took the same name, regenerates the indexes, and reads both sides' documentation changes for contradictions the merge introduced. It **stops on code conflicts** and hands them to you; it never commits.
+
+**Nothing is lost until you commit.** At any point before then, `git merge --abort` puts everything back.
+
+**Three things never to do by hand:** taking `--theirs` or `--ours` on a file under `docs/`; editing `docs/index.md` to make a conflict go away; appending a row to an old-style screens table in `docs/ui.md`.
+
+Bower takes no position on PR review. `/b-merge` behaves the same whether you merge locally or the branch went through a pull request first — use whichever your team already does. The rules the agent follows are in `_bower/framework-reference.md` → *Working in parallel*.
 
 ## Seeing the state
 

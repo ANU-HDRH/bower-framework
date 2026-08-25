@@ -346,6 +346,33 @@ Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision
 
 The queue is deliberately weaker than the review plan: no gate authorises its contents as a set, no marker records that it existed, and nothing derives from it. It is a task list with a death condition, and that is the whole of its contract.
 
+## Working in parallel
+
+Solo projects never open this section; nothing in it is loaded, run, or read until a second writer exists. It is for a small team on one repository, branch-and-merge, with no PR review assumed and merges done by people who may not be fluent with git.
+
+**The unit of parallel work is one `/b-feature` or `/b-module` run on its own branch**, named for the feature. `/b-feature` already concentrates its shared-doc writes into one window (Step 6 reconcile), so a branch's footprint on the central docs is small and late.
+
+**Every merge, in either direction, goes through `/b-merge <other>`** — integrating a branch into main *and* synchronising main into a long-running branch. The sync merge is where two lines of work first meet, and it moves the merge-base, so a command that wrapped only the final integration would find nothing left to inspect. Sync often. Run `/b-recap` after every integration.
+
+**Identifiers are names, never counts** (`framework.md` → *Working Conventions*; `_bower/rationale.md` → *Identifiers Are Names, Never Counts*). A counter taken on two branches collides and git merges the collision clean; a name collides only when two people name the same thing, which is a real conflict and shows as two files with one slug. `/b-merge` repairs those at a gate.
+
+**Resolution by class.** The rule for every `docs/` conflict, so it survives without the command:
+
+| Class | Paths | Resolution |
+|---|---|---|
+| Derived | The tables, markers and counts in `docs/index.md` and `docs/adr/index.md` | Take either side, then `/b-index`. Never merge the text, never hand-edit to fix a conflict. Curated prose in those files (maps, schema notes, legends) is **not** derived — `/b-index` preserves whichever copy survives — so a conflict there is a headed-unit or shared conflict like any other. |
+| ID namespace | New `docs/adr/<slug>.md`, new module directories, new `Q-<slug>` queue items | Both land. Same slug on both sides is a collision: rename one (different decisions, or different drifts) or keep one and re-point that side's references (same decision recorded twice). Nothing downstream detects an unresolved collision — repair it before committing. |
+| Headed unit | `docs/ui.md` `####` regions; `docs/architecture.md` `### <module>` entries | Two whole units added at one point → keep both. Same unit edited on both sides → a real conflict, read both. |
+| Genuinely shared | `scope.md`, `constitution.md`, `architecture.md` narrative and data flow, the same feature's `plan.md`/`status.md`, the same `module-status.md` | Gated. Both hunks in view; ownership is a hint about who to ask, never a rule for which side wins. |
+
+**Three things never to do by hand:** `--ours`/`--theirs` on a non-derived `docs/` path; editing `docs/index.md` to resolve a conflict; appending to a legacy `## Screens` table in `docs/ui.md` (write a `####` region). Recovery before commit is always `git merge --abort`.
+
+**Numbered migrations** are the branch author's to renumber above the other side's highest, journal regenerated with the tool — see *constitution.md — Normative Shape*. `/b-merge` reports a migration directory touched on both sides as a hint; it does not renumber.
+
+**Coherence after a merge.** `/b-merge` reads both sides' `docs/` diffs since the merge-base and reports contradictions *between them* as candidate findings, queued only on operator confirmation. It does not check a branch's docs against docs neither side changed — that is `/b-review`'s job. A clean pass is not a clean merge.
+
+Bower takes no position on PR review: `/b-merge` runs the same whether the merge is local or the branch went through a PR first.
+
 ## Adoption phase
 
 Brownfield adoption (`/b-adopt`) reconstructs orienting docs from an existing codebase and opens an **adoption phase** — a bounded state with an explicit exit. It carries zero standing cost for greenfield projects: the entire apparatus is two things that only exist while a project is mid-adoption, and both vanish when it ends.

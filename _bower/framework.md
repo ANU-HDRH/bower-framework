@@ -1,4 +1,4 @@
-# Bower Framework v0.38
+# Bower Framework v0.39
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
@@ -75,6 +75,7 @@ ADRs record **cross-cutting commitments** — decisions that constrain more than
 - **A next move written into a file is feature-scoped; a next move printed to the operator is project-scoped.** A feature's `status.md` may only name work on *that* feature, or `(none — complete)`. What to do next given the whole project — the next feature, integration, review, the next module — is printed by the command that ran and derived at read time by `/b-recap` from the markers. Nothing rewrites every feature's `status.md`, so a project-scoped line stored in one can only go stale.
 - **A ✓ feature's `status.md` compresses to its terminal form** — the marker, a `## Verification` section (dated evidence, plus `Qualification:` for a standing caveat on it), and `Next move: (none — complete)`. Resumption state dies with the feature; the evidence record survives. Schema: `_bower/framework-reference.md`, "status.md — Resumption Framing."
 - **Doc links are repo-root-based.** Write `[ADR-xxxx](/docs/adr/xxxx-yyy.md)`, never `../../../adr/…`. Targets must start with `/`, `#` or a URL scheme.
+- **Working in parallel — every merge, in either direction, goes through `/b-merge <other>`.** Solo work pays nothing for this; a second writer reads `_bower/framework-reference.md` → *Working in parallel* for the per-class resolution rules. Never `--ours`/`--theirs` on a `docs/` path; the derived indexes are regenerated, never merged.
 - **Never link to a transient file** — `review-plan.md`, `findings.md`. Name the path in prose instead. Both are deleted by design when their work is done, so a link into one is a broken link on a schedule; and where the linking doc is an immutable ADR body, nothing is permitted to repair it afterwards. (The adoption banner's link to `docs/adoption-ledger.md` is not an exception to this so much as the case it does not reach: the link lives *inside* the banner, and the banner is deleted at the same moment the ledger empties.)
 
 ## Runtime bindings
@@ -140,6 +141,7 @@ Orientation and export:
 Maintenance:
 
 - `/b-upgrade` — upgrade the project to the current framework version by walking `_bower/changes.md` migration notes.
+- `/b-merge` — wrap a merge in either direction: *pre* reports the conflict-risk set and hands over the merge line; *post* resolves `docs/` by rule or gate, repairs slug collisions, runs `/b-index`, reads both sides' doc changes for contradictions. Code conflicts are the operator's.
 - `/b-adopt` — brownfield cold-start: reconstruct an orienting `docs/` skeleton from an existing codebase and open an adoption phase (see `docs/adoption-ledger.md` when `docs/index.md` shows the 🌱 adoption banner).
 
 **Post-MVP bias:** reach for `/b-feature` first — its gate redirects to `/b-design` if the change turns out architectural. Don't run design pre-emptively.
