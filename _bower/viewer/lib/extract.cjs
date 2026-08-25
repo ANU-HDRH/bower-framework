@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.37';
+const SCHEMA_VERSION = '0.38';
 
 // ---------------------------------------------------------------- helpers
 
@@ -142,11 +142,12 @@ function parseFinding(text) {
   };
   const parts = text.split(/\s+[—–]\s+/).map((s) => s.trim());
   let i = 0;
-  // `F<n>` in a review plan, `Q<n>` in a findings queue. Two ID spaces, one line
+  // `F<n>` in a review plan; `Q-<slug>` in a findings queue (v0.38 — a name, not a
+  // count; pre-v0.38 queues carry `Q<n>` and keep it). Two ID spaces, one line
   // schema — the prefix exists so a queue ID can never be mistaken for a plan's
   // in a pasted command, and both are parsed here because both feed this parser.
-  if (/^[FQ]\d+$/i.test(parts[0])) {
-    out.id = parts[0].toUpperCase();
+  if (/^([FQ]\d+|Q-[a-z0-9]+(?:-[a-z0-9]+)*)$/i.test(parts[0])) {
+    out.id = /^Q-/i.test(parts[0]) ? 'Q-' + parts[0].slice(2).toLowerCase() : parts[0].toUpperCase();
     i = 1;
   }
   const ci = parts.findIndex((p, n) => n >= i && isReviewClass(p));
@@ -364,19 +365,27 @@ function extract(root) {
   const adrs = [];
   const adrDir = path.join(docsDir, 'adr');
   for (const f of lsFiles(adrDir)) {
-    if (!/^\d{4}-.*\.md$/.test(f)) continue;
+    if (!/\.md$/.test(f) || f === 'index.md') continue;
     const rel = `docs/adr/${f}`;
     const raw = read(path.join(adrDir, f));
     const { fm, body } = M.frontmatter(raw);
-    const num = f.slice(0, 4);
-    const id = fm.id || `ADR-${num}`;
-    const route = `#/adr/${num}`;
+    // v0.38: an ADR's identity is its frontmatter `id`, never its filename. The
+    // *key* is the token after `ADR-` and is what routes and lookups use: the
+    // four-digit prefix for a pre-v0.38 file (`0027-*.md` → `0027`), the slug for
+    // a v0.38+ file (`host-credentials.md` → `host-credentials`). Both shapes
+    // coexist in one log forever — legacy IDs are never renumbered.
+    const legacy = /^(\d{4})-.*\.md$/.exec(f);
+    const stem = f.replace(/\.md$/, '');
+    const fileKey = legacy ? legacy[1] : stem;
+    const id = fm.id || `ADR-${fileKey}`;
+    const key = id.replace(/^ADR-/, '');
+    const route = `#/adr/${key}`;
     docRoutes.set(rel, route);
     const secs = M.sections(body);
     const adr = {
       id,
-      num,
-      slug: f.replace(/\.md$/, ''),
+      key,
+      slug: stem,
       rel,
       title: fm.title || (/^#\s+(.*)$/m.exec(body) || [])[1] || id,
       status: fm.status || 'unknown',
@@ -401,7 +410,9 @@ function extract(root) {
     for (const l of M.links(body))
       linkSources.push({ fromRel: rel, fromLabel: id, fromRoute: route, target: l.target });
   }
-  adrs.sort((a, b) => a.num.localeCompare(b.num));
+  // Date, then key: concurrent ADRs routinely share a date, and the tiebreak
+  // must be stable across regeneration. Numeric legacy keys sort before slugs.
+  adrs.sort((a, b) => (a.date || '').localeCompare(b.date || '') || a.key.localeCompare(b.key));
   const adrById = new Map(adrs.map((a) => [a.id, a]));
 
   // ADR index doc (own route, distinct from the faceted view)

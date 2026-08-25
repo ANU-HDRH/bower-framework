@@ -52,7 +52,7 @@ If `docs/architecture.md` is absent but other docs exist, the project is mid-des
 1. Read `<root>/docs/adr/index.md` — the canonical ADR list with statuses. Read this first; do not glob the directory.
 2. From the index, identify ADRs that *could* be relevant to the proposed change (by title, by module scoping, by topic match against the change description).
 3. Load only those ADRs in full. Note how many you scanned via index vs loaded in full — both numbers appear in `## Inputs read`.
-4. **Compute the next-available ADR ID.** Scan `docs/adr/*.md` filenames (or use the index) for the highest existing `NNNN-` prefix; the next-available ID is that number + 1, zero-padded to four digits. If `docs/adr/` is empty or missing, the first new ID is `0001`. You will pre-allocate this ID (and subsequent IDs, in list order) to any `new`, `supersedes`, or `narrows` operations in your Stage 2 list. `confirms` operations consume no ID.
+4. **Pre-allocate a slug for each new ADR.** An ADR's ID is `ADR-<slug>` — two or three kebab-case words naming the decision — and its filename is `<slug>.md` (`_bower/framework-reference.md` → *ADRs*). For each `new`, `supersedes`, or `narrows` operation in your Stage 2 list, choose a slug and check that `docs/adr/<slug>.md` does not exist; use that ID wherever the brief refers to the ADR. `confirms` operations name an existing ID and allocate nothing. Pre-v0.38 ADRs carry four-digit IDs (`ADR-0027`); cite them as they are.
 
 Do not load every ADR. The index exists precisely so you don't have to.
 
@@ -67,7 +67,7 @@ Do not load every ADR. The index exists precisely so you don't have to.
 For each of Stages 1–5, decide: nothing-to-do, or delta?
 
 - **Stage 1** — does the change shift problem framing or scope? Rare on revisions, common on greenfield.
-- **Stage 2** — does the change introduce, supersede, narrow, or confirm an ADR? One operation per ADR. `confirms` operations are listed (so the operator sees you considered them) but produce no file output. **Pre-allocate IDs** for `new` / `supersedes` / `narrows` operations using the next-available ID computed in Phase 2, in list order. Write these IDs verbatim in the Stage 2 operation list (e.g. `new ADR-0034 — <title>`) — they will be referenced by other stages, and `ADR-NNNN` must never appear as a literal placeholder in the brief.
+- **Stage 2** — does the change introduce, supersede, narrow, or confirm an ADR? One operation per ADR. `confirms` operations are listed (so the operator sees you considered them) but produce no file output. **Pre-allocate IDs** for `new` / `supersedes` / `narrows` operations using the slugs chosen in Phase 2. Write these IDs verbatim in the Stage 2 operation list (e.g. `new ADR-seasonal-availability — <title>`) — they will be referenced by other stages, and `ADR-NNNN` must never appear as a literal placeholder in the brief.
 - **Stage 3** — does `architecture.md` need editing? Edits are typically small on revisions (a paragraph, a cross-reference); large architecture redrafts usually indicate the change should be split.
 - **Stage 4** — which feature `plan.md` files need touching? Does any `module-status.md` need a build-order or integration-note refresh? Any new modules?
 - **Stage 5** — is anything missing from scaffolding? Almost always "nothing to do" on revisions.

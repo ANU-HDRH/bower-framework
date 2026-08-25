@@ -97,7 +97,7 @@ Review state:
   - (nothing to report)
 
 Findings queues:                               (omit the section when no module has one)
-  - <module> — 2 open — Run /b-feature modify <module> <slug> according to Q1 in docs/modules/<module>/findings.md
+  - <module> — 2 open — Run /b-feature modify <module> <feature> according to Q-<slug> in docs/modules/<module>/findings.md
   - <module> — empty findings.md on disk (delete it)
 
 Awaiting manual verification:

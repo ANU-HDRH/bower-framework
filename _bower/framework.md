@@ -1,4 +1,4 @@
-# Bower Framework v0.37
+# Bower Framework v0.38
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
@@ -27,7 +27,7 @@ This project uses the Bower AI-assisted development pattern. Bower optimises for
 |---|---|---|
 | `architecture.md`, `ui.md`, `scope.md` | co-authored | narrative |
 | `problem-space.md`, `constitution.md` | human-owned — never rewrite unprompted | narrative |
-| `adr/NNNN-*.md` | body immutable once accepted; frontmatter mutable | structured, ~150 words |
+| `adr/*.md` | body immutable once accepted; frontmatter mutable | structured, ~150 words |
 | `modules/**/plan.md` | co-authored | terse bullets / tables |
 | `modules/**/status.md` | agent-owned | ~150 words live; ~50 in terminal form at ✓ |
 | `modules/**/module-status.md` | agent-owned | ~250 words |

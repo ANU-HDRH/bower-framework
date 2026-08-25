@@ -107,6 +107,7 @@ Skip only if Step 2 listed Decision impact as `none`.
    - If absent, create it with the sections relevant to this change. The doc grows as the UI grows; do not pre-emptively scaffold sections that don't yet apply.
    - If present, update affected sections to reflect the new state. The doc represents *current state*, not history.
    - Suggested sections (use what fits — do not invent empty headers): `## Navigation`, `## Screens`, `## Layout grammar`, `## Interaction patterns`, `## Visual language`.
+   - `## Screens` is **headed regions, never a table**: one `### <Screen> (<route>)` section per screen with a one-line purpose, then one `#### <Region> — <owning module>` heading per region of the screen, content beneath (shape: `_bower/framework-reference.md` → *UI Changes* → *`## Screens` is headed regions*). A screen composed by several modules is several regions; a change to one region rewrites that region and touches no other. If the file still carries a `| Screen | … |` table, do not add to it — that shape predates v0.38 and its migration converts it.
    - Stay at invariant-level. Navigation map, screen inventory, layout patterns, interaction conventions — yes. Pixel coordinates, exact copy, component implementation details — no.
 2. **Feature `plan.md`** — update any that the proposal listed.
 3. **`module-status.md`** `## Module integration` `Notes:` — update if the change shifted what the module-boundary integration test must assert (rare for visual work; common when introducing a testable interaction pattern). Do not flip the marker.

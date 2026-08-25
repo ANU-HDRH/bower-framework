@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.38 | 2026-08-25 | Identifiers are names, never counts: new ADRs are `ADR-<slug>` in `<slug>.md` and new findings-queue items `Q-<slug>`, legacy ordinals permanent; `docs/ui.md` screens become headed regions owned by one module; a numbered-migration convention names who renumbers. First of two versions for multi-writer projects | judgement |
 | v0.37 | 2026-08-13 | An ADR records what the operator said and what evidence was cited, never deliberation that did not occur: `## Alternatives considered` is retired in favour of attribution, a gate offering a choice among options is prose on every runtime, and `/b-adr` drains the adoption ledger it was already the exit for | mechanical |
 | v0.36 | 2026-08-12 | An open findings queue becomes visible in the viewer — rail badge, module strap, one health finding per open item — as owed work beside the completion markers, never inside them; a marker-parse fix stops a reopened feature reading as complete, and a link into a transient file is now reported | none |
 | v0.35 | 2026-08-12 | Project state lives in the repository, never in agent memory; fresh scaffolds disable Claude Code's per-project memory, and a gated migration audits and drains an existing store | judgement |
@@ -32,6 +33,59 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
 
 ---
+
+## v0.38 — 2026-08-25
+
+### Identifiers are names, never counts
+
+A sequential ID is chosen by counting what is already on disk, and with two branches both count to the same number: git merges `0040-a.md` and `0040-b.md` as two unrelated files, so the collision is semantic and nothing textual ever sees it. A name collides only when two writers name the same decision, which is a real conflict and shows as two files with one slug. So a new ADR's ID is `ADR-<slug>` — two or three kebab-case words — in `docs/adr/<slug>.md`, and a new findings-queue item's is `Q-<slug>`. **Forward-only:** every four-digit ADR and every `Q<n>` already written keeps its ID, filename and every reference to it, permanently; the two shapes coexist in one log, identity is always the frontmatter `id`, and the index orders by `date` then ID. The analyst pre-allocates slugs instead of numbers; `/b-design`'s verification becomes "slug not taken". Reasoning: `_bower/rationale.md` → *Identifiers Are Names, Never Counts*.
+
+- **`skills-src/commands/b-adr.md`** — Step 2 chooses and checks a slug; template, filename rule and handoff follow.
+- **`skills-src/agents/bower-analyst.md`**, **`_bower/brief-schema.md`** — slug pre-allocation replaces next-number computation.
+- **`skills-src/commands/b-design.md`** — ID verification is "no `<slug>.md` exists"; a taken slug is read, not renumbered around.
+- **`skills-src/commands/b-index.md`** — scans every `docs/adr/*.md` but `index.md`; schema block and ordering wording.
+- **`skills-src/commands/b-feature.md`**, **`b-review.md`**, **`b-recap.md`** — queue items are `Q-<slug>`; the high-water-mark rule goes.
+- **`_bower/framework.md`**, **`_bower/framework-reference.md`** — authority row, *ADRs*, *Findings queue*.
+- **`README.md`** — one paragraph under *What Bower maintains in your project*: names not counts, derived indexes are regenerated on conflict, team guidance follows in v0.39.
+- **`_bower/viewer/`** — `extract.cjs` reads every ADR file, keys on the `ADR-` token, sorts by date then key; `md.cjs adrRefs` reads both ID shapes and both link forms; `app.js` routes on `key`; the finding parser accepts `Q-<slug>`; README schema contract; fixtures gain a cross-boundary supersession and a slug queue item. `SCHEMA_VERSION` → 0.38.
+
+### `docs/ui.md` screens are headed regions, not table rows
+
+A screen composed by several modules was one table row — on a real project a 4,676-character cell edited from seven modules, unmergeable by anyone and already a violation of *Narrative does not go in a table cell*. `## Screens` is now one `### <Screen> (<route>)` section per screen with one `#### <Region> — <owning module>` heading per region. Different regions merge clean; two added regions keep both; the same region is a real conflict.
+
+- **`_bower/framework-reference.md`** — *UI Changes* gains the shape and the conflict rule.
+- **`skills-src/commands/b-ui.md`**, **`skills-src/commands/b-feature.md`**, **`skills-src/commands/b-module.md`** — write the region shape; never add to a legacy table. `/b-module` gains a UI-impact line at its gate and a `docs/ui.md` reconcile in Step 5, which it previously lacked.
+
+### Numbered migrations name who renumbers
+
+Bower does not own a stack's migration counter, so the constitution carries the convention: the branch author brings the target branch in, renumbers above its highest, and regenerates the journal with the tool. `/b-design` Stage 5 writes it for stacks that number migrations.
+
+- **`_bower/framework-reference.md`** — *constitution.md — Normative Shape* gains *Numbered migrations and the branch that carries them*.
+- **`skills-src/commands/b-design.md`** — Stage 5 scaffolding bullet.
+
+### Migration
+
+Four steps. Steps 1 and 2 are mechanical; step 3 uses judgement, which sets the version's class; step 4 asks and writes nothing unprompted. **No ADR file is renamed and no reference to an ADR is edited anywhere** — existing `ADR-NNNN` IDs, `NNNN-*.md` filenames, links and code comments are permanent.
+
+**1. Update the schema copy in `docs/adr/index.md`.** Skip if the project has no `docs/adr/index.md`. `/b-index` preserves this file's `## Schema` block as curated, so nothing else will ever correct it. Make three edits and touch nothing else in the block:
+
+- Look for a sentence describing ADR files as `NNNN-kebab-case-title.md` with a zero-padded four-digit ID — an elaborated index has one; the seeded index does **not** (its `## Schema` goes straight to `Frontmatter fields:`). If present, replace that sentence; if absent, insert the text as a new paragraph immediately after the `## Schema` heading:
+
+  ```
+  Each ADR is a single Markdown file named `<slug>.md`; its `id` is `ADR-<slug>`, two or three kebab-case words naming the decision. ADRs written before framework v0.38 carry a four-digit ID and filename prefix (`ADR-0027`, `0027-*.md`); those IDs and filenames are permanent and cited unchanged. An ADR's identity is its frontmatter `id`, never its filename shape.
+  ```
+
+  Keep any following sentence about immutability and non-reuse.
+- In the frontmatter field table, replace the `id` row's Notes cell (it reads *`ADR-NNNN`, four-digit zero-padded, immutable* or similar) with: *`ADR-<slug>`, immutable; pre-v0.38 ADRs carry `ADR-NNNN` and keep it*. If the `title` row says the title matches the filename, change it to *Sentence case*.
+- Replace every occurrence of `Listed by ascending ID` (one under each table) with `Listed by date, then ID`.
+
+Then run `/b-index` so the tables re-sort. If the project's schema block has been elaborated beyond the seed, leave every other sentence as the project wrote it.
+
+**2. Update each findings queue's ID wording.** For each `docs/modules/*/findings.md` that exists, read its preamble (everything above `## Findings`). If it describes item IDs as `Q<n>` or numbered, append one sentence to the preamble: `New items are identified by name, Q-<slug>; items written before framework v0.38 carry Q<n> and keep it.` If the preamble does not mention IDs at all (the seeded template does not), write nothing. Never edit an existing item line or its routed command.
+
+**3. Convert `docs/ui.md`'s `## Screens` table to headed regions — judgement.** Skip if there is no `docs/ui.md` or it has no `## Screens` table. Read the table. For each row, write a `### <Screen> (<route>)` heading using the row's screen name and route as written, then the row's purpose cell as a one-line paragraph. Split the row's remaining cell (key elements, or equivalent) into its distinct regions — a tab, a panel, a list, a control group — and give each a `#### <Region> — <module>` heading with that region's text beneath, where `<module>` is the exact `docs/modules/` directory name of the module that owns it. Decide ownership by grepping `docs/modules/*/*/plan.md` for the region's name or the components it names; the module whose plans describe it owns it. Where no plan names the region, or plans in two modules do, **ask the operator** for that region rather than guessing — list the undecided regions together at one gate. A row whose elements are all one module's is one region. Delete the table when every row has been converted, and leave the file's other sections untouched. Report the screen count, the region count, and how many ownerships came from the operator.
+
+**4. Numbered migrations — ask, don't edit.** Check whether the stack numbers database migrations: a directory of `NNNN_*.sql` (or equivalent) with a journal or manifest, typically named in `docs/constitution.md` or `docs/architecture.md`. If it does not, say `numbered migrations: none` and stop. If it does, `docs/constitution.md` is human-owned, so do not write to it. Show the operator this sentence and ask whether to add it under the constitution's working conventions: `Numbered migrations: the branch author renumbers. Before integrating a branch, bring the target branch in; if it has gained a migration, renumber the branch's migrations above its highest and regenerate the journal with the migration tool, never by hand.` Write it only on an explicit yes. A solo project may reasonably decline — the rule only bites with a second writer, and it can be added then.
 
 ## v0.37 — 2026-08-13
 

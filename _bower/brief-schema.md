@@ -61,25 +61,25 @@ Problem-space.md edits should be rare on revisions — it is framing history. Sc
 
 Either `Status: nothing to do` or a numbered list of ADR operations. One operation per ADR — if two decisions need recording, that's two operations.
 
-**ID pre-allocation.** Before listing operations, the analyst computes the next-available ADR ID by scanning `docs/adr/` for the highest existing `NNNN-` prefix. New ADRs allocated by this brief use sequential IDs starting from `<highest> + 1`, in the order the operations appear in the list. Operations that produce no new file (`confirms`) consume no ID. Pre-allocation matters because other stages (Stage 1, Stage 3, Stage 4) may cross-reference these IDs by name when drafting edits to `scope.md`, `architecture.md`, or `plan.md` files — without pre-allocation, those stages would have to use literal `ADR-NNNN` placeholders that downstream `/b-design` would write to disk.
+**ID pre-allocation.** An ADR's ID is a name, `ADR-<slug>` (two or three kebab-case words; filename `<slug>.md`). Before listing operations, the analyst chooses a slug for each `new`, `supersedes`, or `narrows` operation and verifies `docs/adr/<slug>.md` does not exist. Operations that produce no new file (`confirms`) allocate nothing. Pre-allocation matters because other stages (Stage 1, Stage 3, Stage 4) cross-reference these IDs by name when drafting edits to `scope.md`, `architecture.md`, or `plan.md` files — without it, those stages would have to use literal placeholders that downstream `/b-design` would write to disk. ADRs written before v0.38 carry four-digit IDs (`ADR-0011`); an operation that supersedes, narrows, or confirms one cites that ID unchanged.
 
 ```
 Status: <N> operation(s)
 
-1. new ADR-NNNN — <decision title>
+1. new ADR-<slug> — <decision title>
    Analyst rationale: <one short paragraph>
 
-2. supersedes ADR-MMMM (new ADR-NNNN) — <decision title>
+2. supersedes ADR-<existing> (new ADR-<slug>) — <decision title>
    Analyst rationale: ...
 
-3. narrows ADR-MMMM (new ADR-NNNN) — <decision title>
+3. narrows ADR-<existing> (new ADR-<slug>) — <decision title>
    Analyst rationale: ...
 
-4. confirms ADR-MMMM — <decision title>
-   Analyst rationale: ... (no new ADR written; no ID consumed)
+4. confirms ADR-<existing> — <decision title>
+   Analyst rationale: ... (no new ADR written; nothing allocated)
 ```
 
-Where `NNNN` and `MMMM` in this template are placeholders for real IDs (e.g. `ADR-0034`, `ADR-0011`); the actual brief contains real numbers.
+`<slug>` and `<existing>` in this template are placeholders for real IDs (e.g. `new ADR-cache-invalidation`, `supersedes ADR-0011`); the actual brief contains real IDs.
 
 **`Analyst rationale:` is named for its author, and the label is load-bearing.** The prose is the analyst's own reasoning about the project state, produced in an isolated context by a role with no channel to the operator. Downstream, `/b-design` Stage 2 drafts ADR bodies from this brief, and an ADR may record *what the operator said* but never a weighing that did not occur — so the field carries its provenance with it rather than relying on a prohibition in another file. Write it as analysis, never in a register that implies intent the analyst was told, and never as a set of options put to anyone. Where the analyst finds the decision genuinely open, that belongs in `## Ambiguities and assumptions`, which is what `/b-design` Stage 0's gate turns into a real choice.
 
@@ -154,7 +154,7 @@ This is advisory — operators may interleave or reorder.
 - **No prose between sections.** The brief is structured data; commentary belongs *inside* sections, not between them.
 - **Paths are repo-relative and exact.** `docs/modules/ui-module/response-display/plan.md`, not "the UI plan."
 - **ADRs are referenced by ID.** `ADR-0011`, not "the taxonomy ADR."
-- **Stage 2 IDs are pre-allocated and used throughout the brief.** When Stage 1, 3, or 4 sections reference a new ADR, they use the pre-allocated ID from Stage 2 (e.g. `ADR-0034`), not a placeholder like `ADR-NNNN`. This lets `/b-design` execute each stage's writes without depending on a later stage to backfill literals.
+- **Stage 2 IDs are pre-allocated and used throughout the brief.** When Stage 1, 3, or 4 sections reference a new ADR, they use the pre-allocated ID from Stage 2 (e.g. `ADR-cache-invalidation`), not a placeholder like `ADR-<slug>`. This lets `/b-design` execute each stage's writes without depending on a later stage to backfill literals.
 - **`Status: nothing to do` is a first-class outcome.** It is not a sign of laziness; it is a positive assertion that the analyst checked and found no delta.
 - **No speculative architecture.** The brief proposes deltas, not designs. If the analyst finds the change underspecified to the point that Stage 2 or Stage 3 can't be concretely planned, it should say so in `## Ambiguities and assumptions` and produce the brief it *can* — the operator decides whether to refine the change request and re-run, or proceed.
 
@@ -198,7 +198,7 @@ Feature plans (loaded in full):
 
 - Assumed the seasonal data source is a separate module rather than a feature inside ingredient-search. Justification: it has its own data concerns (external feed, staleness window, refresh cadence) and would be integration-tested independently. If the operator wants it as an ingredient-search feature instead, Stage 4 changes shape: no new module, one extra plan touch in ingredient-search.
 - Assumed the "one week" staleness tolerance is firm enough to drive the refresh-cadence decision in the new ADR. If it's a soft target, the ADR may need to defer that constraint and record it as a configurable knob instead.
-- The feed itself is unsettled and both viable options reshape ADR-0010's operational half. A public crop calendar is free and coarse — country-level windows, no per-variety data, and no availability guarantee, so the fallback path carries real weight. A commercial seasonal API is per-region and per-variety with an uptime commitment, at a recurring cost and a vendor dependency the project does not otherwise have. This is a live choice rather than an assumption to flag: whichever is picked, the staleness budget and the fallback behaviour go in the same ADR.
+- The feed itself is unsettled and both viable options reshape ADR-seasonal-availability's operational half. A public crop calendar is free and coarse — country-level windows, no per-variety data, and no availability guarantee, so the fallback path carries real weight. A commercial seasonal API is per-region and per-variety with an uptime commitment, at a recurring cost and a vendor dependency the project does not otherwise have. This is a live choice rather than an assumption to flag: whichever is picked, the staleness budget and the fallback behaviour go in the same ADR.
 
 ## Stage 1 — Problem framing
 
@@ -209,7 +209,7 @@ Reason: scope.md already lists "ingredient-aware meal planning" as in-scope, and
 
 Status: 2 operations
 
-1. new ADR-0010 — Seasonal-availability data source and staleness policy
+1. new ADR-seasonal-availability — Seasonal-availability data source and staleness policy
    Analyst rationale: introducing a new external data source is cross-cutting — it touches at least two modules and constrains operational behaviour via the refresh cadence. The feed itself is not settled by the change description, so the decision is open rather than merely unrecorded; that is flagged under Ambiguities for the Stage 0 gate. Whatever is chosen, the ADR must carry the one-week staleness budget alongside it and the fallback behaviour when the feed is stale or unavailable.
 
 2. confirms ADR-0007 — Search query syntax
@@ -220,7 +220,7 @@ Status: 2 operations
 Status: delta
 
 Runtime view:
-- Data sources section: add one paragraph introducing the seasonal-availability feed, its refresh cadence, and its staleness handling. Cross-reference ADR-0010.
+- Data sources section: add one paragraph introducing the seasonal-availability feed, its refresh cadence, and its staleness handling. Cross-reference ADR-seasonal-availability.
 
 Software architecture view:
 - seasonal-data: new entry — purpose: ingests and caches the external seasonal-availability feed, exposes a lookup API. Data concern: per-ingredient seasonality windows. Depends on: (no internal dependencies; consumes the external feed). Consumed by: meal-planner, ingredient-search.

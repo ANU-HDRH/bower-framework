@@ -394,8 +394,10 @@ assert(sevOf('findings-queue-empty') === 'warn', 'findings-queue-empty is warn',
 // it was there. Three surfaces now carry it: the module object (rail badge and
 // module-page strap), and one health finding per open item.
 const cleanQ = g.modules.find((m) => m.name === 'clean').findings;
-assert(cleanQ && cleanQ.total === 2 && cleanQ.open === 1, 'the queue is parsed, disposed items included', JSON.stringify(cleanQ && { total: cleanQ.total, open: cleanQ.open }));
+assert(cleanQ && cleanQ.total === 3 && cleanQ.open === 1, 'the queue is parsed, disposed items included', JSON.stringify(cleanQ && { total: cleanQ.total, open: cleanQ.open }));
 assert(cleanQ && cleanQ.items[0].id === 'Q1' && cleanQ.items[1].id === 'Q2', 'Q-space IDs parse — the plan parser only knew F', JSON.stringify(cleanQ && cleanQ.items.map((i) => i.id)));
+// v0.38: a queue ID is a name, `Q-<slug>`; legacy `Q<n>` items keep theirs. Both parse.
+assert(cleanQ && cleanQ.items[2].id === 'Q-shared-loader-helper' && cleanQ.items[2].routed && cleanQ.items[2].completion, 'a Q-<slug> ID parses, with its class, pointer and completion intact', JSON.stringify(cleanQ && cleanQ.items[2]));
 assert(cleanQ && cleanQ.items[1].completion === 'done 2026-07-24 via /b-feature consolidate-fixture-loader', 'a discharged item keeps its completion note out of the pointer', JSON.stringify(cleanQ && cleanQ.items[1].completion));
 assert(cleanQ && !!(cleanQ.items[0].brief || {}).resolution, 'the three-line brief is attached, not counted as items', JSON.stringify(cleanQ && cleanQ.items[0].brief));
 assert(cleanQ && cleanQ.route === g.docRoutes['docs/modules/clean/findings.md'], 'the module carries the queue route, so the rail and module page have somewhere to point', JSON.stringify(cleanQ && cleanQ.route));
@@ -564,7 +566,27 @@ const adr = (id) => g.adrs.find((a) => a.id === id);
 assert(adr('ADR-0011').narrows.includes('ADR-0012'), 'narrows is read from frontmatter');
 assert(adr('ADR-0012').narrowedBy.includes('ADR-0011'), 'narrowed-by is read from frontmatter');
 assert(adr('ADR-0012').status === 'accepted', 'a narrowed ADR stays accepted');
-assert(g.counts.adrsNarrowed === 3, 'narrowed ADRs are counted', `got ${g.counts.adrsNarrowed}`);
+assert(g.counts.adrsNarrowed === 4, 'narrowed ADRs are counted', `got ${g.counts.adrsNarrowed}`);
+
+// v0.38 slug IDs — a v0.38 `<slug>.md` and a pre-v0.38 `NNNN-*.md` are both ADRs,
+// identity comes from frontmatter, and the key (route token) is the slug for one
+// and the four digits for the other. Both shapes coexist forever.
+const slugAdr = adr('ADR-typed-boundaries');
+assert(slugAdr && slugAdr.key === 'typed-boundaries', 'a slug ADR is read and keyed by its slug', JSON.stringify(slugAdr && slugAdr.key));
+assert(adr('ADR-0022') && adr('ADR-0022').key === '0022', 'a legacy ADR is keyed by its four digits');
+assert(slugAdr && slugAdr.supersedes.includes('ADR-0022') && adr('ADR-0022').supersededBy.includes('ADR-typed-boundaries'), 'a supersession chain crosses the ID boundary');
+assert(adr('ADR-binary-attachments') && adr('ADR-binary-attachments').narrows.includes('ADR-typed-boundaries') && slugAdr.narrowedBy.includes('ADR-binary-attachments') && slugAdr.status === 'accepted', 'a slug ADR narrows a slug ADR, symmetric, target still accepted');
+assert(
+  g.adrs.every((a, i) => i === 0 || ((g.adrs[i - 1].date || '') < (a.date || '') || ((g.adrs[i - 1].date || '') === (a.date || '') && g.adrs[i - 1].key <= a.key))),
+  'ADRs sort by date, then key',
+);
+assert(
+  M.adrRefs('see ADR-0014, [ADR-host-credentials](/docs/adr/host-credentials.md), adr/0009-old-thing.md and ADR-a1-b2.').sort().join() ===
+    ['ADR-0009', 'ADR-0014', 'ADR-a1-b2', 'ADR-host-credentials'].sort().join(),
+  'adrRefs reads both ID shapes and both link forms',
+  JSON.stringify(M.adrRefs('see ADR-0014, [ADR-host-credentials](/docs/adr/host-credentials.md), adr/0009-old-thing.md and ADR-a1-b2.')),
+);
+assert(!M.adrRefs('[the index](/docs/adr/index.md)').length, 'a link to the ADR index is not an ADR reference');
 
 // v0.23 constitution: aspirations must be separable from rules.
 assert(g.constitution.items.length === 1, 'the Not-yet-in-force section is extracted', JSON.stringify(g.constitution));
@@ -578,6 +600,11 @@ assert(pending.length === 1, 'one feature has pending verification', `got ${pend
 // form leaked its closing `**` into the value, which turned a properly closed
 // next move into a spurious finding.
 const featOf = (mod, name) => g.features.find((f) => f.module === mod && f.name === name);
+assert(
+  (featOf('clean', 'feature-a').adrs || []).includes('ADR-typed-boundaries') && (featOf('clean', 'feature-a').adrs || []).includes('ADR-0002'),
+  'a plan citing a slug ADR and a legacy ADR resolves both',
+  JSON.stringify(featOf('clean', 'feature-a').adrs),
+);
 const stale = featOf('drifted', 'stale-pointer');
 assert(
   stale.status.nextMove === '`Run /b-feature ghost-feature`',

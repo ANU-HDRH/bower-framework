@@ -34,7 +34,7 @@ Two boundaries on that rule:
 2. Read `docs/constitution.md` to confirm it exists
 3. Read `docs/ui.md` if it exists. Its presence enables the `UI` link in the index; if the file has a leading summary sentence or paragraph, use it for the link description (otherwise use the canonical "Experience surface (navigation, screens, interaction patterns)"). Parallel to how `architecture.md` is scanned for the system overview.
 4. Scan `docs/design/` for design documents
-5. Scan `docs/adr/` for ADR files (any file matching `NNNN-*.md`); parse frontmatter from each
+5. Scan `docs/adr/` for ADR files — every `*.md` except `index.md`; parse frontmatter from each. An ADR's identity is its frontmatter `id:`, never its filename: since v0.38 new ADRs are `<slug>.md` with `id: ADR-<slug>`, and pre-v0.38 ADRs are `NNNN-*.md` with `id: ADR-NNNN`; both are ADRs
 6. Scan `docs/modules/` for all modules, features, and their status files
 7. For each feature, read its `status.md` to determine the current status marker
 8. For each module, read its `module-status.md` for both the `## Build order` markers and the `## Module integration` `Test:` marker
@@ -85,8 +85,8 @@ Frontmatter fields:
 
 | Field | Required | Notes |
 |---|---|---|
-| `id` | yes | `ADR-NNNN`, four-digit zero-padded, immutable |
-| `title` | yes | Sentence case, matches the kebab portion of the filename |
+| `id` | yes | `ADR-<slug>` — two or three kebab-case words naming the decision; immutable. ADRs written before framework v0.38 carry a four-digit ID (`ADR-0027`) and filename prefix (`0027-*.md`), permanent and cited unchanged |
+| `title` | yes | Sentence case; the filename is `<slug>.md` and does not repeat it |
 | `status` | yes | `accepted` \| `superseded` \| `deprecated` |
 | `date` | yes | `YYYY-MM-DD` |
 | `scope` | new ADRs | `universal` \| `module` \| `integration` \| `operational` — decides which changes load the ADR; absent on pre-v0.20 ADRs (*unclassified*) |
@@ -111,18 +111,18 @@ Supersession retires a decision; **narrowing does not**. An ADR carrying `narrow
 
 | ID | Title | Scope | Modules | Topics | Relations | Date |
 |---|---|---|---|---|---|---|
-| [ADR-NNNN](/docs/adr/NNNN-kebab-title.md) | <title> | <scope or *unclassified*> | <modules or —> | <topics or —> | <relations or —> | <date> |
+| [ADR-<slug>](/docs/adr/<slug>.md) | <title> | <scope or *unclassified*> | <modules or —> | <topics or —> | <relations or —> | <date> |
 
-(Listed by ascending ID. Includes all `status: accepted` ADRs. An ADR with no `scope` field is shown as *unclassified* — a pre-v0.20 entry awaiting classification; commands treat it as loadable on module or topical match only, never as universal.)
+(Listed by date, then ID. Includes all `status: accepted` ADRs. An ADR with no `scope` field is shown as *unclassified* — a pre-v0.20 entry awaiting classification; commands treat it as loadable on module or topical match only, never as universal.)
 
-The **Relations** cell is derived from frontmatter and renders each relationship this ADR participates in, comma-separated: `narrows ADR-NNNN`, `narrowed by ADR-NNNN`, `supersedes ADR-NNNN`. Write `—` when the ADR carries none. This is the column that makes narrowing visible: without it, a narrowed ADR is indistinguishable from an unqualified one, since its status is correctly still `accepted`. `superseded-by` never appears here — an ADR carrying it is not in this table.
+The **Relations** cell is derived from frontmatter and renders each relationship this ADR participates in, comma-separated: `narrows ADR-<id>`, `narrowed by ADR-<id>`, `supersedes ADR-<id>`. Write `—` when the ADR carries none. This is the column that makes narrowing visible: without it, a narrowed ADR is indistinguishable from an unqualified one, since its status is correctly still `accepted`. `superseded-by` never appears here — an ADR carrying it is not in this table.
 
 ## Superseded and deprecated
 
 | ID | Title | Status | Superseded by | Date |
 |---|---|---|---|---|
 
-(Listed by ascending ID. Includes `status: superseded` and `deprecated`. Omit the section heading if empty.)
+(Listed by date, then ID. Includes `status: superseded` and `deprecated`. Omit the section heading if empty.)
 ```
 
 The schema section is **boilerplate** — on first generation, write it verbatim. It is the canonical schema reference for the project. On regeneration, treat it as curated: if the project has elaborated it (e.g. expanded the field notes, added lifecycle or access-pattern prose), leave that intact rather than overwriting it with this seed. The tables underneath are derived from frontmatter and are always recomputed.

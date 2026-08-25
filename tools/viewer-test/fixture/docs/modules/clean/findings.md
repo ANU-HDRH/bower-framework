@@ -16,3 +16,7 @@ Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision
   - Location: src/clean/__tests__/feature-a.test.ts:8, feature-b.test.ts:8
   - Drift: both suites define the same loader; the second copy drifted first.
   - Resolution: One loader in a shared fixture module.
+- [x] Q-shared-loader-helper — the consolidated loader is not exported for feature-c — route:/b-feature — Run /b-feature modify clean export-loader-helper according to Q-shared-loader-helper in docs/modules/clean/findings.md — done 2026-07-25 via /b-feature export-loader-helper
+  - Location: src/clean/__tests__/fixtures.ts:1
+  - Drift: the loader is module-private; feature-c's suite copies it.
+  - Resolution: Export it.

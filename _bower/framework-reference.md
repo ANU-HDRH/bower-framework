@@ -60,6 +60,8 @@ Two rules follow, and the second is the one that bites:
 
 **Documentation style:** design layer is narrative and explains *why*; operational layer is terse bullets and tables. Write for future-you in 6 months. Update docs as part of implementation, not after.
 
+**Numbered migrations and the branch that carries them.** Where the stack numbers database migrations (`0029_*.sql` with a journal, or the equivalent), the counter has the same failure as a sequential ADR ID: two branches each append `0029` and the journal merges clean and wrong. Bower does not own that counter, so the constitution carries the convention, and it names the responsibility: **the branch author renumbers**. Before integrating, bring the target branch in; if it has gained a migration, renumber the branch's migrations above its highest and regenerate the journal with the migration tool, never by hand. `/b-design` writes this line when it drafts `constitution.md` for a stack with numbered migrations; an existing project adds it when a second writer arrives.
+
 ## Code Formatters and `docs/`
 
 **Exclude `docs/` from the project's markdown formatter.** Record the exclusion wherever the project keeps formatter config (`.prettierignore` or equivalent), and note it in `docs/constitution.md` alongside the other process conventions, so it survives someone re-running the formatter repo-wide.
@@ -181,23 +183,23 @@ Three states, and the section is mandatory — a module with no review yet carri
 
 ## ADRs — Architectural Decision Records
 
-`docs/adr/` is the project's decision log. One file per decision, named `NNNN-kebab-case-title.md` with a zero-padded four-digit ID. IDs are immutable and never reused, even if a decision is later superseded; gaps are fine. ADRs cover any **cross-cutting commitment** — a choice that constrains more than one feature and would surprise a future reader if not written down. Single-feature implementation detail belongs in that feature's `plan.md`, not in an ADR.
+`docs/adr/` is the project's decision log. One file per decision, named `<slug>.md`, with `id: ADR-<slug>` — the slug is two or three kebab-case words naming the decision (`host-credentials`, `sse-streaming`). **IDs are names, never counts:** a counter collides whenever two writers on two branches both increment it, and git merges the collision clean; a name collides only when two people name the same decision, which is a real conflict and shows as two files. IDs are immutable and never reused, even if a decision is later superseded. **ADRs written before v0.38 carry a four-digit ID and filename prefix** (`ADR-0027`, `0027-secret-management.md`); those IDs and filenames are permanent, are cited unchanged, and are never renumbered — the two forms coexist in one log, and an ADR's identity is always its frontmatter `id`, never its filename shape. The index lists ADRs by `date`, then ID. ADRs cover any **cross-cutting commitment** — a choice that constrains more than one feature and would surprise a future reader if not written down. Single-feature implementation detail belongs in that feature's `plan.md`, not in an ADR.
 
 **Frontmatter schema:**
 
 ```yaml
 ---
-id: ADR-NNNN
+id: ADR-<slug>
 title: <Title>
 status: accepted | superseded | deprecated
 date: YYYY-MM-DD
 scope: universal | module | integration | operational
 modules: [<bower-module-name>, ...]   # required when scope: module
 topics: [<kebab-keyword>, ...]        # optional subject keywords
-supersedes: [ADR-NNNN, ...]           # omit if empty
-superseded-by: [ADR-NNNN, ...]        # omit if empty
-narrows: [ADR-NNNN, ...]              # omit if empty; target keeps status: accepted
-narrowed-by: [ADR-NNNN, ...]          # omit if empty
+supersedes: [<ADR ID>, ...]           # omit if empty; any ID shape
+superseded-by: [<ADR ID>, ...]        # omit if empty
+narrows: [<ADR ID>, ...]              # omit if empty; target keeps status: accepted
+narrowed-by: [<ADR ID>, ...]          # omit if empty
 ---
 ```
 
@@ -207,9 +209,9 @@ narrowed-by: [ADR-NNNN, ...]          # omit if empty
 
 **`## Alternatives considered` was retired at v0.37.** No route to an ADR weighs options before the decision exists — design drafts from a brief that already names the ADR, feature and module reconcile write one after the code has merged, and adoption, review and integration each arrive holding evidence rather than a choice — so where the section appeared, its content had been reconstructed after the fact unless the operator happened to dictate it, and nothing in the record distinguished the two. What `## Context` may carry instead is **attribution**: at most one sentence recording either what the operator said (a typed choice at a gate, the request's own wording, an explicit correction at a gate) or what evidence was cited and what the operator did with it — *"Observed in `a1b2c3d`; the operator ratified."* Never a weighing; never the model's own recommendation rationale re-attributed to a person; never anything mined from the surrounding conversation. **Silence means no attribution was recorded**, which is the common case, and is stated once in `docs/adr/index.md`'s schema block rather than as per-file boilerplate. Forms and prohibitions: `/b-adr` → *Attribution*. Reasoning: `_bower/rationale.md` → *What an ADR Can Honestly Claim*. Bodies already on disk keep their sections, since bodies are immutable, and are not migrated.
 
-**Lifecycle.** Bodies are **immutable once accepted**. Reversals are new ADRs with `supersedes: [ADR-NNNN]`; the old ADR's frontmatter gains `status: superseded`, `superseded-by: [ADR-NNNN]` — both files in one commit. Frontmatter is mutable — adding `scope`/`topics` classification to a legacy ADR is allowed and encouraged.
+**Lifecycle.** Bodies are **immutable once accepted**. Reversals are new ADRs with `supersedes: [<old ID>]`; the old ADR's frontmatter gains `status: superseded`, `superseded-by: [<new ID>]` — both files in one commit. Relationship fields hold IDs of either shape: a slug ADR may supersede or narrow a legacy one or another slug ADR. Frontmatter is mutable — adding `scope`/`topics` classification to a legacy ADR is allowed and encouraged.
 
-**Narrowing.** A decision that scopes an exception to an earlier one — leaving its central commitment in force — **narrows** rather than supersedes it. The new ADR carries `narrows: [ADR-NNNN]`; the narrowed ADR gains `narrowed-by: [ADR-NNNN]` and **keeps `status: accepted`**. Both sides are written in one commit by whichever command created the new ADR; a one-sided pair is an error, not a partial state. Rules:
+**Narrowing.** A decision that scopes an exception to an earlier one — leaving its central commitment in force — **narrows** rather than supersedes it. The new ADR carries `narrows: [<old ID>]`; the narrowed ADR gains `narrowed-by: [<new ID>]` and **keeps `status: accepted`**. Both sides are written in one commit by whichever command created the new ADR; a one-sided pair is an error, not a partial state. Rules:
 
 - **The test.** Would someone implementing the earlier ADR's *main* decision today still be right? Yes → `narrows`. No → `supersedes`. Frontmatter that claims supersession while the body says the earlier decision stands is a defect: it marks live policy dead.
 - **`narrows` never changes the target's `status`.** That is the whole point of the field. Nothing else about the target's frontmatter changes either.
@@ -260,6 +262,26 @@ Examples:
 
 Out-of-band UI chat is, by design, *cheaper* than out-of-band feature chat. Read that as deliberate, not as a hole.
 
+**`## Screens` is headed regions, not a table.** A screen is composed by several modules — a project workspace with seven tabs is seven modules' work on one surface — and a table row per screen puts all of it in one cell, which is one line to git. Observed on a real project: a 4,676-character cell edited by seven modules, unmergeable by anyone. So `docs/ui.md` records each screen as a section and each region of it as a headed unit owned by one module:
+
+```markdown
+## Screens
+
+### Project workspace (`/projects/[id]`)
+
+Manage a project's scripts, runs and session review.
+
+#### Scripts tab — scripts
+
+Version list with draft / published / archived state; …
+
+#### Runs tab — runs
+
+…
+```
+
+The `####` heading is the region's address — name, then the owning module after an em dash. A single-owner screen has one region. Two branches editing different regions merge clean; two branches each adding a region conflict at the insertion point and the resolution is *keep both*; two branches editing the same region are both working on that module, and that is a real conflict to read. The heading grain also gives an agent something to target: a region is rewritten wholesale, where a cell could only ever be appended to. Everything else in the file — `## Navigation`, `## Layout grammar`, `## Interaction patterns`, `## Visual language` — stays invariant-level prose as before.
+
 ## Module Review
 
 When a module reaches completion — every feature ✓ and the `## Module integration` marker ✓ — `/b-feature` and `/b-module` offer `/b-review <module>` as an *optional* next move. It is the one moment the module's emergent properties first become reviewable: whether tests cover the *interactions* between features, whether docs still match code, whether features built weeks apart answer the same question the same way, whether an accepted ADR has quietly drifted from the implementation.
@@ -294,7 +316,7 @@ One open plan per module. `/b-recap` surfaces both the marker and the open plan'
 
 `docs/modules/<module>/findings.md` is an open queue of findings that emerged **outside** a review — most often a `/b-feature` run noticing a real problem it was not invoked to fix. Before v0.34 such an observation had nowhere to go: `review-plan.md` is a review artifact, so writing into it would invent a finding no reviewer diagnosed, and the note went to the console and died there.
 
-**Same line schema as the review plan, different ID space.** A queue item is a checkbox, a module-local ID `Q<n>`, a gist, a class, and a runnable command ending `according to Q<n> in docs/modules/<module>/findings.md`, with the three-line `Location:` / `Drift:` / `Resolution:` brief indented beneath — all three, each non-empty. **Every** queue item carries a brief, where a review plan gives one only to its routed items: the plan's owned items are actioned in the same pass with the report still in context, and a queue item is deferred by construction, so the line is always the whole handoff to a command that was not present when the drift was seen. The `Q` prefix exists so a queue ID can never be mistaken for a review plan's `F<n>` in a pasted command.
+**Same line schema as the review plan, different ID space.** A queue item is a checkbox, a module-local ID `Q-<slug>` (two or three kebab-case words naming the drift — a name, never a count, so two writers on two branches cannot both take `Q3`; items written before v0.38 carry `Q<n>` and keep it), a gist, a class, and a runnable command ending `according to Q-<slug> in docs/modules/<module>/findings.md`, with the three-line `Location:` / `Drift:` / `Resolution:` brief indented beneath — all three, each non-empty. **Every** queue item carries a brief, where a review plan gives one only to its routed items: the plan's owned items are actioned in the same pass with the report still in context, and a queue item is deferred by construction, so the line is always the whole handoff to a command that was not present when the drift was seen. The `Q` prefix exists so a queue ID can never be mistaken for a review plan's `F<n>` in a pasted command.
 
 ```markdown
 # Findings queue: <module>
@@ -307,7 +329,7 @@ Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision
 
 ## Findings
 
-- [ ] Q1 — <gist> — route:/b-feature — Run /b-feature modify <m> <slug> according to Q1 in docs/modules/<m>/findings.md
+- [ ] Q-<slug> — <gist> — route:/b-feature — Run /b-feature modify <m> <feature> according to Q-<slug> in docs/modules/<m>/findings.md
   - Location: <file:line vs file:line>
   - Drift: <what disagrees with what>
   - Resolution: <what to do about it>

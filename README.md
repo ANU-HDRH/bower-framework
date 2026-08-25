@@ -1,4 +1,4 @@
-# Bower Framework v0.37
+# Bower Framework v0.38
 
 A lightweight AI-assisted development pattern for research software engineering.
 
@@ -136,6 +136,8 @@ docs/
         ├── module-status.md    # Build order, integration state, review state
         └── review-plan.md     # Open-review findings; transient, absent when closed
 ```
+
+Identifiers in these files are **names, never counts**: a new ADR is `ADR-<slug>` in `docs/adr/<slug>.md`, a findings-queue item is `Q-<slug>`. Two people on two branches can each write an ADR without silently taking the same number — and ADRs written before v0.38 keep their four-digit IDs for good. `docs/index.md` and `docs/adr/index.md` are derived: if they ever conflict in a merge, take either side and run `/b-index`. A fuller account of working as a team arrives with the merge command in v0.39.
 
 ## Seeing the state
 

@@ -24,8 +24,8 @@ The request (the user's description of the decision): $ARGUMENTS
 
 ## Step 1: Understand Context
 
-1. Read `docs/adr/index.md` if it exists — confirms the next available ID and lets you check for adjacent or related decisions.
-2. If no `docs/adr/` directory exists yet, this is the first ADR; the next ID is `0001`.
+1. Read `docs/adr/index.md` if it exists — lets you check for adjacent or related decisions, and that the slug you intend to use is not already taken.
+2. If no `docs/adr/` directory exists yet, this is the first ADR.
 3. If the user's description implies superseding an existing ADR (e.g. "we're switching from Redis to in-process caching, ADR-0011 is wrong"), read that ADR's full contents.
 4. Read `docs/architecture.md` and any module's `module-status.md` referenced by the decision, only insofar as needed to fill in `modules` correctly and to write a defensible `## Context` section.
 5. **If `docs/adoption-ledger.md` exists, read it.** This command is the whole of the ledger's *resolve* exit (`_bower/framework-reference.md` → *Adoption phase*), so the decision you are about to record may be one of its open lines — and `/b-adopt`'s handoff hands the operator `/b-adr <slug>` to do exactly that. Match the request against the lines: an explicit reference wins, then a slug match, then a topical match on the open question (which is a guess — say so if you rely on it). If two lines could match, ask at the gate rather than picking. Step 4 deletes the line you matched; nothing else does.
@@ -34,9 +34,9 @@ Do **not** load every ADR. The point of the index is that you don't have to.
 
 ## Step 2: Determine ID and Relationship
 
-- **ID.** Scan `docs/adr/*.md` filenames for the highest existing `NNNN-` prefix; the new ID is that number + 1, zero-padded to four digits. If the directory is empty or missing, the new ID is `0001`. IDs are immutable and never reused — gaps from deleted entries are fine.
-- **Supersession.** If the user's description names an existing ADR being replaced, this is a supersession. The new ADR will carry `supersedes: [ADR-NNNN]` and the old ADR's frontmatter will be updated with `superseded-by: [<new-id>]` and `status: superseded`. Both files will be written in this command's output. The old ADR's **body is not touched**.
-- **Narrowing.** If the user describes a decision that scopes an exception to an existing ADR rather than fully replacing it (e.g. "ADR-0011 says use Postgres for all stores; this module uses ClickHouse instead"), this is a **narrowing**. The new ADR carries `narrows: [ADR-NNNN]` and the old ADR's frontmatter gains `narrowed-by: [<new-id>]` — and **nothing else**: its `status` stays `accepted`, because its central decision is still in force. Both files are written in this command's output. The old ADR's **body is not touched**.
+- **ID.** An ADR's ID is a **name, never a count**: `ADR-<slug>`, where the slug is two or three kebab-case words naming the decision (`host-credentials`, `sse-streaming`, `single-vm-deploy`). Choose it from the decision's subject, not its title in full, and check that `docs/adr/<slug>.md` does not already exist — if it does, either this is the same decision (read it; you may be looking at a supersession or narrowing) or the slug needs to be more specific. A slug is chosen, so two writers on two branches collide only when they name the same thing, which is a real conflict and shows as two files; a counter collides whenever both increment it, and git merges that clean. IDs are immutable and never reused. **ADRs written before v0.38 carry a four-digit ID and filename prefix (`ADR-0027`, `0027-*.md`)**; those IDs and filenames are permanent, are cited unchanged, and are never renumbered.
+- **Supersession.** If the user's description names an existing ADR being replaced, this is a supersession. The new ADR will carry `supersedes: [<old ID>]` (either ID shape) and the old ADR's frontmatter will be updated with `superseded-by: [<new-id>]` and `status: superseded`. Both files will be written in this command's output. The old ADR's **body is not touched**.
+- **Narrowing.** If the user describes a decision that scopes an exception to an existing ADR rather than fully replacing it (e.g. "ADR-0011 says use Postgres for all stores; this module uses ClickHouse instead"), this is a **narrowing**. The new ADR carries `narrows: [<old ID>]` and the old ADR's frontmatter gains `narrowed-by: [<new-id>]` — and **nothing else**: its `status` stays `accepted`, because its central decision is still in force. Both files are written in this command's output. The old ADR's **body is not touched**.
 
 **Choosing between them.** Apply this test before deciding: *would someone implementing the old ADR's main decision today still be right?* If yes, it is a narrowing — the old decision survives with an exception carved out. If no, it is a supersession. When the answer is genuinely unclear, put the question to the user at the gate rather than guessing; the two are not interchangeable, and recording a narrowing as a supersession marks live policy dead. Do not use `supersedes` for a relationship the new ADR's own body describes as partial.
 
@@ -46,15 +46,15 @@ Compose the file. Two sections are required (`## Context`, `## Decision`); one i
 
 ```markdown
 ---
-id: ADR-NNNN
-title: <Title in sentence case, matching the filename minus the ID prefix>
+id: ADR-<slug>
+title: <Title in sentence case>
 status: accepted
 date: YYYY-MM-DD
 scope: universal | module | integration | operational
 modules: [<module-name>, ...]
 topics: [<kebab-keyword>, ...]
-supersedes: [ADR-NNNN]
-narrows: [ADR-NNNN]
+supersedes: [<existing ADR ID>]
+narrows: [<existing ADR ID>]
 ---
 
 ## Context
@@ -119,7 +119,7 @@ Frontmatter rules:
 
 Legacy ADRs (pre-v0.20) lack `scope`. Frontmatter is mutable — when you touch a legacy ADR for supersession, or the operator asks for classification, adding `scope`/`topics` to an existing accepted ADR's frontmatter is allowed and encouraged; the body stays immutable.
 
-Filename: `docs/adr/NNNN-kebab-case-title.md`. Lowercase, hyphens, no punctuation, no trailing period. The kebab title should match the frontmatter title.
+Filename: `docs/adr/<slug>.md` — the slug from the ID, nothing else. Lowercase, hyphens, no punctuation. The `title` field carries the full sentence-case title; the filename does not repeat it.
 
 Body length: aim for ~150 words across all sections combined, ceiling 300. If you're approaching 300, check whether the prose is doing real work or just filling sections — pad Context with restatement of framing docs, or write pseudo-Consequences that just rephrase the Decision, and you've blown the budget without adding signal. Nothing here earns growth; an attributed reason is one sentence in the operator's words, not a paragraph reconstructing their thinking.
 
@@ -150,7 +150,7 @@ Frame as: "Here's the ADR I'd write. Check the quoted intent, the Decision sente
 After confirmation:
 
 1. Create `docs/adr/` if it does not exist.
-2. Write the new ADR to `docs/adr/NNNN-kebab-title.md`.
+2. Write the new ADR to `docs/adr/<slug>.md`.
 3. If superseding, update the older ADR's frontmatter:
    - Set `status: superseded`
    - Add or extend `superseded-by: [<new-id>]`
@@ -181,7 +181,7 @@ Emit a single short handoff block. The next move depends on context:
 - If invoked directly: `(none — ADR recorded; resume your next task)`.
 
 ```
-ADR-NNNN recorded: <title> [<status>]
+ADR-<slug> recorded: <title> [<status>]
 <Filename>
 <If supersession: ADR-MMMM marked superseded.>
 <If narrowing: ADR-MMMM narrowed (still accepted).>

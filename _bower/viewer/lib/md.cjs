@@ -287,14 +287,23 @@ function backticked(text) {
   return out;
 }
 
-/** ADR references anywhere in text: ADR-0014 or a link to adr/0014-*.md */
+/**
+ * ADR references anywhere in text. Three forms, two ID shapes (v0.38):
+ *   ADR-0014 / ADR-host-credentials      — the ID itself
+ *   adr/0014-<slug>.md                    — a legacy link; the key is the digits
+ *   adr/host-credentials.md               — a v0.38 link; the key is the stem
+ * A slug ID ends at the first character outside [a-z0-9-] and never ends in a
+ * hyphen, so `ADR-foo-bar.` and `ADR-foo-bar)` both yield `ADR-foo-bar`.
+ */
 function adrRefs(text) {
   const ids = new Set();
-  const re = /ADR-(\d{4})/g;
   let m;
+  const re = /ADR-([a-z0-9]+(?:-[a-z0-9]+)*)/gi;
   while ((m = re.exec(text || ''))) ids.add(`ADR-${m[1]}`);
-  const re2 = /adr\/(\d{4})-/g;
-  while ((m = re2.exec(text || ''))) ids.add(`ADR-${m[1]}`);
+  const legacyLink = /adr\/(\d{4})-[^\s)]*\.md/g;
+  while ((m = legacyLink.exec(text || ''))) ids.add(`ADR-${m[1]}`);
+  const slugLink = /adr\/([a-z][a-z0-9]*(?:-[a-z0-9]+)*)\.md/g;
+  while ((m = slugLink.exec(text || ''))) if (m[1] !== 'index') ids.add(`ADR-${m[1]}`);
   return [...ids];
 }
 

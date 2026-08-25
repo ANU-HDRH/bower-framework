@@ -75,7 +75,7 @@ function badge(mk, opts = {}) {
 
 const modByName = (n) => G.modules.find((m) => m.name === n);
 const featOf = (mod, name) => G.features.find((f) => f.module === mod && f.name === name);
-const adrByNum = (n) => G.adrs.find((a) => a.num === n);
+const adrByKey = (k) => G.adrs.find((a) => a.key === k);
 
 function toast(msg) {
   const t = $('#toast');
@@ -1527,7 +1527,7 @@ function viewModule(name) {
                 const a = G.adrs.find((x) => x.id === id);
                 return el(
                   'a',
-                  { class: 'row', href: `#/adr/${a.num}` },
+                  { class: 'row', href: `#/adr/${a.key}` },
                   el('span', { class: 'idx', style: 'min-width:62px' }, a.id),
                   el('span', { class: 'note grow', style: 'color:var(--ink-2)' }, a.title),
                   el('span', { class: 'eyebrow' }, a.status),
@@ -1689,7 +1689,7 @@ function viewFeature(mod, name) {
                       { class: 'chips' },
                       f.adrs.map((id) => {
                         const a = G.adrs.find((x) => x.id === id);
-                        return el('a', { class: 'chip', href: `#/adr/${a.num}`, title: a.title }, id);
+                        return el('a', { class: 'chip', href: `#/adr/${a.key}`, title: a.title }, id);
                       }),
                     ),
                   )
@@ -1791,7 +1791,7 @@ function viewAdrs() {
           ? shown.map((a) =>
               el(
                 'a',
-                { class: 'row', href: `#/adr/${a.num}` },
+                { class: 'row', href: `#/adr/${a.key}` },
                 el('span', { class: 'idx', style: 'min-width:60px' }, a.id),
                 el('span', { class: 'grow' },
                   el('div', { style: 'color:var(--ink)' }, a.title),
@@ -1815,9 +1815,9 @@ function viewAdrs() {
   );
 }
 
-function viewAdr(num) {
-  const a = adrByNum(num);
-  if (!a) return notFound(`No ADR ${num}`);
+function viewAdr(key) {
+  const a = adrByKey(key);
+  if (!a) return notFound(`No ADR ${key}`);
   const chain = (ids, label) =>
     ids.length
       ? el(
@@ -1830,7 +1830,7 @@ function viewAdr(num) {
             ids.map((id) => {
               const t = G.adrs.find((x) => x.id === id);
               return t
-                ? el('a', { class: 'chip', href: `#/adr/${t.num}`, title: t.title }, id)
+                ? el('a', { class: 'chip', href: `#/adr/${t.key}`, title: t.title }, id)
                 : el('span', { class: 'chip' }, `${id} (missing)`);
             }),
           ),
@@ -1999,7 +1999,7 @@ function viewSearch(q) {
       hits.push({ title, sub, route, extract, rank: inTitle ? 0 : 1 });
     };
     for (const d of G.docs) consider(d.title, d.kind, `#/doc/${encodeURIComponent(d.id)}`, d.body);
-    for (const a of G.adrs) consider(`${a.id} — ${a.title}`, 'decision', `#/adr/${a.num}`, a.body);
+    for (const a of G.adrs) consider(`${a.id} — ${a.title}`, 'decision', `#/adr/${a.key}`, a.body);
     for (const f of G.features) {
       const body = `${f.plan ? f.plan.body : ''}\n${f.status ? f.status.body : ''}`;
       consider(`${f.module}/${f.name}`, 'feature', f.route, body);
