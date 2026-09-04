@@ -82,6 +82,12 @@ Three lifecycle checks, all `warn`, keyed on the owner: **stale** (the owner lan
 - **`tools/viewer-test/`** — twenty annotations and a seventh module, `dupe`, colliding on a feature name: nine that must stay silent, five stale (one a 🚧 owner with a stamped plan), one absorbed, five unowned, and component-suppression cases in both directions; the owner token and marker exactness as unit assertions.
 - **`docs/conformance/`** — `runs.md` records the v0.40 gate-text obligation; both tier claims name it as owed.
 
+### Skills trimmed of restated reasoning
+
+The five workflow skills, the three agent definitions and *Forward-written claims* now say what to do, in what order, at which gate; reasoning that restated `_bower/rationale.md` or this reference is gone, and a counter-intuitive rule keeps one clause of why. Gate text, step numbers, literal strings and examples are unchanged; no behavioural change. Two stale references were corrected in passing: `/b-feature` Step 2 and Step 6 named the stored `Next move:` as pointing at `/b-integration` (it is the Step 7 handoff), and `/b-design` still called queue items `Q<n>`.
+
+- **`skills-src/commands/b-feature.md`**, **`b-design.md`**, **`b-module.md`**, **`b-review.md`**, **`b-merge.md`**, **`skills-src/agents/*.md`**, **`_bower/framework-reference.md`** → *Forward-written claims* — trimmed; generated adapters rebuilt. No project-side work.
+
 ### Migration
 
 **Class: judgement** (step 5 alone is mechanical). `plan.md` and `architecture.md` gain a new annotation form — the one thing this version adds to a document's shape — and both are otherwise unchanged, so nothing existing needs rewriting and nothing breaks if this is skipped. What is at stake is visibility: a project that has run `/b-design` before now may already hold forward-written prose, which is what this version exists to make legible. The viewer will not report any of it until the annotations are written, because whether an *unannotated* prose claim is true of the code is not decidable from `docs/`.

@@ -8,13 +8,13 @@ description: Wrap a merge in either direction — pre-merge conflict-risk report
 
 You are running the Bower merge workflow. It wraps a git merge between the current branch and one other, **in either direction** — main into a long-running branch, or a branch back into main — and does the part of a merge that git cannot: resolve `docs/` by Bower's rules, repair identifier collisions, regenerate the derived indexes, and read both sides' documentation changes for contradictions the merge introduced. Code conflicts are the operator's; this command names them and stops.
 
-Solo projects never run this. It exists for a small team merging without an assumed PR review, often by people not yet fluent with git, and its job is to make sure nobody reaches for `--theirs` on a documentation file and loses a colleague's work silently.
+Solo projects never run this.
 
 The request (the other branch): the request as given in the message that invoked this skill.
 
 ## Important Behavioural Rules
 
-- **Every merge, both directions.** A synchronisation merge (main into a branch) is where two lines of work first meet, and it moves the merge-base — a command that only wrapped the final integration would find nothing left to inspect. So the request is the *other* side, whichever it is, and everything is computed from the two tips.
+- **Every merge, both directions.** A synchronisation merge (main into a branch) moves the merge-base, so it is wrapped too. The request is the *other* side, whichever it is, and everything is computed from the two tips.
 - **State is read from git; nothing is stored.** Whether this is a *pre* or a *post* invocation is decided by `MERGE_HEAD`, never by a file this command writes. There is no branch-start step and no per-commit hook.
 - **The standard for `docs/`: a conflict is impossible by construction, resolves by one rule, or is gated.** Never "rare". Every conflicted `docs/` path is classified below and handled by its class; nothing is resolved by taking a side wholesale except derived index content, which is regenerated — the curated prose in those same files is not derived and is never side-taken.
 - **Code conflicts are not this command's job.** List them, say so, stop. Resume once the operator has resolved and staged them.
@@ -36,12 +36,12 @@ The request (the other branch): the request as given in the message that invoked
 
 Every `docs/` path that both sides touched, and every conflicted `docs/` path, is one of four classes. The class decides the resolution; the operator is asked only for the last.
 
-| Class | Paths | Why it is that class | Resolution |
-|---|---|---|---|
-| **Derived** | The derived parts of `docs/index.md` and `docs/adr/index.md` — module and ADR tables, status markers, accepted/superseded counts, link targets | Recomputed from markers and frontmatter by `/b-index`, which rewrites every derived value from the tree | A conflict block that lies wholly inside derived content: take either side, run `/b-index` before commit. Never merge the text. A block touching **curated** content — documentation maps, schema prose, legend tables, anything `/b-index` preserves — is not derived and is resolved as *headed unit* or *genuinely shared* like any other, because `/b-index` preserves whichever copy survives and would silently keep the loss. |
-| **ID namespace** | New files under `docs/adr/`, new `docs/modules/<module>/` directories, new `Q-<slug>` items in `findings.md` | Identifiers are names, never counts — two writers land two files or two items and nothing textual collides | Both land; nothing to resolve. Same *name* on both sides is a **slug collision** (Step 2.4). |
-| **Headed unit** | `docs/ui.md` `####` regions; `docs/architecture.md` `### <module>` entries under `## Software architecture` | Each unit has one owner and its own heading; two units appended at the same insertion point conflict textually but not semantically | **Additive shape** — both hunks are whole units (each begins at a heading of that level and ends before the next) → keep both, the current branch's first. Any other shape → gated. |
-| **Genuinely shared** | Everything else — `scope.md`, `constitution.md`, `architecture.md` narrative and `## Data flow` sections, the same feature's `plan.md` / `status.md`, the same `module-status.md`, the same `####` region, the same `findings.md` item | Two writers changed one thing | **Operator gate.** Both hunks shown in full, ownership named as a hint about who to ask, never as a rule for which side wins. |
+| Class | Paths | Resolution |
+|---|---|---|
+| **Derived** | The derived parts of `docs/index.md` and `docs/adr/index.md` — module and ADR tables, status markers, accepted/superseded counts, link targets (everything `/b-index` recomputes) | A conflict block that lies wholly inside derived content: take either side, run `/b-index` before commit. Never merge the text. A block touching **curated** content — documentation maps, schema prose, legend tables, anything `/b-index` preserves — is not derived and is resolved as *headed unit* or *genuinely shared* like any other. |
+| **ID namespace** | New files under `docs/adr/`, new `docs/modules/<module>/` directories, new `Q-<slug>` items in `findings.md` | Both land; nothing to resolve. Same *name* on both sides is a **slug collision** (Step 2.4). |
+| **Headed unit** | `docs/ui.md` `####` regions; `docs/architecture.md` `### <module>` entries under `## Software architecture` — one owner and its own heading each | **Additive shape** — both hunks are whole units (each begins at a heading of that level and ends before the next) → keep both, the current branch's first. Any other shape → gated. |
+| **Genuinely shared** | Everything else — `scope.md`, `constitution.md`, `architecture.md` narrative and `## Data flow` sections, the same feature's `plan.md` / `status.md`, the same `module-status.md`, the same `####` region, the same `findings.md` item | **Operator gate.** Both hunks shown in full, ownership named as a hint about who to ask, never as a rule for which side wins. |
 
 Ownership hints come from the path (`docs/modules/<module>/…`), from a region heading's `— <module>` suffix, or from `architecture.md`'s `### <module>` heading. `docs/ui.md` sections other than `## Screens`, and every co-authored or human-owned central doc, have no single owner — say so rather than inventing one.
 
@@ -51,7 +51,7 @@ No writes. Compute from **A** and **B**:
 
 1. **Distance.** `git rev-list --count HEAD..<other>` and `git rev-list --count <other>..HEAD` — how far each side is ahead of the base. Name both; a large number on the incoming side is the reason to sync more often, and worth saying once.
 2. **Conflict-risk set — A∩B.** Every path both sides changed, classified per the table above. Code paths are listed as *code — resolved by you*. For each `docs/` path give the class and what *post* will do with it, so the operator knows before merging what will be automatic and what will be a question.
-3. **Slug collisions.** Files added under `docs/adr/` on both sides, **excluding `docs/adr/index.md`** — it is derived, and two branches each writing a project's first ADR both create it (`git diff --diff-filter=A --name-only <base> <side> -- docs/adr/ ':!docs/adr/index.md'`), intersected by filename; the `id:` of every added ADR on each side, intersected; new `Q-<slug>` lines added to any `findings.md` on both sides (`git diff <base> <side> -- 'docs/modules/*/findings.md'`, lines beginning `+- [ ] Q-`), intersected by slug. Report each collision as *two decisions with one name, or one decision recorded twice — resolved at a gate after the merge*. Two identical files merge clean and are still a collision worth naming: the second author did not know the first existed.
+3. **Slug collisions.** Files added under `docs/adr/` on both sides, **excluding `docs/adr/index.md`** — it is derived, and two branches each writing a project's first ADR both create it (`git diff --diff-filter=A --name-only <base> <side> -- docs/adr/ ':!docs/adr/index.md'`), intersected by filename; the `id:` of every added ADR on each side, intersected; new `Q-<slug>` lines added to any `findings.md` on both sides (`git diff <base> <side> -- 'docs/modules/*/findings.md'`, lines beginning `+- [ ] Q-`), intersected by slug. Report each collision as *two decisions with one name, or one decision recorded twice — resolved at a gate after the merge*. Two identical files merge clean and are still a collision worth naming.
 4. **Migration hint.** If a directory that holds numbered migrations (per `docs/constitution.md`'s migrations convention, if it has one) appears in A∩B or gained files on both sides, say so: the branch author renumbers above the other side's highest and regenerates the journal with the tool, per the constitution. This command does not renumber.
 5. **Emit the merge line**, exactly:
 
@@ -61,7 +61,7 @@ No writes. Compute from **A** and **B**:
 
    `--no-commit` so that *post* always has an inspectable, uncommitted merge state, clean or conflicted. Then: `Run /b-merge <other>` again once the merge command has run, whatever it reports. State that `git merge --abort` returns to exactly this point at any time before the commit.
 
-Close with the report, the two lines, and stop. Do not run the merge yourself — the operator sees the risk set first, and the command that changes the tree is theirs to type.
+Close with the report, the two lines, and stop. Do not run the merge yourself.
 
 ## Step 2: Post — resolve, repair, regenerate, read
 
@@ -69,7 +69,7 @@ Open with the recovery line, every time: *`git merge --abort` returns the branch
 
 ### 2.1 Code conflicts stop the run
 
-`git diff --name-only --diff-filter=U` lists unresolved paths. Every path outside `docs/` is code (or project config, which is the same to this command). If any exist, list them, say that resolving them is the operator's work, and stop with: resolve each, `git add` it, then `Run /b-merge <other>`. Do not touch `docs/` conflicts while code conflicts remain — the operator may abort, and half-resolved docs would be wasted work.
+`git diff --name-only --diff-filter=U` lists unresolved paths. Every path outside `docs/` is code (or project config, which is the same to this command). If any exist, list them, say that resolving them is the operator's work, and stop with: resolve each, `git add` it, then `Run /b-merge <other>`. Do not touch `docs/` conflicts while code conflicts remain — the operator may abort.
 
 ### 2.2 Resolve `docs/` conflicts by class
 
@@ -82,11 +82,11 @@ For each conflicted path under `docs/`, in the order of the class table:
 
 Never take `--ours` or `--theirs` on a non-derived `docs/` path, and never resolve a `docs/` conflict by deleting the lines you do not understand. Where a hunk's meaning needs the whole file, read the file — the diff is the scope, not a cage.
 
-**Nothing below runs while a path is still conflicted.** After this step, re-run `git diff --name-only --diff-filter=U`. If any path remains — an *I will resolve it by hand* answer, a collision the operator wants to rename themselves, anything you could not classify — stop here with a handoff naming each path: resolve it, `git add` it, then `Run /b-merge <other>`. The next invocation finds `MERGE_HEAD` still present, sees no conflicted paths, and continues from 2.4. Regenerating an index or reading diffs for coherence over a tree that still carries conflict markers produces wrong output that looks right, and a `git commit` handoff on that tree is an invitation to commit the markers.
+**Nothing below runs while a path is still conflicted.** After this step, re-run `git diff --name-only --diff-filter=U`. If any path remains — an *I will resolve it by hand* answer, a collision the operator wants to rename themselves, anything you could not classify — stop here with a handoff naming each path: resolve it, `git add` it, then `Run /b-merge <other>`. The next invocation finds `MERGE_HEAD` still present, sees no conflicted paths, and continues from 2.4. An index regenerated, or diffs read, over a tree that still carries conflict markers is wrong output that looks right.
 
 ### 2.3 Transient files
 
-`review-plan.md` and `findings.md` conflicts are resolved above like any other, with one rule of their own: two ticks or dispositions on the **same** item are a genuinely shared conflict, gated as such, because two people disposed of one finding and the record must say what actually happened. A tick on one side and a brief edit on the other is usually compatible — propose the combined text.
+`review-plan.md` and `findings.md` conflicts are resolved above like any other, with one rule of their own: two ticks or dispositions on the **same** item are a genuinely shared conflict, gated as such. A tick on one side and a brief edit on the other is usually compatible — propose the combined text.
 
 ### 2.4 Slug collisions — repaired here, at a gate
 
@@ -102,21 +102,21 @@ Recompute the collision set from Step 1.3 (the merge state is where both sides a
 
   Read the annotations in those files from `<side>`'s tree (`git show <side>:<path>`), owner from the marker and the two lines after it. Show every hit at the gate beside the rename, attributed to its side; re-point one naming the renamed slug to the new one, and one naming a dropped item to the survivor — each following the item its own side wrote. An annotation both diffs touch is ambiguous: show it and let the operator say which drift it meant.
 
-Stage what changed. The operator may decline any of this and rename by hand. If so, the add/add path stays conflicted and the stop rule in 2.2 applies: end the run with a handoff naming the path and the two IDs, and do not continue to 2.5. Say plainly that **nothing downstream will catch an unresolved collision** — `/b-index` indexes whatever file it finds, and the viewer keys ADRs by ID and silently keeps one of two — so the merge must not be committed until the operator has renamed one side and the path is staged.
+Stage what changed. The operator may decline any of this and rename by hand. If so, the add/add path stays conflicted and the stop rule in 2.2 applies: end the run with a handoff naming the path and the two IDs, and do not continue to 2.5. Say plainly that **nothing downstream will catch an unresolved collision**, so the merge must not be committed until the operator has renamed one side and the path is staged.
 
 ### 2.5 Regenerate the indexes
 
-Run `/b-index`. This rewrites the derived tables in `docs/index.md` and `docs/adr/index.md` from the markers and frontmatter now in the tree, which is the only correct resolution for the derived class and also picks up every ADR and module that landed from either side. Stage the result. If `/b-index` is not invokable in this session, say so and put `Run /b-index` first in the handoff — the merge must not be committed with a stale derived index if it can be avoided, and if it cannot, the next regeneration corrects it.
+Run `/b-index` and stage the result. If `/b-index` is not invokable in this session, say so and put `Run /b-index` first in the handoff.
 
 ### 2.6 Coherence pass — the union, not the intersection
 
-A∩B was the *conflict-risk* set. A merge-introduced contradiction can span files no one both-touched: one side changes `architecture.md`, the other writes an ADR or a plan that assumes the old architecture; one side deletes a success criterion, the other's `module-status.md` still names it. So this pass reads **both sides' `docs/` diffs** — `git diff <base> HEAD -- docs/` and `git diff <base> MERGE_HEAD -- docs/` (in the committed-early mode, `HEAD^1` and `HEAD^2` against their merge-base) — and asks of each hunk on one side whether any hunk on the other side contradicts it. Diffs, not whole files: the cost is bounded by the size of the merge, and the whole-file context is one read away when a hunk needs it.
+A merge-introduced contradiction can span files no one both-touched, so this pass reads **both sides' `docs/` diffs** — `git diff <base> HEAD -- docs/` and `git diff <base> MERGE_HEAD -- docs/` (in the committed-early mode, `HEAD^1` and `HEAD^2` against their merge-base) — and asks of each hunk on one side whether any hunk on the other side contradicts it. Diffs, not whole files; read the whole file when a hunk needs it.
 
-Look for, in particular: a boundary or module named in one side's `## Software architecture` change and assumed otherwise in the other's plan or ADR; a `scope.md` criterion added, deleted or re-pointed on one side and cited on the other; an ADR accepted on one side that the other's plan or code contradicts; a build-order marker moved on one side while the other side's `status.md` for the same feature says something else; a `Next move:` on one side pointing at work the other side finished or removed; a *decided, not built* annotation written on one side whose owner the other side moved to ✓, ticked, struck from a build order or renamed — after the merge it is stale or unowned, and neither side's run could have seen that (`_bower/framework-reference.md` → *Forward-written claims*). An annotation with no owner in either side's hunks is a candidate on its own, since this gate is one of the three places such a defect gets a durable record.
+Look for, in particular: a boundary or module named in one side's `## Software architecture` change and assumed otherwise in the other's plan or ADR; a `scope.md` criterion added, deleted or re-pointed on one side and cited on the other; an ADR accepted on one side that the other's plan or code contradicts; a build-order marker moved on one side while the other side's `status.md` for the same feature says something else; a `Next move:` on one side pointing at work the other side finished or removed; a *decided, not built* annotation written on one side whose owner the other side moved to ✓, ticked, struck from a build order or renamed — after the merge it is stale or unowned (`_bower/framework-reference.md` → *Forward-written claims*). An annotation with no owner in either side's hunks is a candidate on its own.
 
 Each contradiction is a **candidate finding**, reported with both hunks and both paths. Offer, at an operator gate, to record the accepted ones in the owning module's `docs/modules/<module>/findings.md` — one item per contradiction, `Q-<slug>` ID, the three-line `Location:` / `Drift:` / `Resolution:` brief written now while both hunks are in front of you, exactly as `/b-feature` Step 6.12 does and per `_bower/framework-reference.md` → *Findings queue*. Write nothing the operator did not accept. A contradiction whose resolution is architectural gets `route:/b-design`; the rest `route:/b-feature`.
 
-**State the miss rate in the report.** This detects contradictions *between the two sides' changes*. A branch's docs can also contradict docs neither side changed, and a hunk can be wrong on its own; both are `/b-review`'s territory. Say so in one line so a clean pass is not read as a clean merge.
+**State the miss rate in the report.** This detects contradictions *between the two sides' changes*; a branch's docs can also contradict docs neither side changed, which is `/b-review`'s territory. Say so in one line so a clean pass is not read as a clean merge.
 
 ### 2.7 Handoff
 

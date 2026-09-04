@@ -6,13 +6,13 @@ argument-hint: the target module
 
 # Bower Module Build
 
-You are running the Bower module-build workflow. This builds all features in a single module in one pass, with one gate up front covering the entire module plan and one acceptance check at the end. Use this when the module is small and well-specified; use `/b-feature` instead for exploratory work or modules that will likely need mid-flight design revision.
+You are running the Bower module-build workflow: all features in a single module in one pass, one gate up front covering the entire module plan, one acceptance check at the end. Use this when the module is small and well-specified; use `/b-feature` instead for exploratory work or modules that will likely need mid-flight design revision.
 
 The request (the target module): $ARGUMENTS
 
 ## Important Behavioural Rules
 
-- **One gate, one acceptance.** You gate the whole module up front. You do not re-gate each feature individually. If an in-flight feature reveals the plan was wrong, stop and consult the user again at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) before continuing — same rule as `/b-feature`.
+- **One gate, one acceptance.** You gate the whole module up front, not each feature. If an in-flight feature reveals the plan was wrong, stop and consult the user again at an operator gate (binding: `_bower/framework.md` → *Runtime bindings*) before continuing.
 - **Architecture is a hard redirect.** Build only the confirmed module build order; if the module needs an architectural change, stop and recommend `/b-design`.
 - **Respect the build order.** Features are implemented in the order listed in `module-status.md` under `## Build order`.
 - **Read first.** Architecture, scope, and the module's existing `module-status.md` are the foundation.
@@ -40,7 +40,7 @@ Batch all independent reads — issue them together, not one per turn.
    grep -rinA2 'decided, not built' docs/architecture.md docs/modules/*/*/plan.md
    ```
 
-   Read the owner from the three-line window. Keep the hits naming `<this module>/<any feature in this build order>` and list them by path under Step 2's **Decision impact**. Each is discharged inside the build loop by the iteration that makes it true (3.7; 3.8 for an absorbed entry); 5.12 is the backstop
+   Read the owner from the three-line window. Keep the hits naming `<this module>/<any feature in this build order>` and list them by path under Step 2's **Decision impact**. Each is discharged inside the build loop by the iteration that makes it true (3.7; 3.8 for an absorbed entry); 5.12 is the backstop.
 2. Read `docs/scope.md` — current scope, non-goals, and any success criteria whose `Delivered by:` clause names this module (those are the criteria this build is responsible for)
 3. Read the target module's `module-status.md` — integration notes and build order
 4. Read `docs/constitution.md` for testing conventions
@@ -63,9 +63,9 @@ Then, at the module level:
 - **Integration test** — what test exercises the module boundary (per the integration notes in `module-status.md`)
 - **Scope impact** — whether this build moves the scope boundary, changes a non-goal, or reveals that a success criterion is missing, wrongly worded, or points at the wrong module. Name the criteria this module is responsible for (those naming it under `Delivered by:`) as context for the plan, but do not treat satisfying them as a `scope.md` edit — criteria carry no status
 - **UI impact** — if any feature introduces, removes, or restructures a screen, view, or component, name the `docs/ui.md` sections and, under `## Screens`, the regions (`#### <Region> — <module>`) that will be created or rewritten; `none` when the module is pure under-the-hood code. If `docs/ui.md` does not exist and the module introduces UI, Step 5 creates it.
-- **Decision impact** — list any accepted ADR loaded in Step 1 that this module's build *touches*: confirms, contradicts (must supersede), narrows (a narrowing ADR — the old decision stays `accepted`), or surfaces as drifted. Note any new cross-cutting decision the module introduces that needs an ADR.
+- **Decision impact** — list any accepted ADR loaded in Step 1 that this module's build *touches*: confirms, contradicts, narrows, or surfaces as drifted (Step 4 acts on each). Note any new cross-cutting decision the module introduces that needs an ADR.
 - **What you won't touch** — explicitly note adjacent areas left alone
-- **Alternatives, where the plan has genuine branching choices** — two or more viable shapes that neither the module's docs nor the request has settled (the test is `/b-ui`'s). Letter them, give each its reasoning and trade-offs, mark one as recommended. Do not invent them to fill the slot; where the shape is already settled, propose it and say so. This matters more here than in `/b-feature`: this command gates **once** for the whole module, so a choice not offered at that gate is not offered at all.
+- **Alternatives, where the plan has genuine branching choices** — two or more viable shapes that neither the module's docs nor the request has settled (the test is `/b-ui`'s). Letter them, give each its reasoning and trade-offs, mark one as recommended. Do not invent them to fill the slot; where the shape is already settled, propose it and say so. This command gates **once** for the whole module, so a choice not offered here is not offered at all.
 
 ## Gate: Confirm or Adjust
 
@@ -108,8 +108,8 @@ After confirmation, for each feature in build order:
 
    Delete each — in any module's plan, and in `docs/architecture.md`, where the annotation is the only thing this command may change. Match the qualified name. If removing one would leave the surrounding prose *wrong* rather than merely unmarked, leave it and recommend `/b-design` in the Step 6 handoff.
 
-   Either way the stored `Next move:` names work on *this* feature only — never the next feature in the build order, never `/b-integration` or `/b-review`. This pass will build those next features itself; a stored pointer to them is stale the moment it is written and nothing ever comes back to fix it. The project-scoped next move belongs in the Step 6 handoff.
-8. If no manual criteria remain for this feature, mark it ✓ in `module-status.md` `## Build order`. Otherwise leave it 🚧 pending Step 4. **If building this feature landed part of a later entry's scope** — a dependency pulled the work forward — append one clause to that later entry: who absorbed what, then `Remaining:` and what is left. You will reach that entry yourself later in this same pass, so the note costs little here; it earns its keep afterwards, when a reader (or a `/b-feature` follow-up) wonders why that feature's plan claims more than it built. If nothing remains, write `Remaining: none` and leave the marker ⏸ until you reach it in the build order and verify it against its own criteria. Schema: `_bower/framework-reference.md`, "Pull-forward annotation." **Discharge that entry's annotations in the same pass**: with `Remaining: none`, every annotation it owns; otherwise only those covering what landed.
+   Either way the stored `Next move:` names work on *this* feature only — never the next feature in the build order, never `/b-integration` or `/b-review`. The project-scoped next move belongs in the Step 6 handoff.
+8. If no manual criteria remain for this feature, mark it ✓ in `module-status.md` `## Build order`. Otherwise leave it 🚧 pending Step 4. **If building this feature landed part of a later entry's scope** — a dependency pulled the work forward — append one clause to that later entry: who absorbed what, then `Remaining:` and what is left. If nothing remains, write `Remaining: none` and leave the marker ⏸ until you reach it in the build order and verify it against its own criteria. Schema: `_bower/framework-reference.md`, "Pull-forward annotation." **Discharge that entry's annotations in the same pass**: with `Remaining: none`, every annotation it owns; otherwise only those covering what landed.
 
 After all features are complete:
 
@@ -123,13 +123,13 @@ Collect every manual acceptance check agreed at the gate — both per-feature ma
 
 For each check:
 
-- **PASS** — flip the relevant feature from 🚧 to ✓ in `module-status.md`; remove the item from that feature's `status.md` `Pending verification:` line (delete the line if now empty). If that clears the last item and the feature is now ✓, compress `status.md` to its terminal form — marker, `## Verification` (fold in what this manual check confirmed, dated), `## Next move` → `(none — complete)`. Record a caveat on the evidence as `Qualification:`, never as `Pending verification:`; a ✓ feature carrying the latter reads as a false-completeness error.
+- **PASS** — flip the relevant feature from 🚧 to ✓ in `module-status.md`; remove the item from that feature's `status.md` `Pending verification:` line (delete the line if now empty). If that clears the last item and the feature is now ✓, compress `status.md` to its terminal form — marker, `## Verification` (fold in what this manual check confirmed, dated), `## Next move` → `(none — complete)`. Record a caveat on the evidence as `Qualification:`, never as `Pending verification:`.
 - **FAIL** — treat as a bug; if fixable in scope, fix and re-verify. If not, leave the feature 🟡 or 🔴 with the failure noted in its `status.md`.
 - **Deferred** — leave the feature 🚧 with `Pending verification:` intact. `/b-recap` will surface it later.
 
 **Decision reconciliation.** Review the **Decision impact** noted at the gate. For each touched ADR: confirmed → no action; contradicted/drifted → invoke `/b-adr` with the ADR-ID being superseded; narrowed → invoke `/b-adr` for a narrowing ADR (the narrowed ADR keeps `status: accepted`); new cross-cutting decision → invoke `/b-adr` to record it.
 
-**Carry the operator's choice to `/b-adr`.** Where the gate settled a lettered choice, pass the resolved option and — where they gave one — their reason in their own words. That is the only provenance the ADR can honestly carry, and the gate is now a whole module's work behind you. Do **not** pass your own recommendation rationale as theirs, and where no choice was offered, pass nothing.
+**Carry the operator's choice to `/b-adr`.** Where the gate settled a lettered choice, pass the resolved option and — where they gave one — their reason in their own words. Do **not** pass your own recommendation rationale as theirs, and where no choice was offered, pass nothing.
 
 Skip only if no Decision impact was identified at the gate. If the user rejects the drafted ADR at `/b-adr`'s gate, redraft with their adjustments rather than skipping; if they want to abandon ADR creation entirely, re-classify the impact (likely "confirmed") — do not silently skip. Complete any ADR work before continuing to Step 5.
 
@@ -137,8 +137,8 @@ Skip only if no Decision impact was identified at the gate. If the user rejects 
 
 9. **`docs/ui.md`** — if the gate's UI impact was anything but `none`, reconcile now. Rewrite the regions this module owns under the affected `### <Screen>` sections and leave other modules' regions alone; add a `#### <Region> — <this module>` heading for each new region; create the file with only the sections this module requires if it does not exist (shape: `_bower/framework-reference.md` → *UI Changes* → *`## Screens` is headed regions*). Current-state doc, not history.
 10. Update integration notes in `module-status.md` `## Module integration` `Notes:` if behaviour differs from Stage 4's assumptions. Confirm the `Test:` marker reflects the real outcome of Step 3.9.
-11. Update `scope.md` only if the build moved the scope boundary, changed a non-goal, or requires a criterion to be added, deleted, reworded, or re-pointed at a different module. Do **not** mark criteria as met — they carry no status, and `/b-recap` derives achievement from module completion.
-12. **Backstop the *decided, not built* discharge.** 3.7 and 3.8 did the work per feature; this checks the loop did it and catches the one defect only a whole-project view sees:
+11. Update `scope.md` only if the build moved the scope boundary, changed a non-goal, or requires a criterion to be added, deleted, reworded, or re-pointed at a different module. Do **not** mark criteria as met — they carry no status.
+12. **Backstop the *decided, not built* discharge.** 3.7 and 3.8 did the work per feature; this checks the loop did it:
 
     ```
     grep -rinA2 'decided, not built' docs/architecture.md docs/modules/*/*/plan.md
@@ -147,7 +147,7 @@ Skip only if no Decision impact was identified at the gate. If the user rejects 
     - An annotation naming a feature this build **landed** (✓, or 🚧 with its plan stamped `Confirmed`) is a missed discharge: delete it and say so in the Step 6 handoff. In `docs/architecture.md` delete only the annotation; if that would leave the prose *wrong*, leave it and recommend `/b-design` in the handoff.
     - Leave every other annotation: one owned by a feature this build did not land (⏸, or 🚧 without a stamp — mid-build), by another module's feature, or by any `` `<module>/Q-<slug>` `` — this command does not drain the queue; whoever does deletes it.
     - **An annotation with no owner** is a write-side defect: offer at an operator gate to record it in the owning module's `docs/modules/<module>/findings.md` — `Q-<slug>`, `route:/b-design` where the claim is in `architecture.md` and `route:/b-feature` otherwise, three-line brief naming file, line and claim — as `/b-feature` Step 6.12 does. Do not adopt or delete it.
-13. Run `/b-index` so module-level status reflects reality. Do **not** hand-edit `docs/index.md` as an alternative — its status is derived from the markers you just wrote, and prose appended there has no writer that ever compacts it (see *Status is never curated* in `b-index.md`). If `/b-index` is not invokable, leave the index to the next regeneration.
+13. Run `/b-index` so module-level status reflects reality. Do **not** hand-edit `docs/index.md` as an alternative (see *Status is never curated* in `b-index.md`). If `/b-index` is not invokable, leave the index to the next regeneration.
 
 ## Step 6: Handoff
 
