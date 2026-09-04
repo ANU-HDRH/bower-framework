@@ -8,6 +8,33 @@ Evidence pointers are paths on the operator's machine or citations into a spike 
 
 ---
 
+## v0.40 — new gate wording (`/b-design` Stages 3–4); nothing re-run
+
+**No runs.** v0.40 adds the *decided, not built* annotation convention. Most of it is read-side rules and a viewer audit, which the demotion rule does not reach — but three pieces sit squarely inside its definition of *gate or delegation text*, so the obligation is recorded here before the tier claims are repeated.
+
+- **`/b-design` Stages 3 and 4 each gain a new decision at their existing gate.** Where a drafted annotation's owner is not a build-order entry, the stage drafts a `Q-<slug>` findings-queue item and presents it *at that stage's gate*, and the two are written together or neither is written — so a strike at the gate now suppresses a doc edit as well as the item. Both gates' prompts change accordingly. This is a *conditional coupled write* at a gate, which no scenario currently exercises: C3 scores whether a gate stops with zero writes, not whether a partial confirmation suppresses the right subset. Worth scoring as a probe against an existing gate rather than as a new scenario.
+- **`/b-feature` Step 2's gate content gains a named class of deletion.** The Docs-impact section now lists, by path, every annotation the change will discharge — including the one edit the command may make to `docs/architecture.md`. The gate's mechanics are unchanged; what the operator is confirming is wider.
+- **`/b-review`'s triage gate changes in both directions.** A findings-queue item that owns an annotation is printed as not absorbable and is not offered — the first gate whose *option set* is computed from a doc sweep rather than fixed by the workflow. And an ownerless-annotation observation is now promoted into the gate as an acceptable finding, where an observation would otherwise be read past. The gate's option set is also **mutable within the gate**: naming a queue item as an owner withdraws that same item from the absorption offer mid-walk. C3 scores gate behaviour against a fixed option set; nothing yet scores whether an option correctly absent is explained rather than silently dropped, whether a promoted observation is presented as a decision rather than a note, or whether an option withdrawn by an earlier answer in the same batch is re-stated rather than quietly disappearing.
+- **`/b-module` gains an operator gate it did not have.** Step 5.12 offers to record an ownerless annotation in a findings queue, with the same no-write-without-yes rule as `/b-feature` Step 6.12 — which is itself write-gated surface no scenario has ever reached.
+- **`/b-merge` 2.4's slug-collision gate gains a repoint.** The gate now shows annotations naming either slug and re-points them as part of the rename. Same gate, wider content — and it inherits v0.39's standing obligation, since no scenario exercises `/b-merge`'s gates at all.
+- **Agent-definition text changed in all three roles.** `bower-analyst`, `bower-implementer` and `bower-reviewer` each gain rules about annotated claims, and `bower-reviewer`'s lifecycle duty is bounded by what its inputs can resolve. None is an interaction constraint — the roles still have no channel — but agent-definition text sits inside the diff any re-run scores, the same call made at v0.37.
+
+`_bower/framework.md` → *Runtime bindings* is untouched, and the generator's handling of gates is unchanged.
+
+**Owed before the v0.40 tier claims may be repeated:**
+
+| Runtime | Scenario | Status |
+|---|---|---|
+| Claude Code | C3 | **owed** — carried forward from v0.34, v0.37 and v0.39, and still the first Claude row the ledger would carry. |
+| Codex | C3 core | **owed** — discharged at v0.34; says nothing about v0.37, v0.39 or v0.40 text. |
+| Codex | C3 probes (4–8) | **owed** — interactive; unrun since the suite was written. |
+| Codex | C8 | **owed** — unrun since the suite was written. |
+| both | C9 | **owed** — carried forward from v0.39; fixture builder still unwritten. |
+
+Until rows exist, the tier claims stand at the v0.37 level with v0.39 and v0.40 added to the owed list. Nothing in this version narrows the grounds the Claude Code claim rests on the way v0.37 did: the choice-gate class is unchanged, and the new gate content rides existing gate mechanics.
+
+---
+
 ## v0.39 — new gate wording (`/b-merge`); nothing re-run
 
 **No runs.** v0.39 adds a fourteenth command, `/b-merge`, with four gates of its own — the per-file conflict gate (a batch gate when a file holds several conflict blocks), the slug-collision gate, the coherence-findings queue gate, and the stop-on-code-conflicts stop. All are new text inside the demotion rule's definition of *gate or delegation text*, so the obligation is recorded here before the tier claims are repeated. Nothing in `_bower/framework.md` → *Runtime bindings*, no existing skill's gate wording, and no agent definition changed.

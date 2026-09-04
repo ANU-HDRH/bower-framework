@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.39';
+const SCHEMA_VERSION = '0.40';
 
 // ---------------------------------------------------------------- helpers
 
@@ -194,6 +194,68 @@ function parseFinding(text) {
 // The five central docs, in reading order. Anything else at the root of docs/
 // is appended after them, and every subdirectory is scanned — a project may
 // grow its own, and an upstream tool should not need a code change to show it.
+// v0.40: forward-written claims. `plan.md` and `architecture.md` describe what
+// the system *is*, which is what makes them readable in place of the code — so a
+// claim about code that is decided but not built has to say so, or it is
+// indistinguishable from a stale one and `code is truth` resolves it backwards.
+// Spec: framework-reference.md -> Forward-written claims.
+//
+// Whether an *un*annotated prose claim is true of the code is not decidable from
+// docs/, so nothing here tries. What is decidable is the annotation's lifecycle:
+// it is deleted by the command that builds the thing, and the three ways that
+// fails are mechanical — the named owner already landed, no owner that could
+// ever remove it resolves, or the owner is a ⏸ entry whose whole scope an
+// earlier feature absorbed.
+//
+// Exactly the string the skills' sweeps grep for (`grep -rin 'decided, not
+// built'`), case-insensitive and nothing looser: a marker only the viewer could
+// see would be one no command could ever discharge.
+const FWD_MARKER = /\bdecided, not built\b/i;
+
+function scanForwardWritten(rel, route, body, host) {
+  const out = [];
+  const lines = M.withoutFences(body).split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (!FWD_MARKER.test(lines[i])) continue;
+    // The annotation may wrap: a blockquote banner puts the ADR on its first
+    // line and the feature on its second, and a formatter re-wraps an inline
+    // clause anywhere. Read a small window, stopping at the next annotation so
+    // two adjacent ones cannot borrow each other's fields.
+    // Read from the marker, not from the start of the line. An inline clause
+    // lands in prose that often already cites a different ADR earlier in the
+    // same sentence — observed on a real project, where the annotation's own
+    // ADR was shadowed by the one the surrounding claim referenced.
+    let win = lines[i].slice(FWD_MARKER.exec(lines[i]).index);
+    for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+      if (FWD_MARKER.test(lines[j])) break;
+      win += ' ' + lines[j];
+    }
+    out.push({
+      rel,
+      route,
+      module: host.module || null,
+      feature: host.feature || null,
+      line: i + 1,
+      text: lines[i].replace(/^[>\s]+/, '').trim(),
+      // The feature that will make the claim true, and so the only thing that
+      // will ever delete the annotation. Written `<module>/<feature>`: feature
+      // names are module-scoped by construction, so a bare one identifies
+      // nothing on its own — the same reason a findings-queue ID without a path
+      // is ambiguous (framework-reference.md -> Findings queue).
+      names: (/feature\s+`([^`]+)`/i.exec(win) || [])[1] || null,
+      qualified: /feature\s+`[^`\/]+\/[^`]+`/i.test(win),
+      // What decided the claim. An ADR where there is one; `gate YYYY-MM-DD`
+      // where an operator gate settled the shape and no ADR was written, which
+      // is what /b-feature Step 3 and /b-module Step 3.2 normally produce —
+      // most annotations in a project are theirs, so reading only the ADR form
+      // would leave the common case with no recorded authority at all.
+      adr: (/\bADR-[A-Za-z0-9][A-Za-z0-9-]*/.exec(win) || [])[0] || null,
+      gate: (/\bgate\s+(\d{4}-\d{2}-\d{2})\b/i.exec(win) || [])[1] || null,
+    });
+  }
+  return out;
+}
+
 const CENTRAL_ORDER = ['index.md', 'scope.md', 'architecture.md', 'constitution.md', 'ui.md'];
 
 // Documents Bower itself defines, writes, and reconciles — as against material
@@ -248,6 +310,7 @@ function extract(root) {
   };
 
   const linkSources = []; // { fromRel, fromLabel, fromRoute, target }
+  const forwardWritten = []; // v0.40: decided-not-built annotations, both docs
   const docRoutes = new Map(); // repo-rel path -> hash route
 
   // A table cell holding a paragraph of prose costs far more than it looks.
@@ -354,6 +417,8 @@ function extract(root) {
     });
     if (renderable) {
       checkTableCells(rel, body);
+      if (rel === 'docs/architecture.md')
+        forwardWritten.push(...scanForwardWritten(rel, route, body, {}));
       for (const l of M.links(body))
         linkSources.push({ fromRel: rel, fromLabel: title.trim(), fromRoute: route, target: l.target });
     }
@@ -991,6 +1056,10 @@ function extract(root) {
         adrs: [],
         integrationPoints: '',
         pendingVerification: null,
+        // v0.40: the plan's `Confirmed YYYY-MM-DD` line — the code every
+        // unannotated claim describes exists and its tests have run. Read to
+        // tell a built-but-pending-verification 🚧 from a mid-build one.
+        confirmed: false,
       };
 
       candidate('missing-plan', !exists(planAbs));
@@ -1013,7 +1082,25 @@ function extract(root) {
 
         // Components table → the file index. This is the inverse lookup the
         // docs cannot answer today (they only go feature → file).
-        const table = M.firstTable(secs['Components'] || '');
+        const compSec = secs['Components'] || '';
+        // A `## Components` row can itself be forward-written: /b-design's plan
+        // touch adds the row for a file a later feature creates, and lands it in
+        // a plan that is usually already ✓. The row then names a file that is
+        // *correctly* absent, so component-missing below would report the
+        // annotation's entire point as drift — the v0.26 failure shape, a schema
+        // change making an existing check emit plausible noise.
+        //
+        // Only the *canonical banner* covers the whole section, and the schema
+        // is exact about what that is: a blockquote carrying the marker, as the
+        // section's first content, directly under the heading. Anything else —
+        // an inline clause in a row, a clause in prose before or after the
+        // table — covers the claim it sits in and no more. The strictness is
+        // deliberate: a too-generous rule suppresses a genuinely missing,
+        // unannotated row, which hides real drift rather than merely reporting
+        // a false one, and that is the worse direction to fail in.
+        const compFirst = compSec.split('\n').find((l) => l.trim() !== '');
+        const compBannerFwd = !!compFirst && /^\s*>/.test(compFirst) && FWD_MARKER.test(compFirst);
+        const table = M.firstTable(compSec);
         candidate('no-components-table', !table);
         if (table) {
           for (const row of table.rows) {
@@ -1029,13 +1116,16 @@ function extract(root) {
             // (`deploy/env/{dev,staging}.tpl`) name a set, not a file.
             const isPattern = /[*?{}]/.test(file);
             const looksLikePath = file.includes('/') && !/\s/.test(file);
-            const entry = { file, purpose, change, isPath: looksLikePath, isPattern, exists: null };
+            const rowFwd = compBannerFwd || FWD_MARKER.test(row.join(' '));
+            const entry = { file, purpose, change, isPath: looksLikePath, isPattern, exists: null, forwardWritten: rowFwd };
             if (looksLikePath && !isPattern) {
               entry.exists = exists(path.join(root, file));
               // Only a built feature's missing file is drift; a planned one's
-              // components legitimately don't exist yet.
+              // components legitimately don't exist yet — and neither does one
+              // the plan has annotated `decided, not built`, whatever this
+              // feature's own marker says.
               const built = bo && bo.marker && bo.marker !== '⏸';
-              if (!entry.exists && built && !/^remove|^delete/i.test(change || '')) {
+              if (!entry.exists && built && !rowFwd && !/^remove|^delete/i.test(change || '')) {
                 flag(
                   'warn',
                   'component-missing',
@@ -1055,6 +1145,10 @@ function extract(root) {
         }
 
         feat.adrs = M.adrRefs(body).filter((id) => adrById.has(id));
+        feat.confirmed = /^Confirmed \d{4}-\d{2}-\d{2}\b/m.test(M.withoutFences(body));
+        forwardWritten.push(
+          ...scanForwardWritten(planRel, fRoute, body, { module: name, feature: fname }),
+        );
         checkTableCells(planRel, body);
         for (const l of M.links(body))
           linkSources.push({
@@ -1250,6 +1344,173 @@ function extract(root) {
   }
   modules.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
   const moduleByName = new Map(modules.map((m) => [m.name, m]));
+
+  // ------------------------------------------------------------ forward-written claims
+
+  // Lifecycle only. An annotation is deleted by the command that builds the
+  // thing it describes (/b-feature Step 6, /b-module Step 3.7), so the failures
+  // are: the build happened and the deletion did not; nothing exists that could
+  // ever do the deleting; or the owner's scope was absorbed by an earlier
+  // feature (below). Each makes the annotation itself the false claim, which is a
+  // worse state than the unannotated prose the convention replaced.
+  // Keyed `<module>/<feature>`, never by bare name: features are module-scoped,
+  // so two modules may each hold a `crud` or a `settings`. A global index lets
+  // the later one overwrite the earlier, which both invents lifecycle warnings
+  // and hides them — and makes the cleanup instruction ambiguous about which
+  // annotation a build discharged.
+  const featureMarker = new Map();
+  const featureByBare = new Map(); // bare name -> every qualified name it could mean
+  const confirmedPlan = new Set(features.filter((f) => f.confirmed).map((f) => `${f.module}/${f.name}`));
+  for (const m of modules)
+    for (const b of m.buildOrder)
+      if (b.name) {
+        const key = `${m.name}/${b.name}`;
+        // 🚧 alone is ambiguous — /b-module marks a feature 🚧 before writing
+        // any code, and an adopted feature is 🚧 with no plan at all — so a 🚧
+        // owner counts as built only when its plan carries the Confirmed line.
+        const built = b.marker === '✓' || (b.marker === '🚧' && confirmedPlan.has(key));
+        featureMarker.set(key, { module: m.name, feature: b.name, marker: b.marker, remaining: b.remaining, built });
+        featureByBare.set(b.name, (featureByBare.get(b.name) || []).concat(key));
+      }
+
+  // The owner is a build-order entry or a findings-queue item, and nothing else:
+  // an ownerless annotation is a class for which the discharge check below is
+  // structurally unreachable, so the convention does not admit one.
+  const queueItem = new Map(); // "<module>/<Q-ID>" -> the item
+  const queueModules = new Set(); // modules that have a queue file at all
+  for (const m of modules)
+    if (m.findings) {
+      queueModules.add(m.name);
+      for (const it of m.findings.items) if (it.id) queueItem.set(`${m.name}/${it.id.toUpperCase()}`, it);
+    }
+  const isQueueOwner = (n) => !!n && /\/(Q-[a-z0-9-]+|Q\d+)$/i.test(n);
+  const queueKey = (n) => {
+    const cut = n.lastIndexOf('/');
+    return `${n.slice(0, cut)}/${n.slice(cut + 1).toUpperCase()}`;
+  };
+  // Every feature that has a plan.md but no build-order entry. That is already
+  // reported once, at the module-status file, as feature-not-in-build-order —
+  // so a self-owned annotation resolving to nothing shares that one cause and
+  // must not be reported a second time under a name that blames the annotation.
+  // Same precedence rule as transient-link over broken-link.
+  const notRostered = new Set(features.filter((f) => f.plan && !f.inBuildOrder).map((f) => `${f.module}/${f.name}`));
+
+  for (const fw of forwardWritten) {
+    const queued = fw.qualified && isQueueOwner(fw.names);
+    const target = fw.qualified && !queued ? featureMarker.get(fw.names) : null;
+    const item = queued ? queueItem.get(queueKey(fw.names)) : null;
+    // The annotation sits in the plan of the very feature it names. That is the
+    // one case where writer and deleter are the same workflow — /b-feature
+    // Step 3 writes it and Step 6 deletes it — so the state is not a resting
+    // one, and the two readings of it (a finished run that forgot, an
+    // interrupted run still owed) have opposite repairs. Both checks below say
+    // so rather than asserting the wrong one.
+    const selfOwned = !!fw.module && !!fw.feature && fw.names === `${fw.module}/${fw.feature}`;
+
+    // Discharged owner, surviving annotation. A won't-fixed queue item is the
+    // same finding with a different repair: the work is not happening, so the
+    // claim goes rather than merely losing its marker.
+    const stale = (!!target && target.built) || (!!item && item.done);
+
+    // Pull-forward moves the work without moving the owner's name: feature A
+    // absorbs part of entry B's scope and builds it, and an annotation owned by
+    // B goes on asserting that the code A just wrote does not exist. B stays ⏸,
+    // so the stale check above cannot see it, and the owner resolves, so the
+    // unowned check below cannot either — this is the one lifecycle failure with
+    // no other reader. The half decidable from docs/ alone is `Remaining: none`:
+    // the entry has nothing left to build, so nothing it owns is still pending.
+    const absorbed =
+      !stale && !!target && target.marker === '⏸' && /^\s*none\b/i.test(target.remaining || '');
+    candidate('forward-write-absorbed', absorbed);
+    if (absorbed)
+      flag(
+        'warn',
+        'forward-write-absorbed',
+        `\`${target.feature}\` is ⏸ in ${target.module}'s build order with \`Remaining: none\` — its scope was ` +
+          `absorbed by an earlier feature, so it has nothing left to build. This claim is still annotated ` +
+          `\`decided, not built\` and names it as the owner, which now asserts that code the absorbing feature ` +
+          `wrote does not exist. Either the absorption made the claim true (delete the annotation) or nothing ` +
+          `will ever build it (delete the claim). Read the code; \`docs/\` cannot tell the two apart.`,
+        fw.rel,
+        { line: fw.line, feature: fw.names, module: target.module, route: fw.route },
+      );
+    candidate('forward-write-stale', stale);
+    if (stale)
+      flag(
+        'warn',
+        'forward-write-stale',
+        (target
+          ? selfOwned
+            ? `\`${target.feature}\` is ${target.marker} in ${target.module}'s build order, and its own plan still annotates this ` +
+              `claim \`decided, not built\`. This one is self-owned — the same workflow writes it and deletes it — ` +
+              `so it means one of two things, with opposite repairs: a \`/b-feature\` run finished and skipped the ` +
+              `deletion (the code is there; delete the annotation), or a run is still owed and was interrupted ` +
+              `after writing the plan (the code is not there; the marker is what is wrong). Read the code the ` +
+              `claim describes — nothing in \`docs/\` can tell the two apart.`
+            : `\`${target.feature}\` is ${target.marker} in ${target.module}'s build order` +
+              (target.marker === '🚧' ? ' with its plan stamped `Confirmed`, so its code exists and only verification is pending' : '') +
+              `, but this claim is still annotated \`decided, not built\`. The command that built it was meant to ` +
+              `delete the annotation; until it does, the annotation is the false claim.`
+          : item.wontFix
+            ? `Queue item \`${fw.names}\` was won't-fixed, so the work this claim describes is not going to happen. ` +
+              `Deleting the annotation would assert the code exists; the claim itself is what should go.`
+            : `Queue item \`${fw.names}\` is ticked, but this claim is still annotated \`decided, not built\`. ` +
+              `Whoever drained the item was meant to delete the annotation; until they do, the annotation is the false claim.`),
+        fw.rel,
+        {
+          line: fw.line,
+          feature: fw.names,
+          ...(target ? { module: target.module } : {}),
+          route: fw.route,
+        },
+      );
+
+    // One kind, four repairs. The defect is the same in each: the owner cannot
+    // be resolved, so nothing can reliably discharge the annotation and it
+    // outlives the claim it qualifies.
+    //
+    // Except when the unresolvable owner is the annotation's own feature and
+    // that feature is simply not in the roster yet: an /b-feature add writes
+    // the plan at Step 3 and the build-order entry at Step 6.2, so this is the
+    // normal shape of a run in flight or one that died in between. It is
+    // already reported at the module-status file as feature-not-in-build-order,
+    // which names the actual repair. One cause, one finding.
+    const rosterGap = selfOwned && !queued && !target && notRostered.has(fw.names);
+    const unowned = !stale && !rosterGap && (!fw.qualified || (queued ? !item : !target));
+    candidate('forward-write-unowned', unowned);
+    if (unowned) {
+      const couldMean = (fw.names && featureByBare.get(fw.names)) || [];
+      const why = !fw.names
+        ? 'This claim is annotated `decided, not built` but names no owner.'
+        : !fw.qualified
+          ? `This claim names \`${fw.names}\` without its module. Feature names and queue IDs are both ` +
+            'module-scoped, so ' +
+            (couldMean.length
+              ? `this could mean ${couldMean.map((k) => `\`${k}\``).join(' or ')}` +
+                (couldMean.length === 1
+                  ? ' today — and a second module adding a feature of that name would silently re-point it'
+                  : ', and nothing here can choose')
+              : 'it identifies nothing') +
+            '.'
+          : queued
+            ? `Queue item \`${fw.names}\` is not in ` +
+              (queueModules.has(fw.names.slice(0, fw.names.lastIndexOf('/')))
+                ? "that module's queue"
+                : 'that module — it has no `findings.md` at all') +
+              '. Either it was drained and the queue deleted, in which case delete this annotation, or it was ' +
+              'never recorded, in which case the work is tracked by nothing.'
+            : `This claim names feature \`${fw.names}\`, which is in no module's build order.`;
+      flag(
+        'warn',
+        'forward-write-unowned',
+        `${why} Nothing will reliably remove it, so once the work lands the annotation is the false claim. ` +
+          'Every annotation names an owner: `<module>/<feature>` for a build-order entry, or `<module>/Q-<slug>` ' +
+          'for a findings-queue item where no roster entry carries the work.',
+        fw.rel,
+        { line: fw.line, feature: fw.names, route: fw.route },
+      );
+    }
+  }
 
   // ------------------------------------------------------------ scope: derived criteria
 
@@ -1610,6 +1871,12 @@ function extract(root) {
     constitution,
     adoption,
     reviewPlans,
+    // The decided-but-unbuilt roster. Reported for its lifecycle above; carried
+    // here because "what has been decided and not yet built" is a question only
+    // this collection can answer. Nothing in web/ renders it yet — that is a
+    // declared deferral, not an omission: `_bower/roadmap.md` → *Surface the
+    // decided-but-unbuilt roster in the viewer UI*, with its revisit trigger.
+    forwardWritten,
     nextMoves,
     ladder,
     backlinks: Object.fromEntries(backlinks),
@@ -1633,8 +1900,12 @@ function extract(root) {
       health: tally(health.map((h) => h.severity)),
       indexedFiles: fileIndex.size,
       pendingVerification: features.filter((f) => f.pendingVerification).length,
+      forwardWritten: forwardWritten.length,
     },
   };
 }
 
-module.exports = { extract, SCHEMA_VERSION };
+// scanForwardWritten is exported for the viewer test only: the owner token it
+// reads (`feature \`<module>/<name>\``) is part of the schema contract, and a
+// contract that lives only in a regex is one nothing would notice changing.
+module.exports = { extract, SCHEMA_VERSION, scanForwardWritten };

@@ -709,6 +709,17 @@ function viewHealth() {
       'A table cell holding a paragraph. A formatter aligns every sibling row out to match it, so the cost multiplies across a file agents read on every session.',
     'check-may-be-obsolete':
       'Aimed at the viewer, not the project: a check matching every candidate is usually testing a dropped convention.',
+    'forward-write-stale':
+      'An annotation says a claim is decided and not built, and its owner has landed. Whoever did the work was ' +
+      'meant to delete the annotation, so the annotation is now the false claim — in the one register agents are ' +
+      'told to trust in place of the code.',
+    'forward-write-unowned':
+      'A decided-not-built annotation is removed by whoever discharges the owner it names. One that names no ' +
+      'resolvable owner is removed by nobody, so it outlives the claim it qualifies.',
+    'forward-write-absorbed':
+      'An earlier feature absorbed the whole of a later entry\'s scope, so nothing is left for that entry to ' +
+      'build — but an annotation still names it as the owner of an unbuilt claim. Pull-forward moves the work ' +
+      'without moving the name, and no other check sees it: the entry is still ⏸.',
     'findings-queue-open':
       'Not drift — a queue holding open items is the queue working. Listed because nothing else aggregates ' +
       'what a project owes: no marker records it, and completion markers answer a different question.',

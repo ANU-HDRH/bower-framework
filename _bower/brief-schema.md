@@ -156,6 +156,7 @@ This is advisory — operators may interleave or reorder.
 - **ADRs are referenced by ID.** `ADR-0011`, not "the taxonomy ADR."
 - **Stage 2 IDs are pre-allocated and used throughout the brief.** When Stage 1, 3, or 4 sections reference a new ADR, they use the pre-allocated ID from Stage 2 (e.g. `ADR-cache-invalidation`), not a placeholder like `ADR-<slug>`. This lets `/b-design` execute each stage's writes without depending on a later stage to backfill literals.
 - **`Status: nothing to do` is a first-class outcome.** It is not a sign of laziness; it is a positive assertion that the analyst checked and found no delta.
+- **An annotated claim is a decision already recorded, not existing code.** Survey a `plan.md` or `architecture.md` claim marked *decided, not built* (`_bower/framework-reference.md` → *Forward-written claims*) as a **constraint from the decision log**, citing what the annotation names as having decided it — an ADR ID, or `gate YYYY-MM-DD` — never as current state. Never propose a Stage 2 operation re-deciding it without saying that is what you are doing.
 - **No speculative architecture.** The brief proposes deltas, not designs. If the analyst finds the change underspecified to the point that Stage 2 or Stage 3 can't be concretely planned, it should say so in `## Ambiguities and assumptions` and produce the brief it *can* — the operator decides whether to refine the change request and re-run, or proceed.
 
 ## Worked example

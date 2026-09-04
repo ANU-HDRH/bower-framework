@@ -71,9 +71,11 @@ defines it. Changing a row means changing `lib/extract.cjs` and
 | ADR frontmatter: `supersedes` / `superseded-by` | same section, *Lifecycle* | supersession chains and symmetry checks |
 | ADR frontmatter: `narrows` / `narrowed-by`, target stays `accepted` | same section, *Narrowing* | narrowing pairs and their checks |
 | `constitution.md` `## Not yet in force` | `framework-reference.md` → *constitution.md — Normative Shape* | separates aspiration from rule |
+| `decided, not built` annotations in `plan.md` and `architecture.md` — the exact marker string, case-insensitive, fenced code skipped; read with the two lines after it; the deciding ADR **or** `gate YYYY-MM-DD`; the owner from the token `` feature `<module>/<feature>` `` / `` feature `<module>/Q-<slug>` `` and nothing else (`owner:` or a bare backticked name reads as ownerless) | `framework-reference.md` → *Forward-written claims* | the decided-but-unbuilt roster and the three lifecycle checks below, owners resolved module-qualified against build orders and findings queues. A canonical blockquote banner as a `## Components` section's **first content** exempts the whole table from `component-missing`; any other annotation exempts only the row it sits in — a looser rule would hide a genuinely missing row, the worse direction to fail in |
+| `plan.md` `Confirmed YYYY-MM-DD` line | same section — the plan's unannotated claims describe code that exists | a 🚧 owner counts as built only when its plan carries it; 🚧 alone also means mid-build or adopted |
 | `docs/index.md` 🌱 banner + `docs/adoption-ledger.md` | `framework-reference.md` → *Adoption phase* | phase detection; suppresses per-feature status warnings |
 | `## Module review` `Review:` line — marker, date, `(N of N features)` snapshot | `framework-reference.md` → *module-status.md — Integration and Build Order* | review state, derived staleness, the lifecycle panel |
-| `docs/modules/<m>/review-plan.md` `## Findings` checklist — `[ ]` / `[x]` / `[~]` | `framework-reference.md` → *Module Review* | in-review banner, disposed/total counts, marker↔plan agreement |
+| `docs/modules/<m>/review-plan.md` `## Findings` checklist — `[ ]` / `[x]` / `[~]`; indented `Location:` / `Drift:` / `Resolution:` sub-lines are a routed item's brief, and any other indented line under an item (an `Owner:` or `Disposition:` chosen at triage, a re-opened note) is kept verbatim and rendered | `framework-reference.md` → *Module Review* | in-review banner, disposed/total counts, marker↔plan agreement |
 | `review-plan.md` finding line — `F<n> — <gist> — <class> — <pointer>`, optionally `— done YYYY-MM-DD via <command>` on a ticked routed item, the closed class vocabulary, the preamble's date and roster count, `## Observations` | `/b-review` Step 3 (the plan shape); the tick grant in `framework-reference.md` → *Module Review* | the review page: what each finding is, who owns it, where it points, and who ticked it. The completion note is split off the pointer — the pointer is a command meant to be copied verbatim |
 | `review-plan.md` routed-finding brief — indented, checkbox-free `- Location:` / `- Drift:` / `- Resolution:` sub-bullets under a `route:*` item, all three required and non-empty | `/b-review` Step 3 (shape rules) | the brief shown under its finding; the incomplete-brief check. Indentation is load-bearing: a brief line matching the checkbox pattern would inflate the disposed/total counts |
 | `review-plan.md` anything else — indented prose under a finding, sections beyond `## Findings` / `## Observations` | — (operator material, not schema) | carried through and rendered: links to the plan resolve to the review page rather than a raw view, so the page must never show less than the file |
@@ -97,6 +99,13 @@ a row above changes.
 
 The reason to open this more than once. Each compares two documents, or a
 document against the filesystem.
+
+One thing deliberately absent: nothing here asks whether an *unannotated* prose
+claim is true of the code. It is not decidable from `docs/` — a `plan.md`
+sentence about an access model has no mechanical counterpart to compare against —
+and guessing would produce exactly the plausible-wrong wall the tripwire below
+exists to catch. The forward-written convention is a write-side rule with a
+lifecycle audit, not a truth check.
 
 **Errors — a contradiction.** Two documents cannot both be right.
 
@@ -126,6 +135,38 @@ document against the filesystem.
   gone: one cause, one finding, and the repair is to unwrite the link rather
   than to mend it. Where the linking document is an accepted ADR body the
   finding says so, because immutability means nothing may repair it at all.
+- a `decided, not built` annotation whose owner has been discharged — a feature
+  now ✓, a feature 🚧 whose plan carries a `Confirmed` line (🚧 alone is
+  ambiguous: `/b-module` marks a feature 🚧 before writing code, and an adopted
+  feature is 🚧 with no plan, so only the stamp says the code is there), or a
+  findings-queue item now ticked. The command that did the work was meant to
+  delete the annotation, so the annotation is now itself the false claim. A
+  **won't-fixed** queue item is the same finding with the opposite repair: the
+  work is not happening, so the claim goes rather than merely losing its marker.
+  A **self-owned** annotation — one sitting in the plan of the very feature it
+  names, which is what `/b-feature` Step 3 writes and Step 6 deletes — has two
+  readings: a run that finished and skipped the deletion, or a run interrupted
+  after the plan write, whose marker is then the stale half. The finding fires,
+  names both, and asserts neither; only the code decides
+- a `decided, not built` annotation whose owner cannot be resolved — none named,
+  a name without its module, a feature in no build order, or a queue ID absent
+  from that module's queue (which reads either as drained-and-deleted or as
+  never recorded, and is worth acting on both ways). Removal is owned by
+  whoever discharges the owner, so an unresolvable one accretes forever — which
+  is the failure the convention trades against, and the reason an owner is
+  mandatory rather than encouraged. One exclusion: a self-owned annotation whose
+  feature has a plan but no build-order entry yet is the ordinary shape of an
+  `/b-feature` add between Step 3 and Step 6.2, and is reported once as
+  `feature-not-in-build-order`, which names the actual repair — one cause, one
+  finding, the same precedence `transient-link` takes over `broken-link`
+- a `decided, not built` annotation whose owner is a ⏸ entry carrying
+  `Remaining: none` — an earlier feature absorbed the whole of its scope, so it
+  has nothing left to build and the claim it owns is no longer pending. Pull
+  forward moves the work without moving the owner's name, and neither check
+  above sees it: the entry never reaches ✓, and the owner resolves. This is the
+  only lifecycle failure with no other reader, which is why the partial case
+  (`Remaining:` naming something) is left to the write side — which part of a
+  half-absorbed scope landed is not decidable from `docs/`
 - the adoption ledger is empty but the 🌱 banner is still up
 - a module is `Review: 🚧` with no `review-plan.md` on disk — a review was opened
   and its findings are gone

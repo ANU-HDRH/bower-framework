@@ -17,6 +17,8 @@ Dispositions: `[ ]` open · `[x]` resolved · `[~]` won't fix (operator decision
 - [ ] F5 — the parser accepts a bare `**` — route:/b-design — Run /b-design bare-emphasis-boundary according to F5 in docs/modules/boldorder/review-plan.md
   - Location: src/boldorder/parse.ts:19
   - Drift:
+- [ ] F6 — architecture.md claim annotated `decided, not built` names no owner — inline-reconcile — docs/architecture.md:133
+  - Owner: `drifted/ghost-feature` — chosen by the operator at triage 2026-07-29
 - [ ] a finding written as free prose, with no class and no pointer
 - [x] F13 — resolved routed items are not chased for a brief — route:/b-feature — Run /b-feature modify boldorder already-landed according to F13 in docs/modules/boldorder/review-plan.md — done 2026-07-29 via /b-feature already-landed
 - [ ] F14 — a routed finding with no brief at all — route:/b-feature — Run /b-feature modify boldorder no-brief-at-all

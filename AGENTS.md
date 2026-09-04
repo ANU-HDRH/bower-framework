@@ -31,6 +31,19 @@ Seventeen sources (14 commands, 3 agents), each a runtime-neutral body plus a me
 - **Run `node tools/adapter-test/run.cjs`** after touching the generator.
 - **`b-*` and `bower-*` are framework-owned namespaces** in a project's `.agents/skills/` and `.codex/agents/`. The scaffold replaces and prunes within them only.
 
+## Instructions say what to do; the reasoning lives elsewhere
+
+A skill or agent body is read by a model at least as capable as the one that wrote it, on every invocation, alongside the project it is working on. Tell it **what to do, in what order, at which gate** — not why. Justification in an instruction costs tokens every session, buries the rule it justifies, and is how the skills grew a third in one version: a reviewer asked "why?", and the answer was pasted beside the rule instead of where it belongs.
+
+- **The why has one home.** A design principle → `_bower/rationale.md`. A rule's mechanics and edge cases → `_bower/framework-reference.md`, once. A skill states the rule and points (`→ *Forward-written claims*`); it never restates the reasoning, and two skills never both explain the same thing.
+- **One exception: the counter-intuitive rule.** Where the correct action looks wrong — a deletion that must come *first*, a file that must not be touched, a gate that must not fire — one clause saying what goes wrong otherwise earns its place, because a capable model would otherwise do the plausible thing. One clause, not a paragraph, and not repeated where the rule is repeated.
+- **Literal beats explained.** `grep -rinA2 'decided, not built'` needs no sentence on what `-i` and `-A2` are for.
+- **Measure it.** `wc -w skills-src/commands/*.md` before and after. A version that grows a skill by more than ~10% says in its commit message why the *instruction*, not the reasoning, needed the space.
+
+## When a review round ends
+
+A finding blocks a release when the common path produces a wrong state, when two framework texts contradict each other, or when a migration note would execute wrongly in a project. An edge the convention does not cover — a rare transition, a legacy shape `docs/` cannot distinguish, a lifecycle no command drives — gets one sentence in the convention's *not covered* list and a `_bower/roadmap.md` entry with a revisit trigger, not a rule. After that, the next review round is triggered by use on a real project, not by re-reading.
+
 ## Changelog entries are terse; migration notes are not
 
 `_bower/changes.md` is scaffolded into every project and read by `/b-upgrade`, so length has a real cost. Per sub-change: one short paragraph on what changed and why, then a bulleted file list with a clause each. That is the whole budget.

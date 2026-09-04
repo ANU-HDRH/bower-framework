@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.40 | 2026-09-04 | A `plan.md` or `architecture.md` claim about code that is decided but not built is annotated `decided, not built`, names the feature that will make it true, and is treated as non-existent until that feature lands; `/b-design` writes them, `/b-feature` Step 6 and `/b-module` Step 3.7 delete them as they build, and the viewer audits their lifecycle | judgement |
 | v0.39 | 2026-08-25 | Merging for small teams: `/b-merge` wraps every merge in either direction — pre-merge conflict-risk report, post-merge `docs/` resolution by class (rule or gate), slug-collision repair, `/b-index`, and a coherence pass over both sides' doc changes; *Working in parallel* rules in the reference and a *Working as a team* section in the README. Second of two versions for multi-writer projects | none |
 | v0.38 | 2026-08-25 | Identifiers are names, never counts: new ADRs are `ADR-<slug>` in `<slug>.md` and new findings-queue items `Q-<slug>`, legacy ordinals permanent; `docs/ui.md` screens become headed regions owned by one module; a numbered-migration convention names who renumbers. First of two versions for multi-writer projects | judgement |
 | v0.37 | 2026-08-13 | An ADR records what the operator said and what evidence was cited, never deliberation that did not occur: `## Alternatives considered` is retired in favour of attribution, a gate offering a choice among options is prose on every runtime, and `/b-adr` drains the adoption ledger it was already the exit for | mechanical |
@@ -32,6 +33,102 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.40 — 2026-09-04
+
+### A doc may describe code that is decided but not built — and must say so
+
+A claim written ahead of the code is indistinguishable from a stale one, and *code is truth* resolves the two in opposite directions. So prose gets the vocabulary markers already have: `decided, not built`, what decided it (an ADR, or `gate YYYY-MM-DD`), and an **owner** that will make it true, written `` feature `<module>/<feature>` `` or `` feature `<module>/Q-<slug>` ``. `plan.md` and `architecture.md` only; agents treat what it wraps as non-existent, exactly as under `## Not yet in force`. Spelling, placement and rules: `_bower/framework-reference.md` → *Forward-written claims*; why: `_bower/rationale.md` → *Living Documentation*.
+
+- **`_bower/framework-reference.md`** — new `## Forward-written claims — Decided, Not Built`: spelling, the owner token, placement, the sweep window, the rules, what `Confirmed YYYY-MM-DD` covers (the plan's *unannotated* claims — so a 🚧 feature carries it, and a design annotation sits in a stamped plan without contradiction), and what is deliberately not covered. *Findings queue* rule 6 exempts an annotation-owning item from absorption.
+- **`_bower/framework.md`** — *Living documentation* covers the future as well as the past; *read the `plan.md`* names the one exception the map declares about itself.
+- **`_bower/rationale.md`** — the third instance of one class (after v0.15 and v0.23), and why the write side was fixed rather than every orientation.
+
+### The write side
+
+A design run's output is a decision and the code is unchanged when it finishes; `/b-feature` and `/b-module` write their own plans before the code, deliberately.
+
+- **`skills-src/commands/b-design.md`** — new behavioural rule; greenfield and a new module's `## Software architecture` entry are exempt. Stages 3 and 4 resolve each owner as they draft and put any `Q-<slug>` owner at their own gate — struck, neither item nor annotated edit is written; a Stage 3 edit whose owner only Stage 4 creates is written there beside its entry; Stage 4 re-checks every owner Stage 3 wrote; a module this run renames or dissolves has its annotation owners re-pointed at the Stage 3 gate; the handoff reports owners.
+- **`skills-src/commands/b-feature.md`** — Step 3 annotates on add and modify; Step 6.1 deletes the banner and writes `Confirmed YYYY-MM-DD` in one edit, whether the feature lands ✓ or 🚧.
+- **`skills-src/commands/b-module.md`** — Step 3.2 annotates each plan it writes ahead; 3.7 deletes the banner and writes `Confirmed YYYY-MM-DD` in its place; *Partial Failure* keeps the banner on a feature that did not land.
+
+### The read side, and who deletes it
+
+Orientation, the analyst, the reviewer and the implementer treat an annotated claim as asserting nothing about the code. Deletion belongs to the command that builds the thing and happens **as it builds**; it is the only edit those commands may make to `architecture.md`. Every sweep is `grep -rinA2 'decided, not built'`.
+
+- **`skills-src/commands/b-feature.md`** — Step 1.2 sweeps on every intent and Step 2's Docs impact lists the hits with their owners; Step 6 *opens* with the discharge, ahead of every marker, stamp and tick; a queue-owned annotation goes in the same edit as the tick that discharges the item; **remove** intent deletes claim *and* annotation for anything the removed feature owned; Step 6.12 queues an ownerless one (`route:/b-design` where the claim is in `architecture.md`, else `route:/b-feature`).
+- **`skills-src/commands/b-module.md`** — Step 1.1 runs the same sweep and reports it under Decision impact; 3.7 and 3.8 discharge per feature inside the build loop; Step 5.12 backstops (a 🚧 feature with a stamped plan counts as landed) and offers an ownerless annotation to the queue at a gate. A queue-owned one is never its business.
+- **`_bower/review-schema.md`**, **`skills-src/agents/bower-reviewer.md`** — dimension 2 excludes an annotated claim from drift; its lifecycle duty is bounded to what a module-scoped reviewer that never reads `findings.md` can resolve — a `✓` owner in this module, or a missing or unqualified owner, reported as an observation carrying both repairs.
+- **`skills-src/commands/b-review.md`** — the triage gate offers that observation as an acceptable finding with three dispositions — name an owner (checked: a build-order entry that can still build something, or an open queue item, which naming withdraws from absorption in that same triage), delete a stale plan claim, or route a stale `architecture.md` claim to `/b-design` — persisted as an `Owner:` or `Disposition:` sub-line, the one owned-item exception to the no-brief rule; `inline-reconcile` acts on the sub-line, or deletes a stale annotation from `architecture.md`.
+- **`_bower/brief-schema.md`**, **`skills-src/agents/bower-analyst.md`** — an annotated claim is surveyed as a constraint from the decision log, citing the ADR or gate date, never as current state.
+- **`skills-src/agents/bower-implementer.md`** — the annotated section is its target; the annotation is left for the caller.
+
+### An owner is a name, so nothing may quietly rename it
+
+- **`_bower/framework-reference.md`** — what may rename a `Q-<slug>`, and why there is no `<module>/F<n>` form; pull-forward: `Remaining: none` discharges every annotation that entry owns, a partial `Remaining:` only what landed.
+- **`skills-src/commands/b-review.md`** — Step 2 marks an annotation-owning item as staying in the queue, with the file and line; the triage gate does not offer it.
+- **`skills-src/commands/b-merge.md`** — 2.4 enumerates annotations **per side** (`git diff <base> <side>`, read from that side's tree) and re-points them with the slug; the "no other references" claim is retired. 2.6's coherence pass looks for an annotation one side wrote whose owner the other side landed, struck or renamed, and for an ownerless one.
+- **`skills-src/commands/b-feature.md`**, **`skills-src/commands/b-module.md`** — the pull-forward step discharges what the absorption made true.
+
+### The viewer audits the annotation, not the prose
+
+Three lifecycle checks, all `warn`, keyed on the owner: **stale** (the owner landed), **unowned** (nothing resolves), **absorbed** (a ⏸ owner with `Remaining: none`). Whether an *un*annotated claim is true of the code is not decidable from `docs/`, so nothing tries.
+
+- **`_bower/viewer/lib/extract.cjs`** — `scanForwardWritten` over `architecture.md` and every `plan.md`, reading exactly what the sweeps read and the owner from the `` feature `…` `` token only; the three checks, with a 🚧 owner counted as landed only when its plan carries `Confirmed`; `forwardWritten` and its count; `SCHEMA_VERSION` 0.40. `component-missing` stands down on a row an annotation covers — the canonical banner as a section's first content covers the section, anything else the claim it sits in.
+- **`_bower/viewer/web/app.js`**, **`_bower/viewer/README.md`** — a health-page explanation per check; schema-contract row, the three warnings, and what is deliberately not checked.
+- **`_bower/roadmap.md`** — rendering the collected roster in the viewer UI is deferred, with its revisit trigger.
+- **`tools/viewer-test/`** — twenty annotations and a seventh module, `dupe`, colliding on a feature name: nine that must stay silent, five stale (one a 🚧 owner with a stamped plan), one absorbed, five unowned, and component-suppression cases in both directions; the owner token and marker exactness as unit assertions.
+- **`docs/conformance/`** — `runs.md` records the v0.40 gate-text obligation; both tier claims name it as owed.
+
+### Migration
+
+**Class: judgement** (step 5 alone is mechanical). `plan.md` and `architecture.md` gain a new annotation form — the one thing this version adds to a document's shape — and both are otherwise unchanged, so nothing existing needs rewriting and nothing breaks if this is skipped. What is at stake is visibility: a project that has run `/b-design` before now may already hold forward-written prose, which is what this version exists to make legible. The viewer will not report any of it until the annotations are written, because whether an *unannotated* prose claim is true of the code is not decidable from `docs/`.
+
+**1. Audit `docs/architecture.md`.** Read it against the code. For each claim about a component, table, column, route, or access rule, check whether the thing exists. Where it does not, find the ADR that decided it (`docs/adr/index.md`, then the ADR body) and the build-order entry that will build it (`docs/modules/*/module-status.md`), and annotate the claim:
+
+- A whole section written ahead gets a blockquote banner directly under its heading — a blockquote, and the section's **first content**, before any prose. In a `## Components` table that is what decides whether the whole table or one row is exempt from the viewer's `component-missing` check; a banner with anything above it covers nothing:
+
+  ```markdown
+  > **Decided, not built** — [ADR-<slug>](/docs/adr/<slug>.md); built by feature `<module>/<feature>`.
+  ```
+
+- A single claim inside an otherwise-built section gets an inline clause:
+
+  ```markdown
+  (**decided, not built** — [ADR-<slug>](/docs/adr/<slug>.md), feature `<module>/<feature>`)
+  ```
+
+- Always qualify the owner with its module. Feature names and queue IDs are both module-scoped, so a bare one is ambiguous now or after the next module lands; the viewer reports an unqualified owner for exactly that reason.
+- **Do not annotate the `## Software architecture` entry of a module whose every build-order entry is `⏸`** — a module designed and not yet started. Every marker on it already says it is unbuilt, and no single feature owns a module's entry, so there is nothing to name. Annotate only that module's claims that sit inside otherwise-built sections, owned by whichever of its features will build the thing.
+- Where the decision implies work no build-order entry carries, the owner is a findings-queue item: record it in the owning module's `docs/modules/<module>/findings.md` at an operator gate (`Q-<slug>`, `route:/b-feature`, three-line brief) and name it as `` feature `<module>/Q-<slug>` ``. If the operator declines the item, the claim still needs a disposition: delete it as stale (nothing tracks the work), or leave it unannotated as it was and name it in the handoff. Never annotate it without an owner.
+- Where you cannot find a deciding ADR, do not invent one — surface the claim to the operator instead. An unbuilt architecture claim with no decision behind it is a finding, not an annotation. (`gate YYYY-MM-DD` is the other legal form, but it belongs to a gate that actually settled the shape in a `/b-feature` or `/b-module` run; it is not a way to fill the slot in this pass.)
+- **Use the marker text exactly** — `decided, not built`, in those words. The banner form capitalises the first letter and the inline form does not, which is why every sweep for it is `grep -rinA2`; anything else ("decided but not built", "not yet built") is invisible to the commands that delete it and to the viewer that audits it. Keep the owner within two lines of the marker — the banner's second line is the normal place — since that is the window every sweep and the viewer read. **Introduce the owner with the word `feature`, in backticks** — `` feature `<module>/<feature>` `` or `` feature `<module>/Q-<slug>` ``, exactly as the forms above do. The viewer reads the owner from that token and nothing else: `owner: `…``, `built by `…`` or a bare backticked name is reported as an ownerless annotation.
+
+**2. Audit the feature plans — and do not scope this by the plan's own marker.** A design run writes into *sibling* plans it will not implement, so the file holding a forward-written claim is most often a **completed** feature's, describing code a *different*, still-unbuilt feature will build. That is the shape this version exists for: the field report behind it found the claims in a `✓` feature's plan, owed to feature 5 of the same module. Skipping `✓` plans would skip the case.
+
+What decides whether a claim is early or stale is **which feature will make it true**, never which feature's plan holds it:
+
+- an unbuilt build-order entry will make it true → it is forward-written, and gets the annotation naming `<module>/<feature>`. One exception: an entry carrying a pull-forward `Remaining: none` clause has nothing left to build, so it can never discharge anything — if that entry is the only candidate, the claim is either already true (leave it unannotated) or owned by nobody (record a `Q-<slug>` item);
+- an accepted decision with no entry at all will make it true → it is forward-written, and its owner is a `<module>/Q-<slug>` findings-queue item you record in the same pass;
+- nothing will make it true → it is a stale claim, not an early one. Leave it unannotated: that is ordinary drift, this migration does not own it, and annotating it would hide it. Record it in `docs/modules/<module>/findings.md` with the usual three-line brief, or leave it to `/b-review`.
+
+Work from the decision log rather than reading every plan, which does not scale on a large project and is not where the evidence is. This finds what the decision log points at; a claim written ahead by an interrupted pre-v0.40 `/b-feature` or `/b-module` run has no ADR to find it by and is not distinguishable from drift in `docs/` — it is left to `/b-review`, which reports it as ordinary drift.
+
+1. List the accepted ADRs whose commitments have **not** fully landed — read `docs/adr/index.md`, then each candidate body, and check each against every module's `## Build order` for an entry that is not `✓`. Include any implied-not-tracked work a past design run named in its handoff, which has no entry to find.
+2. For each such ADR, grep `docs/architecture.md` and **every** `plan.md` — `✓` ones included — for its ID *and* for the concepts it names: the table, column, route, flag, or type. A forward-written claim frequently cites the ADR, but not always; the concept names are the more reliable hook, and the ADR body supplies them.
+3. Verify each hit against the code. Annotate the ones whose subject does not exist, per step 1's forms, naming the owner as `` feature `<module>/<feature>` `` — the unbuilt feature the ADR is owed to, which is generally neither the plan you are editing nor even its module — or, where no build-order entry carries the work, as `` feature `<module>/Q-<slug>` ``, a findings-queue item you record in the same pass. Every annotation gets an owner; if you cannot identify one, that claim is a finding for the operator rather than an annotation.
+
+**3. Do not annotate anything else.** Not `status.md`, `module-status.md`, `scope.md`, `constitution.md`, `ui.md`, or an ADR body. If an unbuilt claim is found in one of those, it is a different defect: a marker that should be `⏸`, a `Pending verification:` line, a `## Not yet in force` entry, or — for an ADR body — nothing at all, since an ADR is a decision and is *supposed* to describe what is not yet built.
+
+**4. Gate the result.** Every claim the audit found ends in exactly one of: annotated with a resolving owner; deleted as stale; or left as it was and named in the handoff as a finding for the operator. Present the list — file, line, the claim, the ADR, the disposition — at an operator gate before writing. This is judgement work on co-authored documents, and "this claim describes code that does not exist" is exactly the kind of assertion the operator should check: a claim you wrongly annotate becomes invisible to every later session.
+
+**5. Stamp legacy plans — mechanical.** For each feature marked `✓` in a `## Build order` whose `plan.md` has no `Confirmed YYYY-MM-DD` line, append one, dated from the feature's `status.md` `## Verification` section (or the plan's last commit date if there is none). Plans `/b-module` wrote before v0.40 never carried the line; from v0.40 it marks a plan whose unannotated claims describe code that exists, and the viewer reads it to tell a built-but-unverified `🚧` owner from a mid-build one. Leave `🚧` plans unstamped unless their `status.md` shows the code landed.
+
+**6. Then run the viewer** (`node _bower/viewer/serve.cjs`) and read its drift page. The three new warnings catch every *owner* mistake this pass can make: an owner already discharged, an owner that resolves to nothing (none named, unqualified, or absent from a roster or queue), and an owner whose scope an earlier feature absorbed entirely. They do **not** catch the mistake that matters most — annotating a claim that was actually stale — because whether an unannotated claim is true of the code is not decidable from `docs/`. That one is what step 4's gate is for.
+
+Nothing else is required. The `/b-*` commands carry the convention forward from here: `/b-design` writes annotations and records their owners at the gate that writes them, and they are deleted as the code lands — `/b-feature` at the head of Step 6, before any marker, stamp or tick, and `/b-module` per feature at Step 3.7, inside its build loop.
 
 ---
 

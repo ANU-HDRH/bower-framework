@@ -118,6 +118,10 @@ const EXPECTED = [
   'broken-link',
   'relative-doc-link',
   'transient-link',
+  // forward-written claims (v0.40)
+  'forward-write-stale',
+  'forward-write-unowned',
+  'forward-write-absorbed',
   // document cost
   'oversized-table-cell',
 ];
@@ -176,14 +180,250 @@ for (const [kind, want] of [
   ['component-missing', 'warn'],
   ['arch-feature-roster', 'warn'],
   ['relative-doc-link', 'info'],
+  ['forward-write-stale', 'warn'],
+  ['forward-write-unowned', 'warn'],
+  ['forward-write-absorbed', 'warn'],
 ])
   assert(sevOf(kind) === want, `${kind} is ${want}`, `got ${sevOf(kind)}`);
+
+// ── forward-written claims (v0.40) ───────────────────────────────────────────
+//
+// The three checks audit an annotation's *lifecycle*, never the truth of the prose
+// it wraps — that is not decidable from docs/. So the assertions that matter are
+// the negative ones: a conformant annotation on an unbuilt owner must stay
+// fwdSilent. If it starts firing, every design run's output becomes a warning.
+//
+// Every annotation names an owner — a build-order entry or a findings-queue item
+// — and there is deliberately no exempt form. An ownerless annotation would be a
+// class for which the discharge check is structurally unreachable, so once the
+// implied work landed nothing could ever detect the now-false annotation.
+const fwd = g.forwardWritten;
+assert(fwd.length === 20, 'every decided-not-built annotation is collected', `got ${fwd.length}`);
+assert(
+  g.counts.forwardWritten === fwd.length,
+  'the count agrees with the roster',
+  `${g.counts.forwardWritten} vs ${fwd.length}`,
+);
+const fwdFindings = g.health.filter((h) => h.kind.startsWith('forward-write-'));
+const at = (rel, line) => fwdFindings.find((h) => h.path === rel && h.line === line);
+assert(fwdFindings.length === 11, 'exactly the eleven lifecycle failures are reported', `got ${fwdFindings.length}`);
+
+// Silence is the load-bearing half: an owner that has not been discharged yet.
+const fwdSilent = fwd.filter((f) => !at(f.rel, f.line));
+assert(
+  fwdSilent.length === 9,
+  'a banner, an inline clause, an open queue item, a ⏸ collision, an unrostered self-owner and four ' +
+    'component-section annotations owned by a 🚧 feature stay fwdSilent',
+  fwdSilent.map((f) => `${f.rel}:${f.line} (${f.names})`).join(', '),
+);
+assert(
+  fwdSilent.some((f) => f.names === 'clean/Q1'),
+  'an annotation owned by an OPEN findings-queue item is conformant — the item is the removal owner',
+  fwdSilent.map((f) => f.names).join(', '),
+);
+assert(
+  !fwdFindings.some((h) => h.path.includes('shrunk-feature')),
+  'an annotation on a ⏸ feature is not a finding',
+);
+// One cause, one finding — the same precedence transient-link takes over
+// broken-link. /b-feature writes the plan at Step 3 and the build-order entry
+// at Step 6.2, so a self-owned annotation naming a feature that is not rostered
+// yet is a run in flight or one that died in between. The repair is the missing
+// roster entry, which feature-not-in-build-order already names; reporting it
+// again as unowned would blame the annotation for the roster's gap.
+assert(
+  !fwdFindings.some((h) => h.path.includes('orphan-plan')),
+  'a self-owned annotation on an unrostered feature defers to feature-not-in-build-order',
+  fwdFindings.filter((h) => h.path.includes('orphan-plan')).map((h) => h.kind).join(', '),
+);
+assert(
+  g.health.some((h) => h.kind === 'feature-not-in-build-order' && /orphan-plan/.test(h.message)),
+  'and that finding is the one actually reported',
+);
+assert(
+  fwdFindings.every((h) => typeof h.line === 'number'),
+  'each finding locates itself by line',
+);
+
+// ── stale: the owner was discharged and the annotation survived ─────────────
+const fwdStale = g.health.filter((h) => h.kind === 'forward-write-stale');
+assert(fwdStale.length === 5, 'five ways an owner outruns its annotation', `got ${fwdStale.length}`);
+const staleFeat = fwdStale.find((h) => h.path === 'docs/architecture.md' && h.feature === 'drifted/built-feature');
+assert(
+  staleFeat && staleFeat.module === 'drifted',
+  'a ✓ build-order entry names the qualified feature and the module whose roster marked it ✓',
+  JSON.stringify(staleFeat),
+);
+// Cross-owned: the annotation sits in a document the feature does not live in,
+// so the only reading is a missed discharge, and the message says exactly that.
+assert(
+  staleFeat && /the annotation is the false claim/.test(staleFeat.message) && !/self-owned/.test(staleFeat.message),
+  'a cross-owned stale annotation is diagnosed outright',
+  staleFeat && staleFeat.message,
+);
+// Self-owned: /b-feature Step 3 writes it and Step 6 deletes it, so a ✓ owner
+// means either a finished run that skipped the deletion or an interrupted one
+// still owed — opposite repairs, and nothing in docs/ chooses between them. The
+// finding must fire (it is not a resting state) and must not pick a side.
+const staleSelf = fwdStale.find((h) => h.path.includes('built-feature/plan.md'));
+assert(
+  staleSelf && /self-owned/.test(staleSelf.message) && /interrupted/.test(staleSelf.message),
+  'a self-owned stale annotation names both readings rather than asserting one',
+  staleSelf && staleSelf.message,
+);
+assert(
+  fwdStale.some((h) => h.feature === 'drifted/Q-drift-tombstone' && /is ticked/.test(h.message)),
+  'a TICKED queue item is a missed discharge, same as a ✓ feature',
+  fwdStale.map((h) => h.feature).join(', '),
+);
+// 🚧 is ambiguous on its own — /b-module marks a feature 🚧 before any code
+// exists, and an adopted feature is 🚧 with no plan — so a 🚧 owner is read as
+// built only when its plan carries the Confirmed line. ghost-feature (🚧, no
+// plan) stays silent above; pending-verify (🚧, stamped) is a missed discharge.
+const stalePending = fwdStale.find((h) => h.feature === 'dupe/pending-verify');
+assert(
+  stalePending && /🚧/.test(stalePending.message) && /Confirmed/.test(stalePending.message),
+  'a 🚧 owner whose plan is stamped Confirmed is built, and the finding says which line settled it',
+  stalePending && stalePending.message,
+);
+// A won't-fix is the same finding with the opposite repair — the work is not
+// happening, so deleting the marker would assert code that will never exist.
+assert(
+  fwdStale.some((h) => h.feature === 'drifted/Q-abandoned-retry' && /the claim itself is what should go/.test(h.message)),
+  "a WON'T-FIXED queue item says to delete the claim, not the annotation",
+  fwdStale.map((h) => h.message.slice(0, 60)).join(' | '),
+);
+
+// ── unowned: the owner cannot be resolved, so nothing can discharge it ───────
+const fwdUnowned = g.health.filter((h) => h.kind === 'forward-write-unowned');
+assert(fwdUnowned.length === 5, 'five ways an annotation ends up unownable', `got ${fwdUnowned.length}`);
+assert(
+  fwdUnowned.every((h) => h.path === 'docs/architecture.md'),
+  'all five are in architecture.md',
+  fwdUnowned.map((h) => h.path).join(', '),
+);
+for (const [probe, label] of [
+  [/names no owner/, 'no owner named at all'],
+  [/without its module/, 'an owner missing its module qualifier'],
+  [/in no module's build order/, 'a feature in no build order'],
+  [/is not in that module's queue/, 'a queue ID absent from an existing queue'],
+  [/has no `findings\.md` at all/, 'a queue ID in a module with no queue'],
+])
+  assert(
+    fwdUnowned.some((h) => probe.test(h.message)),
+    `unownable: ${label}`,
+    fwdUnowned.map((h) => h.message.slice(0, 50)).join(' | '),
+  );
+assert(
+  fwdUnowned.every((h) => /`<module>\/Q-<slug>`/.test(h.message)),
+  'each names both owner forms as the repair',
+);
+assert(
+  fwdUnowned.some((h) => /`drifted\/built-feature` or `dupe\/built-feature`/.test(h.message)),
+  'an unqualified name is told what it could have meant',
+  fwdUnowned.map((h) => h.message).join(' | '),
+);
+
+// ── absorbed: pull-forward moved the work without moving the owner's name ────
+//
+// Feature A absorbs the whole of entry B's scope and builds it. B stays ⏸, so
+// forward-write-stale cannot see it; B resolves, so forward-write-unowned
+// cannot either. `Remaining: none` is the half decidable from docs/ alone —
+// nothing is left for B to build, so nothing it owns is still pending.
+const fwdAbsorbed = g.health.filter((h) => h.kind === 'forward-write-absorbed');
+assert(fwdAbsorbed.length === 1, 'the absorbed-owner case is reported once', `got ${fwdAbsorbed.length}`);
+assert(
+  fwdAbsorbed[0] &&
+    fwdAbsorbed[0].feature === 'drifted/absorbed-feature' &&
+    /Remaining: none/.test(fwdAbsorbed[0].message),
+  'it names the absorbed entry and why it can never discharge the annotation',
+  fwdAbsorbed[0] && fwdAbsorbed[0].message,
+);
+// The partial case is deliberately not reported: which half of a half-absorbed
+// scope landed is not decidable from docs/. `shrunk-feature` is the control.
+assert(
+  !fwdAbsorbed.some((h) => h.feature === 'drifted/shrunk-feature'),
+  'a partial absorption (`Remaining:` naming something) is left to the write side',
+);
+
+// ── an annotated `## Components` row is not a missing component ──────────────
+//
+// A design run's plan touch adds rows for files a later feature creates, into a
+// plan that is usually already ✓. Reporting those as drift is the annotation's
+// whole point turned into noise — the v0.26 shape, where a schema change made an
+// existing check emit plausible wrong findings. A banner under the heading covers
+// the section; an inline clause covers its own row and no more.
+const compMissing = g.health.filter((h) => h.kind === 'component-missing').map((h) => h.message).join(' | ');
+for (const suppressed of ['src/ghost-a.ts', 'src/ghost-b.ts', 'src/late-wrapper.ts'])
+  assert(!compMissing.includes(suppressed), `an annotated component row is silent: ${suppressed}`, compMissing);
+// A blockquote banner that is not the section's FIRST content covers nothing —
+// `built-feature`'s Components section opens with prose, then a banner, then the
+// table. Suppressing there would hide a genuinely missing unannotated row.
+assert(
+  compMissing.includes('src/missing.ts'),
+  'a banner that is not the section\'s first content covers nothing',
+  compMissing,
+);
+assert(
+  compMissing.includes('src/really-missing.ts'),
+  'an unannotated missing row in the same table still reports — the inline form covers one row',
+  compMissing,
+);
+// The same plan carries an inline clause in prose *after* the table. Accepting
+// any non-table annotation as a section banner let that line suppress the row
+// above, which hides real drift rather than inventing a false finding — the
+// worse of the two failure directions. Only the canonical blockquote banner,
+// before the first row, covers a section.
+const stalePlan = M.sections(
+  (g.features.find((f) => f.module === 'drifted' && f.name === 'stale-pointer') || { plan: { body: '' } }).plan.body,
+);
+const afterTable = (stalePlan['Components'] || '').split('\n').filter((l) => !/^\s*\|/.test(l));
+assert(
+  afterTable.some((l) => /decided, not built/i.test(l) && !/^\s*>/.test(l)),
+  'the fixture still holds a non-blockquote annotation inside ## Components, outside the table',
+  afterTable.join(' / ').slice(0, 120),
+);
+
+// The collision. `built-feature` is ✓ in `drifted` and ⏸ in `dupe`. Keying the
+// feature index by bare name let the later module overwrite the earlier, which
+// fires a fwdStale warning on the planned one or hides it on the built one
+// depending on directory order — so this is the regression, not a nicety.
+assert(!!fwd.find((f) => f.names === 'dupe/built-feature'), 'the colliding annotation parses its module');
+assert(
+  !fwdFindings.some((h) => h.feature === 'dupe/built-feature'),
+  'a ⏸ feature is fwdSilent even when another module has the same name at ✓',
+);
+
+assert(
+  fwd.filter((f) => f.adr || f.gate).length === 20,
+  'every annotation cites what decided it',
+  fwd.map((f) => f.adr || f.gate).join(', '),
+);
+// `gate YYYY-MM-DD` is the other half of the schema and the one /b-feature and
+// /b-module write, since most feature work settles its shape at a gate without
+// an ADR. Extracting only the ADR form left the commonest annotation in a
+// project with no recorded authority at all.
+const fwdGate = fwd.find((f) => f.gate);
+assert(
+  fwdGate && fwdGate.gate === '2026-07-30' && !fwdGate.adr,
+  'a gate-decided annotation records its date and cites no ADR',
+  JSON.stringify(fwdGate),
+);
+// Found on real data, not in a fixture: an inline clause lands in prose that
+// already cites a different ADR earlier in the sentence, and reading the line
+// from its start attributed the annotation to the wrong decision.
+const fwdShadowed = fwd.find((f) => f.rel.includes('shrunk-feature') && f.line > 20);
+assert(
+  fwdShadowed && fwdShadowed.adr === 'ADR-typed-boundaries',
+  "an annotation's own ADR wins over one cited earlier in the same claim",
+  fwdShadowed && fwdShadowed.adr,
+);
 
 // ── structure the views depend on ────────────────────────────────────────────
 
 assert(
-  g.counts.modules === 6,
-  'six modules (two documented, one ghost, one undeclared, one unparseable build order, one stale-reviewed)',
+  g.counts.modules === 7,
+  'seven modules (two documented, one ghost, one undeclared, one unparseable build order, one stale-reviewed, one name-collider)',
   `got ${g.counts.modules}`,
 );
 assert(g.schema.match === true, 'fixture is on the schema version the viewer parses', JSON.stringify(g.schema));
@@ -258,8 +498,8 @@ for (const [kind, want] of [
 // open, `[x]` resolved and `[~]` won't-fix both discharge it. Won't-fix is an
 // operator decision recorded here and deliberately left no other trace.
 const bp = g.reviewPlans.find((p) => p.module === 'boldorder');
-assert(bp && bp.total === 7, 'every finding in the plan is tracked, routed included', `got ${bp && bp.total}`);
-assert(bp && bp.open === 4, 'only `[ ]` items hold the review open', `got ${bp && bp.open}`);
+assert(bp && bp.total === 8, 'every finding in the plan is tracked, routed included', `got ${bp && bp.total}`);
+assert(bp && bp.open === 5, 'only `[ ]` items hold the review open', `got ${bp && bp.open}`);
 assert(bp && bp.wontFix === 1, "`[~]` is counted as won't-fix", `got ${bp && bp.wontFix}`);
 
 // v0.31: the plan is readable, not just countable. A finding line splits into
@@ -294,11 +534,28 @@ assert(
   'the command carries its own finding reference, path included',
   f3 && f3.pointer,
 );
-const f4 = bp && bp.items[4];
+const f4 = bp && bp.items.find((i) => !i.id);
 assert(
   f4 && f4.class === null && f4.gist === 'a finding written as free prose, with no class and no pointer',
   'an unparseable line keeps its text rather than being dropped',
   JSON.stringify(f4),
+);
+
+// v0.40: an accepted ownerless-annotation finding carries the owner the operator
+// chose at the triage gate. It is the one fact in an owned item that nothing
+// diagnosed, so a resumed review — which skips diagnosis entirely — has no other
+// way to know it. It is not a brief: `review-routed-no-brief` must stay quiet on
+// it, and it must not be counted as a finding of its own.
+const fOwner = bp && bp.items.find((i) => i.id === 'F6');
+assert(
+  fOwner && !fOwner.routed && fOwner.brief === null,
+  'an Owner: sub-line is not a brief and does not make its item routed',
+  JSON.stringify(fOwner && { routed: fOwner.routed, brief: fOwner.brief }),
+);
+assert(
+  fOwner && (fOwner.annotations || []).some((a) => /^Owner:/.test(a)),
+  'the operator-chosen owner survives on the item, verbatim',
+  JSON.stringify(fOwner && fOwner.annotations),
 );
 
 // v0.32: a routed finding is deferred into a fresh session, so it carries the
@@ -454,7 +711,7 @@ assert(/immutable/.test(tl[0].message), 'and an immutable ADR body is named as u
     fs.writeFileSync(path.join(pre, '_bower/VERSION'), '0.31\n');
     const gPre = extract(pre);
     const bpPre = gPre.reviewPlans.find((p) => p.module === 'boldorder');
-    assert(bpPre && bpPre.total === 7, 'the pre-v0.32 copy still parses the plan', `got ${bpPre && bpPre.total}`);
+    assert(bpPre && bpPre.total === 8, 'the pre-v0.32 copy still parses the plan', `got ${bpPre && bpPre.total}`);
     assert(
       !gPre.health.some((h) => h.kind === 'review-routed-no-brief'),
       'review-routed-no-brief stands down on a pre-v0.32 project',
@@ -512,7 +769,7 @@ const descendants = (node) => [node, ...node.children.flatMap(descendants)];
 const renderedNodes = descendants(renderedReview);
 const renderedText = renderedReview.textContent;
 assert(renderedText.includes('Review · boldorder'), 'the review page renders its module heading');
-assert(renderedText.includes('3 of 7 disposed'), 'the review page renders disposition progress');
+assert(renderedText.includes('3 of 8 disposed'), 'the review page renders disposition progress');
 assert(renderedText.includes('ADR-0002'), 'the review page renders observations');
 assert(
   renderedNodes.some((node) => node.tagName === 'a' && node.attrs.href === '/open?path=docs%2Fmodules%2Fboldorder%2Fplan.md&line=12'),
@@ -540,8 +797,14 @@ const partial = briefRows.find((n) => n.textContent.includes('parse.ts:19'));
 assert(partial && !/Drift:/.test(partial.textContent), 'a partial brief renders only its populated fields', partial && partial.textContent);
 // Nothing in the file is invisible on the page: operator prose under a finding
 // and sections beyond Findings/Observations both render.
-const annRow = renderedNodes.find((node) => hasClass(node, 'ann'));
-assert(annRow && /Re-opened 2026-07-30/.test(annRow.textContent), 'the review page renders finding annotations', annRow && annRow.textContent);
+const annRows = renderedNodes.filter((node) => hasClass(node, 'ann'));
+const annText = annRows.map((node) => node.textContent).join(' | ');
+assert(/Re-opened 2026-07-30/.test(annText), 'the review page renders finding annotations', annText);
+assert(
+  /Owner: `?drifted\/ghost-feature/.test(annText),
+  'and the operator-chosen owner among them — the page is the plan\'s only rendering',
+  annText,
+);
 assert(
   renderedText.includes('Constitution') && renderedText.includes('consented to'),
   'the review page renders non-schema sections',
@@ -593,7 +856,7 @@ assert(g.constitution.items.length === 1, 'the Not-yet-in-force section is extra
 
 // framework-reference.md status.md spec.
 const pending = g.features.filter((f) => f.pendingVerification);
-assert(pending.length === 1, 'one feature has pending verification', `got ${pending.length}`);
+assert(pending.length === 2, 'two features have pending verification — one ✓ (the defect), one 🚧 (the honest shape)', `got ${pending.length}`);
 
 // v0.30 next-move scoping. Both spellings must be read, and a decorated
 // `(none — …)` must not be mistaken for live work: on a real project the bold
@@ -747,6 +1010,58 @@ assert(M.trailingMarker('🚧 (complete and previously ✓, reopened)') === '�
 assert(M.trailingMarker('Review: ✓ 2026-08-04 (13 of 13 features)') === '✓', 'a Review: line carries no dash and still reads');
 assert(M.trailingMarker('`x/integration.test.ts` — ✓ (2026-08-11)') === '✓', 'an integration Test: line reads past the backticked path');
 assert(M.trailingMarker('') === null && M.trailingMarker(null) === null, 'an empty or absent line is null, never a marker');
+
+// ──────────────────────────── the forward-written owner token
+
+// The owner is read from the token `feature \`<module>/<name>\`` and nothing
+// else — framework-reference.md → Forward-written claims says so, and every
+// example there uses it. A writer who reaches for `owner:` or `built by \`…\``
+// has produced an annotation the viewer must report as ownerless, because the
+// skills' sweeps read the same window and a near-miss form is one nothing
+// discharges. Checked on the reference's own two forms and the near misses.
+console.log('\nextract.cjs — the owner token the annotation is read by');
+const { scanForwardWritten } = require('../../_bower/viewer/lib/extract.cjs');
+const fwdScan = (md) => scanForwardWritten('x.md', '#x', md, {});
+const BANNER =
+  '## projects table shape\n\n> **Decided, not built** — [ADR-admin-project-custody](/docs/adr/admin-project-custody.md);\n> built by feature `projects/admin-project-custody`.\n';
+const INLINE =
+  'Ownership is a mutable column distinct from immutable creation provenance\n(**decided, not built** — [ADR-admin-project-custody](/docs/adr/admin-project-custody.md), feature `projects/admin-project-custody`).\n';
+const GATE = '> **Decided, not built** — gate 2026-09-03; built by feature `projects/Q-custody-column`.\n';
+const [bannerFw] = fwdScan(BANNER);
+assert(
+  bannerFw && bannerFw.names === 'projects/admin-project-custody' && bannerFw.qualified && bannerFw.adr === 'ADR-admin-project-custody',
+  "the reference's two-line banner yields the owner from its second line and the ADR from its first",
+  JSON.stringify(bannerFw),
+);
+const [inlineFw] = fwdScan(INLINE);
+assert(
+  inlineFw && inlineFw.names === 'projects/admin-project-custody' && inlineFw.line === 2,
+  "the reference's inline clause yields the owner and locates itself on the clause's line",
+  JSON.stringify(inlineFw),
+);
+const [gateFw] = fwdScan(GATE);
+assert(
+  gateFw && gateFw.gate === '2026-09-03' && gateFw.adr === null && gateFw.names === 'projects/Q-custody-column',
+  'a gate-decided annotation with a queue-item owner yields the date, no ADR, and the Q- owner',
+  JSON.stringify(gateFw),
+);
+for (const [form, md] of [
+  ['owner:', '> **Decided, not built** — [ADR-x](/docs/adr/x.md); owner: `projects/foo`.\n'],
+  ['built by `…`', '> **Decided, not built** — [ADR-x](/docs/adr/x.md); built by `projects/foo`.\n'],
+  ['a bare name', '> **Decided, not built** — [ADR-x](/docs/adr/x.md); `projects/foo` builds it.\n'],
+]) {
+  const [fw] = fwdScan(md);
+  assert(fw && fw.names === null && !fw.qualified, `a near-miss owner form (${form}) is read as ownerless, not guessed at`, JSON.stringify(fw));
+}
+assert(
+  fwdScan('> **Decided, not built** — [ADR-x](/docs/adr/x.md);\n> for the reasons the ADR gives;\n> and at length;\n> built by feature `projects/foo`.\n')[0].names === null,
+  'an owner beyond the two-line window is not found — the same window every sweep reads',
+);
+assert(
+  fwdScan('decided,  not built — feature `m/f`\n').length === 0 && fwdScan('decided but not built — feature `m/f`\n').length === 0,
+  'only the exact marker string counts, as the sweeps grep it — a looser match would be a marker no command could discharge',
+);
+assert(fwdScan('```\n> **Decided, not built** — feature `m/f`\n```\n').length === 0, 'a fenced example of the marker is not an annotation');
 
 // ──────────────────────────── the extractor → client contract
 

@@ -1,11 +1,11 @@
-# Bower Framework v0.39
+# Bower Framework v0.40
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
 ## Core Principles
 
 - **Planning before building** — design and document before implementing; avoid vibe coding.
-- **Living documentation** — docs represent current state, not history; update in place, git is the change log.
+- **Living documentation** — docs represent current state, not history; update in place, git is the change log. Where a doc must describe code that is decided but not yet built, the claim says so and the annotation is deleted when it comes true (`_bower/framework-reference.md` → *Forward-written claims*).
 - **Feature modules** — a module is a set of features that share data concerns and can be meaningfully integration-tested together; boundaries persist post-MVP. Boundary rationale lives in `architecture.md` under `## Software architecture`.
 - **AI-readable context** — structure documentation for discoverability by agents and humans alike.
 
@@ -65,7 +65,7 @@ ADRs record **cross-cutting commitments** — decisions that constrain more than
 
 ## Working Conventions
 
-- **Before touching any component, read its `plan.md`** — purpose, file locations, integration points. Don't search the codebase when the map exists.
+- **Before touching any component, read its `plan.md`** — purpose, file locations, integration points. Don't search the codebase when the map exists. The one exception the map declares about itself: a claim annotated **decided, not built** describes code that does not exist yet — treat it as non-existent, verify that part against the code, and if this change is what makes it true, delete the annotation when you reconcile (`_bower/framework-reference.md` → *Forward-written claims*).
 - **Changes made outside `/b-*` commands** still reconcile docs before they're declared complete: code change → update the feature's `status.md` (and `plan.md` if behaviour/components/testing shifted); new feature appearing in code → recommend `/b-feature add`; cross-cutting decision introduced or invalidated → run `/b-adr`. These redirects are *soft* — surface the skill, proceed ad-hoc if the user confirms.
 - **Drift you notice but weren't asked to fix goes in the module's findings queue.** Any command that surfaces a real problem outside its own scope offers — at a gate, never silently — to record it in `docs/modules/<module>/findings.md`: one line plus a `Location:` / `Drift:` / `Resolution:` brief, written while the evidence is still in context. The queue implies no review state and holds nothing open; it is drained by whoever runs the items and deleted when empty. Schema and rules: `_bower/framework-reference.md` → *Findings queue*.
 - **Project state never lives in agent memory.** Every fact required to work on this project is in the repository; a runtime's persistent memory store may hold facts about the operator and their machine, never about the project. The test: would a fresh session, on any runtime, on a clean clone, with no memory, get this right? If not, it belongs in `docs/` — promote it to its home and delete the entry. Scaffolded projects disable per-project memory where the runtime keeps one; the policy and the mechanism: `_bower/framework-reference.md` → *Document Layers and Ownership*.
