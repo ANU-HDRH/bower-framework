@@ -182,7 +182,7 @@ Whatever command marks the feature ✓ compresses the file in the same pass. **C
 
 ## module-status.md — Integration and Build Order
 
-`module-status.md` captures four things: the module-boundary integration test (location and status), the build order of features within the module, free-form integration notes, and the module's review state. Populated during full design (Stage 4), maintained as features progress. Budget ~250 words total.
+`module-status.md` captures four things: the module-boundary integration test (location and status), the build order of features within the module, free-form integration notes, and the module's review state. Populated during full design (Stage 4), maintained as features progress. **Budget is density, and density is an inspection heuristic:** ~30 words per `## Build order` entry, plus the integration and review lines — a four-feature module lands near 150 words, a twelve-feature one near 400. Well past that is a reason to read the file, never a finding in itself. What may be removed from it is fixed by its shape; see *Compaction* below.
 
 ```markdown
 ## Module integration
@@ -205,9 +205,35 @@ Order reflects intra-module dependencies identified at design time; reorderings 
 
 **`## Build order` is the module's feature roster, and the only one.** No other document lists a module's features. In particular, `architecture.md`'s `## Software architecture` entry states the module's purpose, data-concern boundary, and inter-module dependencies, and deliberately stops there — it does not enumerate features, because nothing maintains a second copy and a second copy therefore drifts. When you need to know what a module contains, read this section; when you add or remove a feature, this is the only roster to update.
 
-**Pull-forward annotation.** Build order is a prediction made at design time, and dependencies routinely cause an earlier feature to absorb part of a later one's scope. That is benign in itself — it mirrors how the work actually falls out. What is not benign is the artifact it leaves behind: the later feature's `plan.md` was written before the absorption and now overstates its own scope, and that plan is exactly what the later feature's implementation pass is handed as its contract. So when a feature absorbs scope from a later entry, `/b-feature`'s reconcile annotates *that entry* with one clause naming who absorbed what, then a `Remaining:` clause naming what is still to build. The `Remaining:` half is the part that does the work — it is what stops the next pass from re-implementing what already exists. Add the annotation only when scope genuinely moved, and keep it to one line: the ~250-word budget is shared with the integration notes.
+**Pull-forward annotation.** Build order is a prediction made at design time, and dependencies routinely cause an earlier feature to absorb part of a later one's scope. That is benign in itself — it mirrors how the work actually falls out. What is not benign is the artifact it leaves behind: the later feature's `plan.md` was written before the absorption and now overstates its own scope, and that plan is exactly what the later feature's implementation pass is handed as its contract. So when a feature absorbs scope from a later entry, `/b-feature`'s reconcile annotates *that entry* with one clause naming who absorbed what, then a `Remaining:` clause naming what is still to build. The `Remaining:` half is the part that does the work — it is what stops the next pass from re-implementing what already exists. Add the annotation only when scope genuinely moved, and keep it to one line.
 
 If the absorption leaves nothing to build, the entry stays ⏸ with `Remaining: none — verify and close via /b-feature <name>`. Do **not** mark it ✓ on the strength of another feature's criteria having passed: ✓ means *this* feature's agreed criteria were verified, and the code that landed early has not been checked against them. The entry earns ✓ through a normal (and now very short) `/b-feature` pass, or the operator removes it as no longer a distinct feature.
+
+**Compaction.** The file's complete shape is three headings and the lines under them, and nothing else:
+
+```markdown
+## Module integration
+
+Test: <path or "not yet defined"> — <marker>
+Notes: <one line>
+Pending verification: <outstanding module-level manual checks>   ← only while some remain
+
+## Build order
+
+1. <feature-name> — <marker>   ← optionally a pull-forward clause carrying `Remaining:`
+
+## Module review
+
+Review: <state, with date and roster count at ✓>
+```
+
+**A shape mismatch names a candidate, not a verdict.** Content outside the shape is where accretion is found; the two are not the same thing. Delete what is **known duplication or history** — a restatement of what a feature does, a copy of acceptance criteria, a table whose data is maintained in another document, narrative that recounts how the module got here, a record of what a line once said. A table or a paragraph is not accretion by being a table or a paragraph: it qualifies only once you can name where its content is already kept, or that it describes the past. Everything else outside the shape is **left exactly as it is and named in the run summary**, never moved, summarised or rewritten on the spot: deciding which document should hold it is a design judgement, and a compaction pass is not where that gets made. Feature behaviour lives in `plan.md`, module purpose and dependencies in `architecture.md` `## Software architecture`, verification in `status.md`.
+
+**Nothing inside the shape is ever touched by a compaction** — not a marker, a feature name, a `Remaining:` clause, a `Pending verification:` line or the `Review:` line. Compaction removes prose; it never removes state.
+
+**Who compacts:** `/b-feature` reconcile, `/b-module` Step 5, `/b-integration` Step 5, and `/b-review` at closeout — in the pass where each already writes the file, with no gate, because the file is agent-owned. Commands that write into the shape without compacting — `/b-design` Stage 4, `/b-ui`, `/b-review` when it opens a review — leave it to those four.
+
+**Over-budget is never a finding**, and never work for `/b-feature`. Only a **shape violation** is reportable: a shape-conformant file can exceed density honestly through long `Remaining:` clauses, and there is then nothing in it a compaction is allowed to cut.
 
 **Module-level status is a floor, not a sum.** `/b-index` derives a module's status as the worst across both feature markers and the module-integration marker. A module with all features ✓ but `## Module integration` still ⏸ surfaces as 🚧 — making the constitution's verified-for-✓ rule observable rather than aspirational. The review state (below) is **not** an input to this floor.
 

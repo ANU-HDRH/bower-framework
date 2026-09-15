@@ -87,6 +87,9 @@ Handling:
    - `Test:` line — set the path you wrote, and the marker (✓ if all PASS, 🚧 if PENDING USER, 🟡/🔴 if known issues).
    - `Notes:` line — refresh if the as-built test diverged from Stage 4's prose.
    - If `Pending verification:` items remain, add a line listing them under the `## Module integration` section.
+
+   **Compact while you are in the file.** Delete known duplication or history; leave anything else outside the file's shape exactly as it is and name it in the closing summary. → `_bower/framework-reference.md` → *Compaction*.
+
 2. Do **not** update `scope.md` to record that a criterion is now met — criteria carry no status, and `/b-recap` derives achievement from module completion (this test's ✓ is part of that derivation). Touch `scope.md` only in the rare case that building the test revealed the scope boundary or a criterion's wording to be wrong.
 3. Run `/b-index` so the module-level marker reflects the new module-integration state.
 

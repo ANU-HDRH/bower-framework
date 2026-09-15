@@ -226,6 +226,8 @@ On confirmation:
 1. If any status marker changed, run `/b-index` so module status reflects reality. If `/b-index` is not invokable, correct the module-level marker in `module-status.md` and leave `docs/index.md` to the next regeneration — never hand-edit the index (see *Status is never curated* in `b-index.md`).
 2. If a reconcile changed a feature's resumption picture, refresh that feature's `status.md` accordingly (≤150 words, current-state).
 3. Write `Review: ✓ YYYY-MM-DD (<N> of <N> features)` in `module-status.md`'s `## Module review`, using today's date and the diagnosis-time roster count — from the plan's preamble when a plan exists, or the count retained from Step 3 for a clean review — **not** a recount of `## Build order` now: features added during mediation were not part of this review.
+   **Compact while you are in the file.** Delete known duplication or history; leave anything else outside the file's shape exactly as it is and name it in the closing summary. → `_bower/framework-reference.md` → *Compaction*.
+
 4. **Delete `docs/modules/<module>/review-plan.md`.** `Review: ✓` is now the record; `✓` with a plan on disk is a broken state.
 
 Steps 3 and 4 are one unit — never do one without the other. (A clean review is not an exception: it has no plan, so step 4 is vacuously done, not skipped.)

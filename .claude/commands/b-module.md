@@ -137,6 +137,9 @@ Skip only if no Decision impact was identified at the gate. If the user rejects 
 
 9. **`docs/ui.md`** — if the gate's UI impact was anything but `none`, reconcile now. Rewrite the regions this module owns under the affected `### <Screen>` sections and leave other modules' regions alone; add a `#### <Region> — <this module>` heading for each new region; create the file with only the sections this module requires if it does not exist (shape: `_bower/framework-reference.md` → *UI Changes* → *`## Screens` is headed regions*). Current-state doc, not history.
 10. Update integration notes in `module-status.md` `## Module integration` `Notes:` if behaviour differs from Stage 4's assumptions. Confirm the `Test:` marker reflects the real outcome of Step 3.9.
+
+    **Compact while you are in the file.** Delete known duplication or history; leave anything else outside the file's shape exactly as it is and name it in the handoff. → `_bower/framework-reference.md` → *Compaction*.
+
 11. Update `scope.md` only if the build moved the scope boundary, changed a non-goal, or requires a criterion to be added, deleted, reworded, or re-pointed at a different module. Do **not** mark criteria as met — they carry no status.
 12. **Backstop the *decided, not built* discharge.** 3.7 and 3.8 did the work per feature; this checks the loop did it:
 

@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.41 | 2026-09-15 | `module-status.md`'s word budget becomes a density heuristic (~30 words per build-order entry) plus a structural shape test; out-of-shape content is a compaction candidate, deleted only where it is known duplication or history and otherwise reported, at the reconcile step of `/b-feature`, `/b-module` and `/b-integration` and at `/b-review` closeout; over-budget is never a review finding | judgement |
 | v0.40 | 2026-09-04 | A `plan.md` or `architecture.md` claim about code that is decided but not built is annotated `decided, not built`, names the feature that will make it true, and is treated as non-existent until that feature lands; `/b-design` writes them, `/b-feature` Step 6 and `/b-module` Step 3.7 delete them as they build, and the viewer audits their lifecycle | judgement |
 | v0.39 | 2026-08-25 | Merging for small teams: `/b-merge` wraps every merge in either direction — pre-merge conflict-risk report, post-merge `docs/` resolution by class (rule or gate), slug-collision repair, `/b-index`, and a coherence pass over both sides' doc changes; *Working in parallel* rules in the reference and a *Working as a team* section in the README. Second of two versions for multi-writer projects | none |
 | v0.38 | 2026-08-25 | Identifiers are names, never counts: new ADRs are `ADR-<slug>` in `<slug>.md` and new findings-queue items `Q-<slug>`, legacy ordinals permanent; `docs/ui.md` screens become headed regions owned by one module; a numbered-migration convention names who renumbers. First of two versions for multi-writer projects | judgement |
@@ -33,6 +34,33 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.41 — 2026-09-15
+
+### A module-status budget that scales with the module, and compaction instead of a finding
+
+`module-status.md` carried a flat `~250 words`, which a large module cannot meet honestly and which said nothing about *what* to cut — so the file grew, `/b-index` reported it, and the report became a review finding routed to `/b-feature`, a gated command opened to delete a paragraph from an agent-owned file. Two rules replace the number: **density** (~30 words per `## Build order` entry plus the integration and review lines) as an inspection heuristic, and the file's **shape** as the test of what may be removed. Content outside the shape is a candidate, not a verdict — known duplication or history is deleted, anything else is left in place and reported. Compaction happens in the pass where a command is already writing the file, takes no gate, and over-budget is never a finding. Shape, semantics and the list of compacting commands: `_bower/framework-reference.md` → *Compaction*.
+
+- **`_bower/framework-reference.md`** — *module-status.md* carries the density heuristic and a new *Compaction* block: the complete shape (including the headings and the optional `Pending verification:` line), candidate-not-verdict deletion semantics, the rule that nothing inside the shape is ever touched, which four commands compact and which writers do not, and over-budget-is-never-a-finding. The pull-forward annotation no longer cites a shared word ceiling.
+- **`_bower/framework.md`** — Document Authority row for `modules/**/module-status.md`.
+- **`skills-src/commands/b-feature.md`** (Step 6.9), **`b-module.md`** (Step 5.10), **`b-integration.md`** (Step 5.1), **`b-review.md`** (closeout) — one clause each, pointing at the reference for the shape.
+- **`skills-src/commands/b-index.md`** — reports shape violations as their own run-summary line; word count alone is not reportable. It still writes nothing.
+- **`skills-src/agents/bower-reviewer.md`**, **`_bower/review-schema.md`** — document length is not a finding, in any dimension or class; a matching failure mode.
+- **`skills-src/agents/bower-analyst.md`** — drops the `~250 words` aside.
+- **`_bower/roadmap.md`** — whether compaction belongs inline or in a subagent, with its revisit trigger.
+
+### Migration
+
+Judgement. For each `docs/modules/<module>/module-status.md` in the project:
+
+1. Read the file. Its shape is three headings and the lines under them: `## Module integration` with a `Test:` line, a one-line `Notes:` line and — only while module-level manual checks are outstanding — a `Pending verification:` line; `## Build order` with numbered entries, each a feature name, a status marker and optionally a pull-forward clause carrying `Remaining:`; `## Module review` with a `Review:` line.
+2. **Delete what is outside that shape *and* is known duplication or history** — a restatement of what a feature does, a copy of acceptance criteria, a table whose data is maintained in another document, narrative recounting how the module got here, a record of what a line used to say. Being a table or a paragraph does not qualify content: you must be able to name where its content is already kept, or that it describes the past. If you cannot, it goes to step 3. Do not summarise what you delete; `plan.md` (feature behaviour), `architecture.md` `## Software architecture` (module purpose, boundary, dependencies) and `status.md` (verification) already hold their own copy.
+3. **Leave everything else outside the shape exactly as it is** — content that says something no other document says, or that you cannot confidently classify. Do not move it to another document as part of this upgrade. List each one for the operator: the file, what the content is, and why you left it.
+4. **Change nothing inside the shape.** Not a marker, a feature name, a `Remaining:` clause, a `Pending verification:` line or the `Review:` line. Compaction removes prose; it never removes state.
+
+Report per module: the file, its approximate word count before and after, and anything left in place under step 3. Nothing needs to be run afterwards — no markers changed, so `docs/index.md` is unaffected.
 
 ---
 

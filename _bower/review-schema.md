@@ -145,6 +145,7 @@ Findings worth surfacing that have no owned or routed resolution — most common
 - **No prose between sections.** The report is structured data; commentary belongs inside sections.
 - **The reviewer is read-only.** It surveys and reports; it never writes, edits, or commits. Acting on the report is the calling command's job, behind the triage gate.
 - **`clean` is a first-class outcome.** A dimension with no findings is a positive assertion that the reviewer checked and found no drift — not a sign it didn't look. The `## Considered and ruled out` section is where that diligence is evidenced.
+- **Document length is never a finding.** Not a bloated `module-status.md`, not a verbose ADR or plan. `module-status.md` is compacted in place by `/b-feature`, `/b-module`, `/b-integration` or `/b-review` as they write it (`_bower/framework-reference.md` → *Compaction*); the reviewer neither reports it nor classes it.
 - **No new design.** The reviewer reports drift against what already exists; it does not propose new features, new modules, or new architecture. A finding whose resolution is "build something new" is out of scope — the reviewer notes it as an observation and lets the operator decide whether to run `/b-feature` or `/b-design`.
 
 ## Worked example

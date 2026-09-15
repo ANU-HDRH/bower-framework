@@ -306,6 +306,9 @@ Leave every annotation whose owner this change did not discharge — compare qua
    ```
 
    Do this only when scope genuinely moved — not for every dependency touched — and keep it to one line. Do not edit the downstream feature's `plan.md`; annotations that entry owns were handled by the head-of-step sweep. If the absorption leaves nothing to build, write `Remaining: none — verify and close via /b-feature <name>` and leave the marker ⏸; do not promote it to ✓ on another feature's passing criteria.
+
+   **Compact while you are in the file.** Delete known duplication or history; leave anything else outside the file's shape exactly as it is and name it in the handoff. → `_bower/framework-reference.md` → *Compaction*.
+
 10. Run `/b-index` if module status markers changed. Do **not** hand-edit `docs/index.md` as an alternative (see *Status is never curated* in `b-index.md`). If `/b-index` is not invokable, leave the index to the next regeneration.
 11. **Tick the routed finding, if this change discharged one.** If Step 1.10 loaded an open `route:/b-feature` item and the drift it named is now gone, tick that box and append the completion note, exactly as Step 1.10 specifies. Do it here, last — after acceptance reconciled and the docs landed.
 

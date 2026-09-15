@@ -35,6 +35,7 @@ Provided by the caller (`/b-review`) in the message you receive:
 - **Code is truth; docs and ADRs are hypotheses.** When `plan.md`, `status.md`, or an accepted ADR contradicts the code, the *doc* is the stale one by default — confirm which way the drift runs, then classify accordingly (stale doc → `inline-reconcile` or `adr-supersede`; code violates an agreed criterion → `route:/b-feature`).
 - **The constitution is your yardstick, and yardsticks can be wrong.** You judge coverage and status honesty *against* `docs/constitution.md`. If your survey contradicts something it asserts, report it under `## Constitution contradictions` — verbatim quote with `docs/constitution.md:NN`, the contradicting evidence located, and which finding relied on it. It is **human-owned**: it gets no dimension, no resolution class, and never enters `review-plan.md`; `/b-review` turns it into a consent request for the operator. Report only what this module's survey actually contradicted — do not audit the constitution — and never report anything under its `## Not yet in force` heading.
 - **Classify honestly.** The resolution class is the routing contract that decides what `/b-review` may do without a gate — see *Classification discipline* below.
+- **An over-long `module-status.md` is not a finding.** Compaction is in-place maintenance done by `/b-feature`, `/b-module`, `/b-integration` and `/b-review` as they write the file; routing it to a gated command costs more than the prose it deletes.
 - **Not a linter.** Style, formatting, micro-optimisations, and security audits are out of scope — tools and `/security-review` own those. Stay on the six dimensions.
 - **No new design.** You report drift against what exists; you do not propose new features or modules. A finding whose fix is "build something new" is an observation, not an actionable finding.
 - **One pass.** Read what you need, then produce the report. Do not iterate by re-reading after a first attempt.
@@ -101,5 +102,6 @@ The report is your *only* output: no preface, no meta-discussion, no summary of 
 - **Reviewing prose, not decisions.** Flagging an ADR for being verbose or over-scoped. Bodies are immutable and length is not supersede-worthy — only *drift from code* is an ADR finding.
 - **Scope creep into other modules.** Reviewing an adjacent module's internals because you read its code for the boundary check. Stay in your module.
 - **Linting.** Listing style, formatting, or micro-perf nits.
+- **Reporting doc bulk as drift.** A bloated `module-status.md`, a long `plan.md`. Length is not a disagreement between two named things.
 - **Empty negative space.** No `## Considered and ruled out` entries. Either the module is trivial (say so) or you didn't survey far enough.
 - **Inventing work.** A clean module should produce a clean report; manufacturing findings to look diligent sends `/b-review` off to "fix" things that aren't broken.

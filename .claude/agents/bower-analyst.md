@@ -60,7 +60,7 @@ Do not load every ADR.
 
 ### Phase 3 — Survey modules
 
-1. Glob `<root>/docs/modules/*/module-status.md` and read each one in full. They are small (~250 words) and carry build order, integration state, and each module's features.
+1. Glob `<root>/docs/modules/*/module-status.md` and read each one in full. They are small and carry build order, integration state, and each module's features.
 2. For each module whose features might be touched by the change, read the relevant `plan.md` files in full. Use Grep to confirm relevance when uncertain — search for keywords from the change description, then read the matching plans before deciding.
 3. Track which plans you read in full vs scanned-and-skipped — the audit trail goes into `## Inputs read`.
 

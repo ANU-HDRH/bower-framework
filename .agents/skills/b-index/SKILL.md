@@ -25,7 +25,7 @@ Two boundaries on that rule:
 - **Never re-seed a status section a project has removed.** Its absence is a decision, not a gap. If `docs/index.md` has no status prose, there is nothing to do here — do not add one, and do not restore one from the seed template below.
 - **Static orientation facts are not status.** A row like `Stack | TypeScript, Postgres` or `Deployment | Fly.io` describes what the project *is*, not what state it is *in*; it has no marker that could replace it and it does not grow per feature. Preserve those. The test is whether a completed feature would ever prompt an edit to the cell: if yes it is status, if no it is orientation.
 
-**Curated does not mean unbounded.** Preserved sections still carry the style budgets in `_bower/framework.md`'s Document Authority table. Where a curated section has grown past its budget, do not silently rewrite it — **report it in the run summary**: name the section, its size, and the derived source that already covers it. Preservation protects a project's structure, not its accretion. Extend the same report to any `module-status.md` you read that is past its ~250-word budget; you are already reading all of them, and nothing else in the framework observes that ceiling.
+**Curated does not mean unbounded.** Preserved sections still carry the style budgets in `_bower/framework.md`'s Document Authority table. Where a curated section has grown past its budget, do not silently rewrite it — **report it in the run summary**: name the section, its size, and the derived source that already covers it. Preservation protects a project's structure, not its accretion. Extend the same report to any `module-status.md` you read that carries content outside its shape (`_bower/framework-reference.md` → *Compaction*); you are already reading all of them, and nothing else in the framework observes it.
 
 **Compress on completion.** When a module reaches ✓, any preserved narrative that enumerates its features individually collapses to the module-level outcome — one clause for the module, not one per feature. This is the compaction that keeps a curated section flat over a project's life, and it is the *only* point at which non-status per-feature detail in an index legitimately disappears (status prose goes whenever *Status is never curated* says it goes).
 
@@ -156,7 +156,8 @@ Close with a short report — a few lines, not a narrative. It carries the thing
 
 - Which files were written, and the module / feature / ADR counts.
 - **Status prose reduced or deleted**, per *Status is never curated*: name the section and what replaced it. This is an edit the operator did not ask for, so it is always reported.
-- **Curated sections over budget**, and any `module-status.md` over its ~250-word budget: name the section, its approximate size, and the derived source that already covers its content. Report only — the operator decides.
+- **Curated sections over budget**: name the section, its approximate size, and the derived source that already covers its content. Report only — the operator decides.
+- **`module-status.md` files carrying content outside their shape**: name the file and what the out-of-shape content is. Report only — `/b-feature`, `/b-module` and `/b-integration` compact it at their reconcile step, and `/b-review` at closeout. Word count alone is not reportable: a conformant file can exceed its density budget honestly.
 - Modules with no `## Software architecture` entry (description omitted), unclassified ADRs, malformed ADRs, and any one-sided or dead `narrows` / `narrowed-by` pair.
 - Modules whose `module-status.md` has no `## Module review` section (review clause omitted) — the project predates the section and its review state is unrecorded.
 
