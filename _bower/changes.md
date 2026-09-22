@@ -52,9 +52,16 @@ UI carries less ceremony than the rest of the framework, and nothing said so —
 - Compaction keeps v0.41's test: a content class names a *candidate*, and only verified duplication or obsolete history is deleted.
 - The viewer parses no `docs/ui.md` content, so it is unaffected.
 
+### A prose reference to a transient item pins the commit that held it
+
+The no-linking rule fixed link breakage and stopped there: a backticked path plus a finding ID is link-safe and still dangles the day the file is deleted. The item is not lost — it survives in history — but recovering it means knowing to search a path that no longer exists, which the reader following a dangling ID is by construction the least likely to know. A commit hash beside the path turns that archaeology into one `git show <hash>:<path>`. Any commit holding the item works, so the writer pins the one they are reading from. Reported from a downstream project after a drained findings queue left a conformant reference with nothing behind it.
+
+- **`_bower/framework.md`** — *Working Conventions*, the transient-file bullet: one clause for the commit pin.
+- **`_bower/framework-reference.md`** — *Findings queue* rule 4 carries which commit to pin and what dangles without it.
+
 ### Migration
 
-Judgement, in two parts.
+Judgement, in two parts, both arising from the UI change. The commit-pin change requires no project-side work: existing prose references without a hash stay valid, and one is added when the sentence is next edited.
 
 **1. `docs/ui.md`.** Skip if the project has no `docs/ui.md`. Otherwise read the whole file. Its sections are `## Navigation`, `## Screens`, `## Layout grammar`, `## Interaction patterns`, `## Visual language`; under `## Screens`, one `### <Screen> (<route>)` per screen and one `#### <Region> — <owning module>` per region.
 
@@ -73,18 +80,6 @@ Judgement, in two parts.
    Report: the file's word count before and after, and the sections you cut from with one clause each.
 
 **2. ADRs.** Do **not** revisit, supersede or retire existing ADRs — bodies are immutable and a retroactive pass over style decisions is churn. Instead, read `docs/adr/index.md` and list for the operator any accepted ADR whose decision a later change would reverse by editing a stylesheet alone, with one clause each on why. That list is information, not work: the operator decides whether anything follows. The new test governs ADRs written from now on.
-
-
-### A prose reference to a transient item pins the commit that held it
-
-The no-linking rule fixed link breakage and stopped there: a backticked path plus a finding ID is link-safe and still dangles the day the file is deleted. The item is not lost — it survives in history — but recovering it means knowing to search a path that no longer exists, which the reader following a dangling ID is by construction the least likely to know. A commit hash beside the path turns that archaeology into one `git show <hash>:<path>`. Any commit holding the item works, so the writer pins the one they are reading from. Reported from a downstream project after a drained findings queue left a conformant reference with nothing behind it.
-
-- **`_bower/framework.md`** — *Working Conventions*, the transient-file bullet: one clause for the commit pin.
-- **`_bower/framework-reference.md`** — *Findings queue* rule 4 carries which commit to pin and what dangles without it.
-
-### Migration
-
-None — no project-side changes required. Existing prose references without a hash stay valid; add one when next editing the sentence.
 
 ---
 
