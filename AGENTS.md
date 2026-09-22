@@ -52,6 +52,7 @@ Never put in an entry: **process narrative** (how it was found, what was surveye
 
 **`### Migration` is exempt from all of the above** — `/b-upgrade` executes those notes in a downstream project, so verbosity there is functional:
 
+- **One `### Migration` per version, last, whatever the version contains.** A version that rolls up several sub-changes still gets one, and writing it is a *merge*: fold every sub-change's notes into a single ordered set of project-side work, and where a sub-change needs nothing, say so as a clause inside that block rather than as a `### Migration` of its own. `/b-upgrade` identifies "the migration content" within a version entry as one thing, and treats an absent or `"none"` section as a no-op — so a second block trailing the real one, reading `None — no project-side changes required`, can no-op the whole upgrade. Caught at v0.42, which was the first version to carry two.
 - **Self-contained.** No "see v0.10's note" — `/b-upgrade` reads one version at a time, so a cross-reference dangles.
 - **Written for a model.** Name the files to read, what to look for, what to write. "Update `architecture.md`" is too vague; "for each module under `docs/modules/`, read its `module-status.md` … add a `## Software architecture` section with one entry per module covering purpose, boundary and dependencies" is the shape.
 - **Say "none" explicitly** when there is no project-side work: `None — no project-side changes required.` Silence is ambiguous.
