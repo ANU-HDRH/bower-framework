@@ -278,9 +278,12 @@ Leave every annotation whose owner this change did not discharge — compare qua
 **All intents:**
 
 6. **`docs/ui.md`** — if Step 2's Impact section listed UI sections to update, reconcile now:
-   - If `docs/ui.md` exists, update affected sections to reflect the new state (current-state doc, not history).
+   - If `docs/ui.md` exists, update affected sections to reflect the new state (current-state doc, not history) — only where an **invariant** moved. Visual change alone writes nothing here.
    - If it does not exist *and* this change introduced UI (the project's first interface scaffolding), create `docs/ui.md` with only the sections this change requires. Stay at invariant-level: navigation map, screens, layout grammar, interaction patterns, visual-language pointers. `## Screens` is one `### <Screen> (<route>)` section per screen, each region of it under a `#### <Region> — <owning module>` heading — never a table (shape: `_bower/framework-reference.md` → *UI Changes*). When updating an existing screen, rewrite the region this change owns and leave the others' regions alone.
    - If Step 2 listed UI impact as `none`, skip.
+
+   **Compact while you are in the file.** Delete only verified duplication or obsolete history — content whose named home you opened and found already holding the same fact. Leave anything else exactly as it is and name it in the handoff. Never remove a region heading. → `_bower/framework-reference.md` → *UI Changes* → *Compaction*.
+
 7. Rewrite this feature's `status.md` from scratch — never append to the previous contents. Which form you write depends on the marker this feature is about to carry in Step 9 (schema: `_bower/framework-reference.md`, "status.md — Resumption Framing"). (Skip this for remove — the file is gone.)
 
    **If the feature lands ✓** — every agreed criterion PASS, nothing PENDING USER — write the **terminal form**: the marker, a `## Verification` section (date, what was run, what passed, plus a `Qualification:` line if the evidence carries a standing caveat), and `## Next move` → `(none — complete)`. ~50 words. Compress, don't delete — `## Verification` is the only durable record that the criteria were exercised. A `Qualification:` bounds evidence that *was* gathered; it is never a `Pending verification:` line, which names evidence that wasn't.

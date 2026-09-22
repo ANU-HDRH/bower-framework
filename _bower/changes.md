@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.42 | 2026-09-22 | UI records nothing by default, then a code comment, then `docs/ui.md` only where an invariant moved, then a *new* ADR only where something outside the stylesheet depends on it — existing ADRs bind every UI change; `docs/ui.md` gains a density budget and four content classes it does not hold; a prose reference to a transient item pins a commit that held it | judgement |
 | v0.41 | 2026-09-15 | `module-status.md`'s word budget becomes a density heuristic (~30 words per build-order entry) plus a structural shape test; out-of-shape content is a compaction candidate, deleted only where it is known duplication or history and otherwise reported, at the reconcile step of `/b-feature`, `/b-module` and `/b-integration` and at `/b-review` closeout; over-budget is never a review finding | judgement |
 | v0.40 | 2026-09-04 | A `plan.md` or `architecture.md` claim about code that is decided but not built is annotated `decided, not built`, names the feature that will make it true, and is treated as non-existent until that feature lands; `/b-design` writes them, `/b-feature` Step 6 and `/b-module` Step 3.7 delete them as they build, and the viewer audits their lifecycle | judgement |
 | v0.39 | 2026-08-25 | Merging for small teams: `/b-merge` wraps every merge in either direction — pre-merge conflict-risk report, post-merge `docs/` resolution by class (rule or gate), slug-collision repair, `/b-index`, and a coherence pass over both sides' doc changes; *Working in parallel* rules in the reference and a *Working as a team* section in the README. Second of two versions for multi-writer projects | none |
@@ -34,6 +35,56 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.42 — 2026-09-22
+
+### Design work records nothing by default; the A in ADR does not stretch to a style change
+
+UI carries less ceremony than the rest of the framework, and nothing said so — so UI work proposed ADRs for choices a stylesheet edit reverses, and wrote narrative into `docs/ui.md` when that was refused. Four rungs now, each reached by the change crossing that line and never by the effort it took: **nothing** (the normal outcome of design work), a **comment beside the code**, **`docs/ui.md`** where an invariant moved *and* the code cannot carry it, a **new ADR** only where something outside the stylesheet depends on the decision. The ADR test is asymmetric — it governs writing one, never checking them, since brand and accessibility ADRs are broken from inside the stylesheet. `docs/ui.md` gains the budget it never had: density at ~50 words per screen region and per named convention, and four content classes with homes elsewhere. Reasoning: `_bower/rationale.md` → *UI Changes*.
+
+- **`_bower/framework.md`** — `ui.md` gets its own Document Authority row with the density budget; *ADRs — the Short Form* carries the stylesheet test and its asymmetry; *UI Changes* opens with the no-record default.
+- **`_bower/framework-reference.md`** — *ADRs* gains *UI is where "cross-cutting" misleads*; *UI Changes* gains the four rungs, *What `docs/ui.md` holds*, the density heuristic, compaction and the heading-survival rule.
+- **`_bower/rationale.md`** — three principles under *UI Changes*.
+- **`skills-src/commands/b-ui.md`** — Step 2's UI doc impact admits `none`, which skips Step 5's `docs/ui.md` item entirely; the test guards creation as well as update, so a `/b-ui` run on visual work no longer manufactures a document. Decision impact checks accepted ADRs whatever the change touches.
+- **`skills-src/commands/b-feature.md`**, **`skills-src/commands/b-module.md`** — visual change alone writes nothing to `docs/ui.md`; compaction at the reconcile step.
+- Compaction keeps v0.41's test: a content class names a *candidate*, and only verified duplication or obsolete history is deleted.
+- The viewer parses no `docs/ui.md` content, so it is unaffected.
+
+### Migration
+
+Judgement, in two parts.
+
+**1. `docs/ui.md`.** Skip if the project has no `docs/ui.md`. Otherwise read the whole file. Its sections are `## Navigation`, `## Screens`, `## Layout grammar`, `## Interaction patterns`, `## Visual language`; under `## Screens`, one `### <Screen> (<route>)` per screen and one `#### <Region> — <owning module>` per region.
+
+   1. **Find candidates** — content matching one of these four classes. A class names where accretion is found; it is *not* proof the content is duplicated, because the home a class names is where such content belongs, not evidence that this sentence is already in it. For each candidate, open the named home and look. **Delete only what you verified**: the same fact is already there, or the content describes the past (what was tried and rejected, what a line used to say). A constraint, a reason or a consequence recorded only in `docs/ui.md` is unique information whatever class it resembles — leave it and report it under step 2, because deleting it destroys the only copy.
+
+      - **One feature's behaviour** — a bullet or region describing what a single feature does, where no other screen follows the same convention. Its home is that feature's `docs/modules/<module>/<feature>/plan.md`. A convention that genuinely repeats across screens stays.
+      - **Implementation identifiers** — source file, function, component, view-model field and test names. The code is truth at that grain. Exception: keep the path of the stylesheet or token file, where the file itself is the invariant being described.
+      - **Backend mechanics** — wire formats, event or frame names, HTTP status codes, request sequencing. Home is `docs/architecture.md` or the feature's `plan.md`.
+      - **Decision narrative** — why a shape was chosen over another, what was built first and rejected, what a line used to say, and pixel detail (sizes, spacing, exact copy). If the decision is durable it is already an ADR or should be raised as one; otherwise it is history and git holds it.
+   2. **Leave everything else exactly as it is** — anything you did not verify, and anything you cannot confidently classify. Do not move it to another document as part of this upgrade, and do not rewrite it. List each one for the operator: the section, what the content is, and why you left it.
+   3. **Never remove a heading.** A `###` screen or `#### <Region> — <module>` heading is the address `/b-merge` merges on. A region whose body compacts to one sentence keeps its heading; a heading goes only when the region itself goes. Do not merge two regions, and do not collapse a region into prose under its screen.
+   4. Density after compaction is ~50 words per region and per named convention. It is a heuristic for where to look, not a target to hit — a region honestly needing 90 words keeps them.
+
+   This pass **only removes**. Do not add, expand or restructure anything in `docs/ui.md` during the upgrade, and do not create the file if the project does not have one.
+
+   Report: the file's word count before and after, and the sections you cut from with one clause each.
+
+**2. ADRs.** Do **not** revisit, supersede or retire existing ADRs — bodies are immutable and a retroactive pass over style decisions is churn. Instead, read `docs/adr/index.md` and list for the operator any accepted ADR whose decision a later change would reverse by editing a stylesheet alone, with one clause each on why. That list is information, not work: the operator decides whether anything follows. The new test governs ADRs written from now on.
+
+
+### A prose reference to a transient item pins the commit that held it
+
+The no-linking rule fixed link breakage and stopped there: a backticked path plus a finding ID is link-safe and still dangles the day the file is deleted. The item is not lost — it survives in history — but recovering it means knowing to search a path that no longer exists, which the reader following a dangling ID is by construction the least likely to know. A commit hash beside the path turns that archaeology into one `git show <hash>:<path>`. Any commit holding the item works, so the writer pins the one they are reading from. Reported from a downstream project after a drained findings queue left a conformant reference with nothing behind it.
+
+- **`_bower/framework.md`** — *Working Conventions*, the transient-file bullet: one clause for the commit pin.
+- **`_bower/framework-reference.md`** — *Findings queue* rule 4 carries which commit to pin and what dangles without it.
+
+### Migration
+
+None — no project-side changes required. Existing prose references without a hash stay valid; add one when next editing the sentence.
 
 ---
 

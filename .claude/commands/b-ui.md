@@ -51,9 +51,9 @@ Prepare a proposal covering:
 
 When alternatives are real, present 2-3 — not more. Each should commit the design to something distinguishable (not three flavours of the same answer). If you can only find one viable shape, surface this and ask the operator whether to proceed without alternatives or whether the request is actually a Path 2 (specified) change that doesn't need the gate.
 </branching_judgment>
-- **UI doc impact:** which sections of `docs/ui.md` will be created or updated (navigation map, screen inventory, layout grammar, interaction patterns), or "initialise `docs/ui.md`" if it doesn't yet exist.
+- **UI doc impact:** `none`, or which sections of `docs/ui.md` will be updated (navigation map, screen inventory, layout grammar, interaction patterns), or "initialise `docs/ui.md`" where it does not yet exist. Write `none` unless an invariant moves **and the code cannot carry it** — ownership, a cross-surface relationship, or a constraint, never something a reader of the code would arrive at anyway (→ `_bower/framework-reference.md` → *UI Changes*). `none` is a complete answer, including where the file does not exist: running this skill is not itself a reason to create one.
 - **Feature impact:** which feature `plan.md` files need updates, if any.
-- **Decision impact:** any accepted ADRs this touches (confirms, contradicts, narrows, or surfaces as a new cross-cutting decision). Write `none` if no ADRs are touched.
+- **Decision impact:** any accepted ADRs this touches (confirms, contradicts, narrows, or surfaces as a new cross-cutting decision). Check the accepted ADRs **whatever the change touches** — a stylesheet-only edit can still violate a live brand or accessibility commitment. The stylesheet test bears on the fourth only: a shape reversible inside the stylesheet does not *become* a new ADR (`_bower/framework.md` → *ADRs*). Write `none` only when you checked and none are touched.
 - **Acceptance:** how we'll know it's right. UI work is usually manual ("does this look and feel right?"), occasionally automated (Playwright e2e for an interaction pattern, visual-regression for a layout that should not drift). Be specific.
 
 ## Gate: Confirm or Adjust
@@ -103,12 +103,13 @@ Skip only if Step 2 listed Decision impact as `none`.
 
 ## Step 5: Update Documentation
 
-1. **`docs/ui.md`** — the primary reconcile target.
-   - If absent, create it with the sections relevant to this change. The doc grows as the UI grows; do not pre-emptively scaffold sections that don't yet apply.
-   - If present, update affected sections to reflect the new state. The doc represents *current state*, not history.
-   - Suggested sections (use what fits — do not invent empty headers): `## Navigation`, `## Screens`, `## Layout grammar`, `## Interaction patterns`, `## Visual language`.
+1. **`docs/ui.md`** — the usual reconcile target. **If Step 2's UI doc impact was `none`, skip this item entirely**: create nothing, write nothing, say so in the handoff. That test guards creation as well as update — an absent file stays absent.
+   - If absent and an invariant moved, create it with only the sections this change requires. The doc grows as the UI grows; do not pre-emptively scaffold sections that don't yet apply.
+   - If present, update the affected sections to reflect the new state. The doc represents *current state*, not history.
    - `## Screens` is **headed regions, never a table**: one `### <Screen> (<route>)` section per screen with a one-line purpose, then one `#### <Region> — <owning module>` heading per region of the screen, content beneath (shape: `_bower/framework-reference.md` → *UI Changes* → *`## Screens` is headed regions*). A screen composed by several modules is several regions; a change to one region rewrites that region and touches no other. If the file still carries a `| Screen | … |` table, do not add to it — that shape predates v0.38 and its migration converts it.
-   - Stay at invariant-level. Navigation map, screen inventory, layout patterns, interaction conventions — yes. Pixel coordinates, exact copy, component implementation details — no.
+   - Stay at invariant-level: where things live, how they relate, what repeats. Not one feature's behaviour, implementation identifiers, backend mechanics, decision narrative or pixel detail — each has a home elsewhere (`_bower/framework-reference.md` → *UI Changes* → *What `docs/ui.md` holds*).
+
+   **Compact while you are in the file.** Those four classes name candidates, not verdicts: delete only what you verified is duplicated in its named home or describes the past; leave everything else as it is and name it in the handoff. Never remove a region heading. → `_bower/framework-reference.md` → *UI Changes* → *Compaction*.
 2. **Feature `plan.md`** — update any that the proposal listed.
 3. **`module-status.md`** `## Module integration` `Notes:` — update if the change shifted what the module-boundary integration test must assert (rare for visual work; common when introducing a testable interaction pattern). Do not flip the marker.
 4. **`scope.md`** — only if the change shifted the scope boundary, changed a non-goal, or added/removed/reworded a success criterion. Never to record a criterion as met: criteria carry no status. Most UI work does not touch scope at all.

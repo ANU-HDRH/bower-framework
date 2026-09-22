@@ -136,6 +136,9 @@ Skip only if no Decision impact was identified at the gate. If the user rejects 
 ## Step 5: Finalise
 
 9. **`docs/ui.md`** — if the gate's UI impact was anything but `none`, reconcile now. Rewrite the regions this module owns under the affected `### <Screen>` sections and leave other modules' regions alone; add a `#### <Region> — <this module>` heading for each new region; create the file with only the sections this module requires if it does not exist (shape: `_bower/framework-reference.md` → *UI Changes* → *`## Screens` is headed regions*). Current-state doc, not history.
+
+   **Compact while you are in the file.** Delete only verified duplication or obsolete history — content whose named home you opened and found already holding the same fact. Leave anything else exactly as it is and name it in the handoff. Never remove a region heading. → `_bower/framework-reference.md` → *UI Changes* → *Compaction*.
+
 10. Update integration notes in `module-status.md` `## Module integration` `Notes:` if behaviour differs from Stage 4's assumptions. Confirm the `Test:` marker reflects the real outcome of Step 3.9.
 
     **Compact while you are in the file.** Delete known duplication or history; leave anything else outside the file's shape exactly as it is and name it in the handoff. → `_bower/framework-reference.md` → *Compaction*.

@@ -1,4 +1,4 @@
-# Bower Framework v0.41
+# Bower Framework v0.42
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
@@ -25,7 +25,8 @@ This project uses the Bower AI-assisted development pattern. Bower optimises for
 
 | Document | Ownership | Style / budget |
 |---|---|---|
-| `architecture.md`, `ui.md`, `scope.md` | co-authored | narrative |
+| `architecture.md`, `scope.md` | co-authored | narrative |
+| `ui.md` | co-authored | ~50 words per screen region and per named convention — a heuristic, never a ceiling; what may be removed is fixed by what the file is for |
 | `problem-space.md`, `constitution.md` | human-owned — never rewrite unprompted | narrative |
 | `adr/*.md` | body immutable once accepted; frontmatter mutable | structured, ~150 words |
 | `modules/**/plan.md` | co-authored | terse bullets / tables |
@@ -47,7 +48,7 @@ Only `/b-review` writes a module's `## Module review` `Review:` marker (⏸ neve
 
 ## ADRs — the Short Form
 
-ADRs record **cross-cutting commitments** — decisions that constrain more than one feature. Read `docs/adr/index.md` first; open only ADRs relevant to the change (`scope: universal` ADRs apply to everything; select the rest by module, topic, or title — never load wholesale). Bodies are immutable: reversals are new ADRs that supersede the old. **Code is truth, ADR is hypothesis** — if an accepted ADR contradicts the code, the ADR is the stale one; flag and supersede, don't silently trust it. Full schema and lifecycle: `_bower/framework-reference.md` and `/b-adr`.
+ADRs record **cross-cutting commitments** — decisions that constrain more than one feature. Read `docs/adr/index.md` first; open only ADRs relevant to the change (`scope: universal` ADRs apply to everything; select the rest by module, topic, or title — never load wholesale). Bodies are immutable: reversals are new ADRs that supersede the old. **Code is truth, ADR is hypothesis** — if an accepted ADR contradicts the code, the ADR is the stale one; flag and supersede, don't silently trust it. **A UI choice reversible inside the stylesheet does not become a new ADR** — however much argument it took; the CSS and `docs/ui.md` carry it. What reaches `docs/adr/` is the UI decision something outside the stylesheet depends on. That is a test for *writing* one, never for checking: accepted ADRs bind a stylesheet edit like any other change, and a brand or accessibility commitment is most often broken from inside the stylesheet. Full schema and lifecycle: `_bower/framework-reference.md` and `/b-adr`.
 
 ## What to Update When
 
@@ -76,7 +77,7 @@ ADRs record **cross-cutting commitments** — decisions that constrain more than
 - **A ✓ feature's `status.md` compresses to its terminal form** — the marker, a `## Verification` section (dated evidence, plus `Qualification:` for a standing caveat on it), and `Next move: (none — complete)`. Resumption state dies with the feature; the evidence record survives. Schema: `_bower/framework-reference.md`, "status.md — Resumption Framing."
 - **Doc links are repo-root-based.** Write `[ADR-xxxx](/docs/adr/xxxx-yyy.md)`, never `../../../adr/…`. Targets must start with `/`, `#` or a URL scheme.
 - **Working in parallel — every merge, in either direction, goes through `/b-merge <other>`.** Solo work pays nothing for this; a second writer reads `_bower/framework-reference.md` → *Working in parallel* for the per-class resolution rules. Never `--ours`/`--theirs` on a `docs/` path; the derived indexes are regenerated, never merged.
-- **Never link to a transient file** — `review-plan.md`, `findings.md`. Name the path in prose instead. Both are deleted by design when their work is done, so a link into one is a broken link on a schedule; and where the linking doc is an immutable ADR body, nothing is permitted to repair it afterwards. (The adoption banner's link to `docs/adoption-ledger.md` is not an exception to this so much as the case it does not reach: the link lives *inside* the banner, and the banner is deleted at the same moment the ledger empties.)
+- **Never link to a transient file** — `review-plan.md`, `findings.md`. Name the path in prose instead, and where the reference is to a *specific item*, pin a commit that held the file — `git show <hash>:<path>` retrieves the item once the file is gone. Both are deleted by design when their work is done, so a link into one is a broken link on a schedule; and where the linking doc is an immutable ADR body, nothing is permitted to repair it afterwards. (The adoption banner's link to `docs/adoption-ledger.md` is not an exception to this so much as the case it does not reach: the link lives *inside* the banner, and the banner is deleted at the same moment the ledger empties.)
 
 ## Runtime bindings
 
@@ -116,6 +117,8 @@ Three questions: Is it UI? Is it *structural* (changes what's there or how it re
 |------------------|-----------------------------------------|--------------------------------------------|
 | **Well-specified**   | Just do it. No doc update.               | Just do it; reconcile `docs/ui.md`.          |
 | **Underspecified**   | Ask one clarifying question, then do it. | Use `/b-ui` — propose with options.          |
+
+**Design work records nothing by default** — change it and move on; a comment in the component or stylesheet is the next rung, and it is where a choice that would otherwise read as arbitrary belongs. `docs/ui.md` is reached only when an invariant changed **and the code cannot carry it** — a pattern a shared component already expresses is recorded by that component. It holds what a later editor could not recover by reading the code: ownership, relationships across surfaces, and constraints — not one feature's behaviour, implementation identifiers, backend mechanics or why a shape was chosen (`_bower/framework-reference.md` → *UI Changes* → *What `docs/ui.md` holds*).
 
 The gate sits at branching choices, not at structural-ness. Architectural UI changes (framework swap, new top-level navigation pattern, new state management) are hard-redirected to `/b-design`. Worked examples and commit discipline: `_bower/framework-reference.md`.
 
