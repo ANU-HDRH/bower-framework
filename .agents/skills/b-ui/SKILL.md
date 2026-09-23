@@ -18,7 +18,7 @@ The request (the user's description of the UI change): the request as given in t
 Before running this skill, ask whether it's the right shape for the request:
 
 - **Visual-only** (move an icon, tweak colour, adjust spacing, change copy) → suggest dropping to ad-hoc work. No gate, no docs.
-- **Structural but tightly specified** ("add a logout item to the user menu, opens a confirm modal") → suggest just doing it and reconciling `docs/ui.md`.
+- **Structural but tightly specified** ("add a logout item to the user menu, opens a confirm modal") → suggest just doing it, recording it in the feature's `plan.md`; `docs/ui.md` only by the test in Step 2.
 - **Structural with branching choices** → proceed with this skill.
 
 The test for "branching choices": would you have to pick between ≥2 viable shapes (modal vs page, tabs vs accordion, drawer vs dropdown)? If yes, the gate earns its keep. If the operator already named the shape, it doesn't — invented alternatives are noise, not value. The operator can confirm to run the skill anyway, but offering the lighter path first is the right default.
@@ -88,7 +88,7 @@ For PENDING USER manual checks, frame before asking — the operator does not ye
 2. **Name one or two specific things to look at.** ("Check the active tab indicator and the behaviour at narrow widths.")
 3. **Then present the question** at an operator gate.
 
-Without this framing the operator gets "does it look right?" with no anchor; with it, verification is productive in one round-trip. Mark per response. If the operator defers, leave as PENDING USER and reflect that in the docs in Step 5.
+Without this framing the operator gets "does it look right?" with no anchor; with it, verification is productive in one round-trip. Mark per response. If the operator defers, leave as PENDING USER and reflect that in the docs in Step 5; if they accept the check as deferred, record it as `Deferred verification:` (`_bower/framework-reference.md` → *Accepted as deferred*).
 
 **Decision reconciliation.** Review each ADR flagged in Step 2's Decision impact:
 

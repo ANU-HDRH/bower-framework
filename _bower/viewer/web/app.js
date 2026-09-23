@@ -523,6 +523,7 @@ function viewOverview() {
         fs['🚧'] ? `${fs['🚧']} in development` : null,
         fs['⏸'] ? `${fs['⏸']} planned` : null,
         c.pendingVerification ? `${c.pendingVerification} awaiting checks` : null,
+        c.deferredVerification ? `${c.deferredVerification} deferred ${c.deferredVerification === 1 ? 'check' : 'checks'}` : null,
       ],
     }),
     tile({
@@ -1495,6 +1496,7 @@ function viewModule(name) {
                     : plain((f.status && f.status.headline) || (f.plan && f.plan.purpose) || ''),
               ),
               f.pendingVerification ? el('span', { class: 'tag pend' }, 'checks pending') : null,
+              f.deferredVerification && f.deferredVerification.length ? el('span', { class: 'tag pend' }, 'check deferred') : null,
             ),
           ),
         ),
@@ -1632,6 +1634,24 @@ function viewFeature(mod, name) {
               'p',
               { class: 'muted', style: 'margin:8px 0 0;font-size:13px' },
               'Agreed criteria not yet checked. A feature with pending verification is 🚧, not ✓.',
+            ),
+          ),
+        )
+      : null,
+
+    f.deferredVerification && f.deferredVerification.length
+      ? el(
+          'div',
+          { class: 'panel pending-note', style: 'margin-bottom:18px' },
+          el('div', { class: 'panel-head' }, el('span', { class: 'eyebrow' }, 'Deferred verification')),
+          el(
+            'div',
+            { class: 'panel-body' },
+            ...f.deferredVerification.map((d) => el('p', { style: 'margin:0 0 4px' }, plain(d))),
+            el(
+              'p',
+              { class: 'muted', style: 'margin:8px 0 0;font-size:13px' },
+              'Accepted by the operator as deferred: the feature is ✓ and the check is still owed.',
             ),
           ),
         )

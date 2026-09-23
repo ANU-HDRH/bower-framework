@@ -63,6 +63,7 @@ defines it. Changing a row means changing `lib/extract.cjs` and
 | `## Module integration` `Test:` / `Notes:` lines | same section | integration marker and test path |
 | Module status rollup — worst across features **and** integration | same section, *Module-level status is a floor* | derived module status |
 | `status.md` leading marker, `## Next move`, `Pending verification:` | `framework-reference.md` → *status.md — Resumption Framing* | feature state, next moves, honesty checks |
+| `status.md` `Deferred verification: <check> — accepted by operator <date>` lines, one per check — on a ✓ feature, or beside `Pending verification:` on a 🚧 one (v0.43) | same section, *Accepted as deferred* | `deferred-verification-open`, one `info` per line; never `pending-verification-complete`. Module-level lines under `## Module integration` are not parsed |
 | `status.md` terminal form at ✓ — `## Verification` (+ `Qualification:`), `Next move: (none — complete)`; a stored next move is feature-scoped | same section, *Terminal form* | `next-move-on-complete`; the next-moves panel excludes ✓ features |
 | `## Success criteria` bullets + `Delivered by:` clauses, **no status field** | `framework-reference.md` → *scope.md — Boundary, Not Tracker* | derived criteria satisfaction |
 | `plan.md` `## Components` table | `/b-feature` Step 6 | the file → feature index |
@@ -114,6 +115,7 @@ lifecycle audit, not a truth check.
 - a success criterion is delivered by a module that does not exist
 - an ADR supersession or narrowing is recorded on only one of the two ADRs
 - an ADR names a module that does not exist
+- two ADR files claim one `id` — lookups reach only one; an unrepaired `/b-merge` slug collision
 - an accepted ADR also carries `superseded-by`
 - an ADR claims both `narrows` and `supersedes` on one target
 - a **narrowed** ADR is not `accepted` — narrowing leaves its target in force, so
@@ -245,9 +247,11 @@ linking to the queue. On the health page it is one `info` per open item, carryin
 the item's gist and the literal command that discharges it, because that page is
 the only place the project's owed work aggregates.
 
-That check is the one entry on the health page that does not report drift — an
-open queue is the queue working — which is why it is `info`, why the page's
-framing says so, and why the fixture's conformant module fires it and only it.
+That check and `deferred-verification-open` are the two entries on the health page
+that do not report drift — an open queue is the queue working, and a check the
+operator accepted as deferred sits on a ✓ feature by design — which is why both are
+`info`, why the page's framing says so, and why the fixture's conformant module
+fires them and only them.
 The v0.35 shape was to give the queue a route and nothing else, on the stated
 grounds that this made it readable "in the rail, the file index and search". Two
 of those three were never true: the rail lists Bower documents from a fixed set

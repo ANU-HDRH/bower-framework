@@ -22,7 +22,7 @@ Before proceeding, check whether this request is actually for this skill:
 - **Architectural revision** (new module, new technology, scope expansion) → recommend `/b-design`. **Hard** redirect — do not propose architectural changes here.
 - **Pure experience-surface change** (navigation, screen composition, layout grammar, interaction patterns) → recommend `/b-ui` for branching choices, or the appropriate ad-hoc path in `_bower/framework.md` → *UI Changes — Paths and the Gate*. **Soft** redirect.
 
-Backend feature work and small under-the-hood code changes belong here. **Mixed work stays here** — a feature with backend (model, API, controller) plus UI scaffolding (a new screen, components) runs in `/b-feature` and reconciles `docs/ui.md` in Step 6 alongside the feature's `plan.md`.
+Backend feature work and small under-the-hood code changes belong here. **Mixed work stays here** — a feature with backend (model, API, controller) plus UI scaffolding (a new screen, components) runs in `/b-feature`; the feature's `plan.md` records the UI, and `docs/ui.md` changes only by the test in Step 2.
 </intent_redirects>
 
 The request (the user's description of what they want to change): the request as given in the message that invoked this skill.
@@ -43,7 +43,7 @@ The request (the user's description of what they want to change): the request as
 Orientation is **selective**: read what this change needs, not the whole project. Batch all independent reads — issue them together, not one per turn.
 
 1. Read `docs/index.md` and the affected module's `module-status.md` (batched) — project structure, `## Build order`, and the `## Module integration` `Notes:`. **Glob `docs/modules/*/{review-plan,findings}.md` in the same batch** (item 10 acts on the result).
-2. Read the target feature's `plan.md` and `status.md`, plus those of any other components likely affected. **A claim annotated *decided, not built* describes code that does not exist.** Treat it as non-existent: verify against the code and build the proposal on what is actually there (`_bower/framework-reference.md` → *Forward-written claims*).
+2. Read the target feature's `plan.md` and `status.md`, plus those of any other components likely affected. **If the request names only a feature whose `status.md` carries `Pending verification:` or `Deferred verification:`,** this run records check results: present those checks at Step 5's batch gate, then do Step 6 items 7 and 9 and the Step 7 handoff — no proposal, no gate, no implementation. **A claim annotated *decided, not built* describes code that does not exist.** Treat it as non-existent: verify against the code and build the proposal on what is actually there (`_bower/framework-reference.md` → *Forward-written claims*).
 
    **Then find every annotation this change will discharge — project-wide, on every intent:**
 
@@ -105,7 +105,7 @@ Prepare a proposal covering:
   - **Source:** integration points and any callers / consumers of changed behaviour
   - **Tests:** which existing tests need updating or removing; which new tests are needed
   - **Docs:** **list each `plan.md` that needs updating by path** (the one for this feature, plus any sibling features whose plans reference behaviour you're changing or removing). **List separately every *decided, not built* annotation this change discharges** — Step 1.2's hits, `docs/architecture.md` included, by path with the owner each names; Step 6 deletes exactly these. Write `none` if there are none. On **remove** intent list instead the annotations *owned by* the feature being removed — those go claim and all. **If this change will land part of a later build-order entry's scope** (pull-forward), say so and list the annotations *that* entry owns.
-  - **UI:** if the change introduces, removes, or restructures any screen/view/component, name which sections of `docs/ui.md` will be created or updated (navigation, screens, layout grammar, interaction patterns, visual language). If `docs/ui.md` does not yet exist and the change introduces UI, this is the first UI in the project — Step 6 will create the file with the sections this change requires. Write `none` if the change is pure under-the-hood code.
+  - **UI:** `none`, or which sections of `docs/ui.md` will be created or updated. Write `none` unless an invariant moves **and the code cannot carry it** — ownership, a cross-surface relationship, or a constraint (→ `_bower/framework-reference.md` → *UI Changes*). A screen, view or component this one feature adds or restructures is recorded in its `plan.md`. `none` is a complete answer, including where the file does not exist.
   - **Module integration:** does this shift what the module's integration test must assert? If yes, flag it here so the Step 7 handoff can point to `/b-integration <module>`.
 - **Scope impact:** Does this change what's in scope, change a non-goal, or add/remove/reword a success criterion in `scope.md`? Merely *satisfying* an existing criterion is not scope impact.
 - **Decision impact:** List any accepted ADR loaded in Step 1 that this change *touches* — confirms it, contradicts it, narrows it, or surfaces it as drifted from the code (Step 5 acts on each). If no ADRs are touched, write `none`. Also flag a new cross-cutting decision that does not yet have an ADR, so the reconcile step can write one.
@@ -185,7 +185,7 @@ Before marking the feature done, produce an explicit reconciliation of every acc
 Handling:
 
 - **MISSING** is a blocker. Either write the test, or return to the user at an operator gate to renegotiate the criterion. Do not proceed with MISSING items.
-- **PENDING USER** — present the manual checks to the user at a batch gate, collecting an explicit disposition per check: confirmed (mark PASS), failed (treat as a bug and fix before proceeding), or deferred ("I'll check later" — leave as PENDING USER and mark the feature 🚧 rather than ✓, see Step 6). Do not act on any check's answer until every check has one.
+- **PENDING USER** — present the manual checks to the user at a batch gate, collecting an explicit disposition per check: confirmed (mark PASS), failed (treat as a bug and fix before proceeding), deferred ("I'll check later" — leave as PENDING USER and mark the feature 🚧 rather than ✓, see Step 6), or **accepted as deferred** (it will be run outside any session and the feature does not wait — record it as `Deferred verification:` and treat it as PASS for the marker; `_bower/framework-reference.md` → *Accepted as deferred*). Do not act on any check's answer until every check has one.
 
 **Decision reconciliation.** After acceptance criteria are reconciled, review the **Decision impact** noted at the gate — and additionally check the report's `## Divergences` and `## Doc implications` for ADR touches that weren't visible at the gate. For each touched ADR:
 
@@ -253,7 +253,7 @@ Leave every annotation whose owner this change did not discharge — compare qua
    - Update the **Testing** section with final test counts from the report's `## Test run` and any test names worth surfacing (e.g. "12 cases against per-test schema").
    - Append any **implementation footnotes worth keeping** from the report's `## Implementation footnotes`: workarounds for specific bugs, hand-edited migrations, non-obvious casts at boundaries. Skip if nothing surprising came up.
    - **Delete the *decided, not built* banner Step 3 wrote** and, in the same edit, add the closing line `Confirmed YYYY-MM-DD` (today's date) — **whether the feature lands ✓ or 🚧**. The line covers the plan's unannotated claims, not verification (`_bower/framework-reference.md` → *Forward-written claims*).
-2. Append the new feature to `module-status.md` `## Build order`. Place it where its dependencies dictate; if it has none, append to the end. Mark ✓ if all criteria PASS, 🚧 if PENDING USER.
+2. Append the new feature to `module-status.md` `## Build order`. Place it where its dependencies dictate; if it has none, append to the end. Mark ✓ if all criteria PASS or are accepted as deferred, 🚧 if PENDING USER.
 3. Refresh `## Module integration` `Notes:` if the new feature widens what the integration test must assert. Do not flip the marker.
 
 **For modify intent:**
@@ -278,17 +278,17 @@ Leave every annotation whose owner this change did not discharge — compare qua
 **All intents:**
 
 6. **`docs/ui.md`** — if Step 2's Impact section listed UI sections to update, reconcile now:
-   - If `docs/ui.md` exists, update affected sections to reflect the new state (current-state doc, not history) — only where an **invariant** moved. Visual change alone writes nothing here.
-   - If it does not exist *and* this change introduced UI (the project's first interface scaffolding), create `docs/ui.md` with only the sections this change requires. Stay at invariant-level: navigation map, screens, layout grammar, interaction patterns, visual-language pointers. `## Screens` is one `### <Screen> (<route>)` section per screen, each region of it under a `#### <Region> — <owning module>` heading — never a table (shape: `_bower/framework-reference.md` → *UI Changes*). When updating an existing screen, rewrite the region this change owns and leave the others' regions alone.
+   - If `docs/ui.md` exists, update the sections Step 2 named to reflect the new state (current-state doc, not history).
+   - If it does not exist, create it with only the sections Step 2 named. Stay at invariant-level: navigation map, screens, layout grammar, interaction patterns, visual-language pointers. `## Screens` is one `### <Screen> (<route>)` section per screen, each region of it under a `#### <Region> — <owning module>` heading — never a table (shape: `_bower/framework-reference.md` → *UI Changes*). When updating an existing screen, rewrite the region this change owns and leave the others' regions alone.
    - If Step 2 listed UI impact as `none`, skip.
 
    **Compact while you are in the file.** Delete only verified duplication or obsolete history — content whose named home you opened and found already holding the same fact. Leave anything else exactly as it is and name it in the handoff. Never remove a region heading. → `_bower/framework-reference.md` → *UI Changes* → *Compaction*.
 
 7. Rewrite this feature's `status.md` from scratch — never append to the previous contents. Which form you write depends on the marker this feature is about to carry in Step 9 (schema: `_bower/framework-reference.md`, "status.md — Resumption Framing"). (Skip this for remove — the file is gone.)
 
-   **If the feature lands ✓** — every agreed criterion PASS, nothing PENDING USER — write the **terminal form**: the marker, a `## Verification` section (date, what was run, what passed, plus a `Qualification:` line if the evidence carries a standing caveat), and `## Next move` → `(none — complete)`. ~50 words. Compress, don't delete — `## Verification` is the only durable record that the criteria were exercised. A `Qualification:` bounds evidence that *was* gathered; it is never a `Pending verification:` line, which names evidence that wasn't.
+   **If the feature lands ✓** — every agreed criterion PASS or accepted as deferred, nothing PENDING USER — write the **terminal form**: the marker, a `## Verification` section (date, what was run, what passed, a `Qualification:` line if the evidence carries a standing caveat, one `Deferred verification: <check> — accepted by operator <date>` line per accepted check), and `## Next move` → `(none — complete)`. ~50 words. Compress, don't delete — `## Verification` is the only durable record that the criteria were exercised. A `Qualification:` bounds evidence that *was* gathered; it is never a `Pending verification:` line, which names evidence that wasn't.
 
-   **If the feature lands anything else** — 🚧 with PENDING USER items, or 🟡/🔴 — write the **live form**: current state, next move, `Pending verification:` listing the deferred checks. ≤150 words.
+   **If the feature lands anything else** — 🚧 with PENDING USER items, or 🟡/🔴 — write the **live form**: current state, next move, `Pending verification:` listing the deferred checks, and one `Deferred verification:` line per check already accepted as deferred. ≤150 words.
 
    The stored `Next move:` is **a literal slash command, not prose**, and it may only name work on *this* feature. Exactly one of:
 
@@ -298,7 +298,7 @@ Leave every annotation whose owner this change did not discharge — compare qua
    Never the next feature in the build order, `/b-integration`, `/b-review`, or the next module — those belong in the Step 7 handoff.
 
 8. Update `scope.md` only if the change shifted the scope boundary, changed a non-goal, or added/removed/reworded a success criterion. Do **not** record that a criterion is now met — criteria have no status field. If a criterion is deleted, delete it outright; scope carries no history.
-9. Update `module-status.md`: update the `## Build order` marker for this feature. Use ✓ only if all criteria are PASS; use 🚧 if manual checks remain PENDING USER; use 🟡 or 🔴 if something is broken. Do **not** flip the `## Module integration` marker here — that belongs to `/b-integration`.
+9. Update `module-status.md`: update the `## Build order` marker for this feature. Use ✓ only if all criteria are PASS or accepted as deferred; use 🚧 if manual checks remain PENDING USER; use 🟡 or 🔴 if something is broken. Do **not** flip the `## Module integration` marker here — that belongs to `/b-integration`.
 
    **Then annotate any downstream entry whose scope this change absorbed.** If the implementation report's `## Doc implications` names a later build-order feature whose scope now partly exists — or you can see for yourself that it does — append a single clause to *that* entry: who absorbed what, then `Remaining:` and what is left to build.
 

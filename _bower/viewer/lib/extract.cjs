@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.42';
+const SCHEMA_VERSION = '0.43';
 
 // ---------------------------------------------------------------- helpers
 
@@ -479,6 +479,21 @@ function extract(root) {
   // must be stable across regeneration. Numeric legacy keys sort before slugs.
   adrs.sort((a, b) => (a.date || '').localeCompare(b.date || '') || a.key.localeCompare(b.key));
   const adrById = new Map(adrs.map((a) => [a.id, a]));
+
+  // v0.43: an `id` claimed by two files. The Map above keeps one and the other
+  // becomes unreachable by ID; the only post-commit catch for a /b-merge slug
+  // collision nobody repaired (framework-reference.md → *Working in parallel*).
+  const claimants = new Map();
+  for (const a of adrs) claimants.set(a.id, [...(claimants.get(a.id) || []), a]);
+  for (const [id, list] of claimants)
+    for (const a of list.slice(0, -1))
+      flag(
+        'error',
+        'adr-duplicate-id',
+        `${id} is claimed by ${list.length} files (${list.map((x) => x.rel).join(', ')}); lookups by that ID reach only ${adrById.get(id).rel}. Rename one per /b-merge's slug-collision repair.`,
+        a.rel,
+        { adr: id },
+      );
 
   // ADR index doc (own route, distinct from the faceted view)
   const adrIndexAbs = path.join(adrDir, 'index.md');
@@ -1056,6 +1071,7 @@ function extract(root) {
         adrs: [],
         integrationPoints: '',
         pendingVerification: null,
+        deferredVerification: [],
         // v0.40: the plan's `Confirmed YYYY-MM-DD` line — the code every
         // unannotated claim describes exists and its tests have run. Read to
         // tell a built-but-pending-verification 🚧 from a mid-build one.
@@ -1188,6 +1204,10 @@ function extract(root) {
         // deferred. Specified as a line; projects also grow it as a section.
         const pv = M.labelled(body, 'Pending verification') || M.firstParagraph(secs['Pending verification'] || '');
         feat.pendingVerification = pv && !/^\s*(none|n\/a|—|-)\s*$/i.test(pv) ? pv : null;
+        // v0.43, "Accepted as deferred": one `Deferred verification:` line per
+        // check the operator accepted at close-out. Owed work on a ✓ feature,
+        // not a completeness gap — so it is never `pending-verification-complete`.
+        feat.deferredVerification = [...body.matchAll(/^[*_\s-]*Deferred verification:[*_]*\s*(.+)$/gim)].map((m) => m[1].trim());
         feat.status = {
           rel: statusRel,
           ownership: ownershipOf(statusRel),
@@ -1277,6 +1297,14 @@ function extract(root) {
           feat.status.rel,
           { feature: fname, module: name },
         );
+
+      // Surfaced like an open findings queue: conformant state, info severity.
+      // Every candidate fires by construction, so no tripwire candidate.
+      for (const check of feat.deferredVerification)
+        flag('info', 'deferred-verification-open', `${name}/${fname} — deferred check: ${check}`, feat.status.rel, {
+          feature: fname,
+          module: name,
+        });
 
       features.push(feat);
       modFeatures.push(feat);
@@ -1900,6 +1928,7 @@ function extract(root) {
       health: tally(health.map((h) => h.severity)),
       indexedFiles: fileIndex.size,
       pendingVerification: features.filter((f) => f.pendingVerification).length,
+      deferredVerification: features.reduce((n, f) => n + f.deferredVerification.length, 0),
       forwardWritten: forwardWritten.length,
     },
   };

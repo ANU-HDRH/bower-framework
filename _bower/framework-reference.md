@@ -155,7 +155,7 @@ The `Delivered by:` pointer stops at the **module**. It does not name features o
 
 **Live form** — the feature is ⏸ 🚧 🟡 🔴. Current state in a short paragraph or bullets; `## Next move` explicit (a literal slash command); open issues only if they affect resumption. No history, no changelog, no solved-issue residue. Bug backlog belongs in the external tracker, not here. Budget ~150 words — over budget is a signal to compress, not to split.
 
-If any acceptance criterion agreed at a gate has not yet been verified (typically manual checks the user deferred), include a `Pending verification:` line listing those checks. Empty or omitted means fully verified. A feature with pending verification is marked 🚧 in `module-status.md`, not ✓.
+If any acceptance criterion agreed at a gate has not yet been verified (typically manual checks the user deferred), include a `Pending verification:` line listing those checks. Empty or omitted means fully verified. A feature with pending verification is marked 🚧 in `module-status.md`, not ✓ — unless the operator accepted the check as deferred (below).
 
 **Terminal form** — the feature is ✓. The resumption job is discharged, and `plan.md` is the durable record of how the thing works, so the file compresses to the marker, the evidence, and a closed next move. Budget ~50 words.
 
@@ -166,6 +166,7 @@ If any acceptance criterion agreed at a gate has not yet been verified (typicall
 
 <date> — <what was run, what passed>
 Qualification: <a standing caveat on that evidence, if any>
+Deferred verification: <check> — accepted by operator <date>   ← one per check, if any
 
 ## Next move
 
@@ -178,7 +179,9 @@ Whatever command marks the feature ✓ compresses the file in the same pass. **C
 
 **`Qualification:` is not `Pending verification:`.** A qualification bounds evidence that *was* gathered ("fake-LLM evidence only; real inference is owned by the test-harness feature"); pending verification names evidence that was *not*. The distinction is load-bearing rather than stylistic — a ✓ feature carrying `Pending verification:` is a false-completeness claim, so labelling a qualification that way manufactures one.
 
-**A stored `Next move:` may only name work on its own feature** — `Run /b-feature <self>` to close a deferred check, or `(none — complete)`. It may not point at the next feature in the build order, at `/b-integration`, at `/b-review`, or at the next module. Those are *project-scoped* facts: they change whenever anything anywhere lands, and no command rewrites every feature's `status.md`, so storing one there breaks the one-home rule above and the line can only accrue — a long-finished module's features still calling for work that landed weeks ago. The project-scoped handoff is **printed** by the command that ran, and derived at read time by `/b-recap` and the docs viewer from the build-order, integration, and review markers. It is never written into a feature file.
+**Accepted as deferred.** At a close-out batch gate the operator may accept a manual check as deferred: it will be run outside any session, and the feature does not wait for it. The feature lands ✓ in terminal form with one `Deferred verification: <check> — accepted by operator <date>` line per check under `## Verification`, and `## Next move` → `(none — complete)`. It is owed work, not a completeness gap: `/b-recap` and the viewer list it, it never holds the feature or its module at 🚧, and it blocks nothing. Where other checks stay pending, the feature is 🚧 in live form and carries both lines — each check under exactly one — and the `Deferred verification:` lines are rewritten with the file every time. When the operator reports the result, `/b-feature <feature>` records it — passed: the line becomes dated evidence in `## Verification`; failed: a bug, and the feature leaves ✓. The same line under `## Module integration` does the same for a module-level check. *Not covered:* a deferred check that is never run — nothing expires it.
+
+**A stored `Next move:` may only name work on its own feature** — `Run /b-feature <self>` to close a pending check, or `(none — complete)`. It may not point at the next feature in the build order, at `/b-integration`, at `/b-review`, or at the next module. Those are *project-scoped* facts: they change whenever anything anywhere lands, and no command rewrites every feature's `status.md`, so storing one there breaks the one-home rule above and the line can only accrue — a long-finished module's features still calling for work that landed weeks ago. The project-scoped handoff is **printed** by the command that ran, and derived at read time by `/b-recap` and the docs viewer from the build-order, integration, and review markers. It is never written into a feature file.
 
 ## module-status.md — Integration and Build Order
 
@@ -217,6 +220,7 @@ If the absorption leaves nothing to build, the entry stays ⏸ with `Remaining: 
 Test: <path or "not yet defined"> — <marker>
 Notes: <one line>
 Pending verification: <outstanding module-level manual checks>   ← only while some remain
+Deferred verification: <check> — accepted by operator <date>   ← one per check, if any
 
 ## Build order
 
@@ -324,7 +328,7 @@ The router carries the decision table; this section carries the reasoning and wo
 
 **Path 1 — Ad-hoc, no doc impact.** Visual tweaks: move an icon, adjust colour, change copy, tighten spacing. Make the change directly; `docs/ui.md` records invariants, not pixels.
 
-**Path 2 — Ad-hoc, reconcile the doc.** Structural changes tight enough not to need a proposal: "add a logout item to the user menu, opens a confirm modal." Make the change; update `docs/ui.md` (and any affected feature `plan.md`) as part of the reconcile.
+**Path 2 — Ad-hoc, reconcile.** Structural changes tight enough not to need a proposal: "add a logout item to the user menu, opens a confirm modal." Make the change and update the affected feature's `plan.md`. `docs/ui.md` changes only where the change reaches rung 3 below — the modal is one feature's behaviour, and writes nothing there.
 
 **Path 3 — `/b-ui`.** Structural changes with branching choices the user should pick between: "add tab-based content navigation" — which tabs, switch behaviour, mobile, URL state are choices, not specifications.
 

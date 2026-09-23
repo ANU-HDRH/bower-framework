@@ -98,6 +98,8 @@ const EXPECTED = [
   // findings queue (v0.34), open-item surfacing (v0.36)
   'findings-queue-empty',
   'findings-queue-open',
+  // accepted-as-deferred verification (v0.43)
+  'deferred-verification-open',
   // scope criteria (v0.24)
   'criterion-no-owner',
   'criterion-stale-pointer',
@@ -109,6 +111,7 @@ const EXPECTED = [
   'adr-no-successor',
   'adr-unknown-module',
   'adr-unclassified',
+  'adr-duplicate-id',
   // ADR narrowing (v0.27)
   'adr-narrow-asymmetric',
   'adr-narrow-dangling',
@@ -152,15 +155,17 @@ assert(
 // The conformant module is the other half of the negative assertion: a schema
 // change that makes a check fire on correct docs shows up here first.
 //
-// `findings-queue-open` is excluded, and it is the one exclusion this assertion
-// permits. Every other check here reports drift, so firing on `clean` would mean
-// the check is wrong. That one reports conformant state — `clean` carries a
-// correctly-formed queue with an open item, which is the queue working — so it
-// fires here by construction and its absence would be the failure. Do not add a
-// second exclusion to make a red test green; see the header.
+// `findings-queue-open` and `deferred-verification-open` are excluded, and they
+// are the only exclusions this assertion permits. Every other check here reports
+// drift, so firing on `clean` would mean the check is wrong. Those two report
+// conformant owed work — `clean` carries a correctly-formed queue with an open
+// item, and a ✓ feature with a check the operator accepted as deferred — so they
+// fire here by construction and their absence would be the failure. Do not add an
+// exclusion to make a red test green; see the header.
+const OWED_WORK = new Set(['findings-queue-open', 'deferred-verification-open']);
 const cleanFindings = g.health.filter(
   (h) =>
-    h.kind !== 'findings-queue-open' &&
+    !OWED_WORK.has(h.kind) &&
     (/modules\/clean/.test(h.path || '') || /\bclean\//.test(h.message) || h.module === 'clean'),
 );
 assert(
@@ -176,6 +181,7 @@ for (const [kind, want] of [
   ['marker-disagreement', 'error'],
   ['pending-verification-complete', 'error'],
   ['narrowed-adr-not-accepted', 'error'],
+  ['adr-duplicate-id', 'error'],
   ['criterion-stale-pointer', 'error'],
   ['component-missing', 'warn'],
   ['arch-feature-roster', 'warn'],
@@ -672,6 +678,21 @@ assert(/according to Q1 in/.test(fqOpen[0].message), 'and the runnable pointer, 
 // Severity is the whole argument for this check being on the health page at
 // all: an open queue is conformant, so it must not read as drift.
 assert(sevOf('findings-queue-open') === 'info', 'findings-queue-open is info — it is owed work, not a contradiction', `got ${sevOf('findings-queue-open')}`);
+
+// Two files claiming one ADR id (v0.43): reported once, at the file lookups
+// cannot reach, naming both.
+const dup = g.health.filter((h) => h.kind === 'adr-duplicate-id');
+assert(dup.length === 1 && /binary-attachments/.test(dup[0].message) && /binary-attachments-2\.md/.test(dup[0].message), 'a shared ADR id is reported once, naming both files', JSON.stringify(dup.map((h) => h.message)));
+
+// Accepted-as-deferred verification (v0.43): a ✓ feature carrying a
+// `Deferred verification:` line is honest, so the ✓-with-pending contradiction
+// must not fire on it — the clean-module assertion above already proves that.
+// What is asserted here is that the check is surfaced once, as info, with the text.
+const dv = g.health.filter((h) => h.kind === 'deferred-verification-open');
+assert(dv.length === 1 && dv[0].module === 'clean' && dv[0].feature === 'feature-b', 'one finding per deferred check, at its feature', JSON.stringify(dv.map((h) => `${h.module}/${h.feature}`)));
+assert(/production-sized record/.test(dv[0].message), 'carrying the check itself', dv[0].message);
+assert(sevOf('deferred-verification-open') === 'info', 'deferred-verification-open is info — owed work, not a contradiction', `got ${sevOf('deferred-verification-open')}`);
+assert(g.counts.deferredVerification === 1, 'counted for the overview tile', String(g.counts.deferredVerification));
 
 // Nothing may link a transient file (framework.md → Working Conventions): it is
 // deleted when its work is done, so the link breaks on a schedule and disposal

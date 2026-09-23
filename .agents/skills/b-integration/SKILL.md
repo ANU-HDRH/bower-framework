@@ -75,7 +75,7 @@ Reconcile every criterion agreed at the gate:
 Handling:
 
 - **MISSING** is a blocker. Either add the assertion or renegotiate at an operator gate. Do not proceed.
-- **PENDING USER** — present the manual checks at a batch gate, one explicit disposition per check. PASS → mark ✓. Failure → treat as bug, fix, re-verify. Deferred → leave PENDING USER and mark the module-integration marker 🚧 (not ✓).
+- **PENDING USER** — present the manual checks at a batch gate, one explicit disposition per check. PASS → mark ✓. Failure → treat as bug, fix, re-verify. Deferred → leave PENDING USER and mark the module-integration marker 🚧 (not ✓). Accepted as deferred → PASS for the marker, recorded as `Deferred verification:` (`_bower/framework-reference.md` → *Accepted as deferred*).
 
 **ADR drift.** If writing the test surfaced a contradiction between an accepted ADR and the code or constitution (e.g. the ADR mandates real-DB but the harness uses an in-memory fixture), flag it in the handoff and recommend `/b-adr` to supersede before flipping the marker to ✓. Do not silently let the drift stand — that's exactly the rot the ADR mechanism exists to prevent.
 
@@ -86,7 +86,7 @@ Handling:
 1. Update `module-status.md` `## Module integration`:
    - `Test:` line — set the path you wrote, and the marker (✓ if all PASS, 🚧 if PENDING USER, 🟡/🔴 if known issues).
    - `Notes:` line — refresh if the as-built test diverged from Stage 4's prose.
-   - If `Pending verification:` items remain, add a line listing them under the `## Module integration` section.
+   - If `Pending verification:` items remain, add a line listing them under the `## Module integration` section. Add one `Deferred verification: <check> — accepted by operator <date>` line per accepted check.
 
    **Compact while you are in the file.** Delete known duplication or history; leave anything else outside the file's shape exactly as it is and name it in the closing summary. → `_bower/framework-reference.md` → *Compaction*.
 

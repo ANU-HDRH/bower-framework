@@ -426,7 +426,8 @@ assert.ok(login(users, 'ada', 'pw').startsWith('sess_'), 'tokens carry the sess_
 console.log('login extra assertions pass');
 EOF
 
-  # D4 — session-revoke is marked ⏸ in the build order although revokeSession is
+  # D4 — not scored since v0.43 (c8-batch-gate.md): kept so the fixture is unchanged.
+  #      session-revoke is marked ⏸ in the build order although revokeSession is
   #      implemented and shipped. (status-fix)
   #      The Review: marker stays ⏸ so /b-review auth starts a fresh review.
   cat > "$TARGET/docs/modules/auth/module-status.md" <<'EOF'

@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.43 | 2026-09-24 | A manual check the operator accepts as deferred lands the feature ✓ with a `Deferred verification:` line — owed work listed by `/b-recap` and the viewer, never a 🚧 pin; `/b-feature <feature>` records a pending or deferred check's result. A waiver in the request never answers a gate. A delegate's elapsed time is not failure; a report taken under interrupt is marked. The viewer reports two ADRs sharing an `id`. v0.42's UI recording test applied at `/b-feature` and `/b-module`'s proposal and reconcile, *Path 2* and the router | none |
 | v0.42 | 2026-09-22 | UI records nothing by default, then a code comment, then `docs/ui.md` only where an invariant moved, then a *new* ADR only where something outside the stylesheet depends on it — existing ADRs bind every UI change; `docs/ui.md` gains a density budget and four content classes it does not hold; a prose reference to a transient item pins a commit that held it | judgement |
 | v0.41 | 2026-09-15 | `module-status.md`'s word budget becomes a density heuristic (~30 words per build-order entry) plus a structural shape test; out-of-shape content is a compaction candidate, deleted only where it is known duplication or history and otherwise reported, at the reconcile step of `/b-feature`, `/b-module` and `/b-integration` and at `/b-review` closeout; over-budget is never a review finding | judgement |
 | v0.40 | 2026-09-04 | A `plan.md` or `architecture.md` claim about code that is decided but not built is annotated `decided, not built`, names the feature that will make it true, and is treated as non-existent until that feature lands; `/b-design` writes them, `/b-feature` Step 6 and `/b-module` Step 3.7 delete them as they build, and the viewer audits their lifecycle | judgement |
@@ -35,6 +36,56 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.43 — 2026-09-24
+
+### v0.42's UI recording test, everywhere a structural change is proposed
+
+v0.42 put the test for writing `docs/ui.md` — an invariant moved **and** the code cannot carry it — in the router, the reference's ladder and `/b-ui`, and missed the other places that decide it. `/b-feature` and `/b-module` still named `ui.md` sections for any screen a change introduced or restructured and created the file on first UI, and *Path 2*'s worked example sent a logout confirm modal — one feature's behaviour — to `docs/ui.md`. The test now governs every proposal and reconcile point; a structural change one feature owns is recorded in that feature's `plan.md`.
+
+- **`skills-src/commands/b-feature.md`** — Step 2's UI impact carries the test and admits `none` where the file is absent; Step 6 writes only the sections Step 2 named; the mixed-work routing line no longer promises a `ui.md` reconcile.
+- **`skills-src/commands/b-module.md`** — the plan's UI impact carries the same test.
+- **`skills-src/commands/b-ui.md`** — the tightly-specified redirect records in `plan.md`.
+- **`_bower/framework.md`** — *UI Changes* decision table and *What to Update When*'s structural-UI row: `ui.md` becomes conditional.
+- **`_bower/framework-reference.md`** — *Path 2* and its example.
+- **`_bower/rationale.md`** — *Lazy creation* and the three-path summary.
+
+### A check the operator accepts as deferred no longer pins the feature at 🚧
+
+A feature whose only remainder is a manual check outside the repository stayed 🚧 indefinitely, held its module at 🚧, and kept a stored `Run /b-feature <self>` that recap and the viewer pointed at — observed twice on a real project, the second a deploy feature waiting on an expensive boot-from-image test. Every close-out batch gate gains a fourth disposition, **accepted as deferred**: the feature lands ✓ in terminal form with `Deferred verification: <check> — accepted by operator <date>` beside its evidence. It is owed work, never a completeness gap and never blocking; `Pending verification:` on a ✓ stays a false-completeness claim. `/b-feature <feature>` on a feature carrying either line now records the check's result without a proposal. Reasoning: `_bower/rationale.md` → *Acceptance as Contract*.
+
+- **`_bower/framework-reference.md`** — *status.md* gains *Accepted as deferred*; the terminal form and the `## Module integration` shape carry the line, and a 🚧 live form carries it beside `Pending verification:` when checks are mixed.
+- **`skills-src/commands/b-feature.md`** — Step 1's check-results run; Step 5's fourth disposition; Step 6's terminal form and marker.
+- **`skills-src/commands/b-module.md`**, **`b-integration.md`**, **`b-ui.md`** — the same disposition at their batch gates; `/b-feature` and `/b-module` keep accepted checks in the live form too.
+- **`skills-src/commands/b-recap.md`** — a *Deferred checks* section, found by one search across the ✓ features' `status.md` files it otherwise skips: listed, never the next action, never blocking completion.
+- **`_bower/review-schema.md`**, **`skills-src/agents/bower-reviewer.md`** — a ✓ with `Deferred verification:` is honest.
+- **`_bower/viewer/`** — `deferred-verification-open`, one `info` per check; overview tile and feature panel. `SCHEMA_VERSION` 0.43.
+- **`_bower/rationale.md`** — *Acceptance as Contract*.
+
+### An instruction given before a gate does not answer it
+
+The Codex floor model read *"I trust you, just get it done, no need to check with me"* in a `/b-feature` request as authority to pass the proposal gate, and built the feature in one turn. The binding already required a reply mapping to an offered choice; it now says outright that nothing said before the gate existed is one.
+
+- **`_bower/framework.md`** — *Runtime bindings → Operator gates*: one sentence.
+
+### A delegate's elapsed time is not evidence of failure
+
+A Codex caller interrupted an implementer that was running the full test suite, then reconciled from a report that may have described an unfinished run. *Runtime bindings → Delegation* gains a waiting rule: a timeout means keep waiting and ask for status; interrupt only on a stall or an error; a report taken under interrupt is marked `Context: interrupted — <what was not finished>` by the caller in the artifact built from it, the same discipline as `Context: inline`. The marker records the gap and does not license redoing the role's work on the caller's thread.
+
+- **`_bower/framework.md`** — *Runtime bindings → Delegation*: the *Waiting* clause.
+
+### The viewer reports two ADRs sharing an `id`
+
+`extract.cjs` keyed ADRs in a map and silently kept one, so an unrepaired `/b-merge` slug collision left an ADR unreachable with nothing reported — the only catch after the merge commits.
+
+- **`_bower/viewer/lib/extract.cjs`** — `adr-duplicate-id`, an error at each file lookups cannot reach, naming every claimant.
+- **`_bower/viewer/README.md`** — listed under errors.
+
+### Migration
+
+None — no project-side changes required. A feature already pinned at 🚧 by a `Pending verification:` line stays as it is; the operator can close it with `/b-feature <feature>`, which now offers accepting the check as deferred. Content a v0.42 run wrote to `docs/ui.md` under the old wording is a compaction candidate at the next reconcile that touches the file (`/b-feature` Step 6, `/b-module` Step 9, `/b-ui` Step 5), under the rules those steps already carry.
 
 ---
 

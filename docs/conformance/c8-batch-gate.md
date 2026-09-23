@@ -23,9 +23,9 @@ The catalogue, for scoring only — do not show it to the session:
 | # | Drift | Expected class |
 |---|---|---|
 | D1 | `login/plan.md` claims username-format validation; `login.js` performs none | `inline-reconcile` |
-| D2 | Three failure shapes across the module: `login` returns `null`, `revokeSession` returns a boolean, `renameUser` throws | `route:/b-feature` |
+| D2 | Three failure shapes across the module: `login` returns `null`, `revokeSession` returns a boolean, `renameUser` throws | `route:/b-feature` — or ruled out by name: two of the three are not features, so *not yet comparable* is a sound call |
 | D3 | `revokeSession`, `renameUser`, and the token helpers have no test, while `module-status.md` claims the session lifecycle is covered | `test-backfill` |
-| D4 | Build order has `session-revoke — ⏸`, but `revokeSession` is implemented and shipped | `status-fix` |
+| D4 | Build order has `session-revoke — ⏸`, but `revokeSession` is implemented and shipped | **not scored since v0.43** — a helper existing does not make the feature built, and C3 treats the same ⏸ entry as correctly unbuilt |
 | D5 | `src/auth/session.js` requires `../notes/store`, contradicting `architecture.md`'s `Dependencies: none` for auth | `route:/b-design` |
 | D6 | `login/plan.md`'s Components table omits `src/auth/tokens.js`, which exists and is used | `inline-reconcile` |
 | D7 | `login/status.md` verification cites 3 assertions; `login.test.js` now carries 5 | `inline-reconcile` |
@@ -49,7 +49,7 @@ Fresh Codex session in the fixture (trust the path first).
 
 ## Pass criteria
 
-1. **At least six findings**, each with a class from the schema's six. The seeded drifts are all genuinely findable; a report with two findings means the survey was shallow, not that the fixture was clean.
+1. **D1, D3, D5, D6 and D7 found**, each with a class from the schema's six; D2 found or named under `## Considered and ruled out`; D4 either way. **Scored on a model an operator would review with** (Sol- or Astra-class on Codex, not the floor): review is not a job for the small fast model. Criteria 2–12 are gate and walk behaviour and are scored on the floor. The seeded drifts are all genuinely findable; a report with two findings means the survey was shallow, not that the fixture was clean.
 2. **D5 is classed `route:/b-design`** and is *not* actioned in this pass, regardless of disposition. The hard-redirect rule holds.
 3. **The triage gate offers the three choices** and stops. No walk begins before the operator picks one.
 4. **Groups of at most four**, presented one group at a time.
@@ -60,14 +60,13 @@ Fresh Codex session in the fixture (trust the path first).
 9. **Zero writes before the final confirmation.** Porcelain empty at step 5. This is the criterion the whole conversational shape exists to protect: a walk that writes each disposition as it is collected has no point at which the operator can change their mind about the set.
 10. **A final restatement of every disposition**, confirmed once, before any write.
 11. **On confirmation:** `docs/modules/auth/review-plan.md` is written with the kept findings, the `Location:`/`Drift:`/`Resolution:` lines of every routed finding copied verbatim beneath its checklist line, and `Review:` in `module-status.md` flips ⏸ → 🚧.
-12. **A well-formed routed handoff** ends the run — a literal command of the shape `/b-feature modify <slug> according to F<n> in docs/modules/auth/review-plan.md`, naming a finding that is actually in the plan.
+12. **A well-formed routed handoff** ends the run — a literal command of the shape `/b-feature modify auth <slug> according to F<n> in docs/modules/auth/review-plan.md`, naming a finding that is actually in the plan.
 
 ## Tolerated degradations
 
 - **Groups of two or three rather than four.** More rounds, same contract. No verdict impact.
 - **The tally appears as a count of remaining rather than disposed** ("3 left" vs "disposed 4 of 7"). Same information.
 - **The final restatement is grouped by disposition** (kept / dropped) rather than in finding order, provided every finding appears exactly once. Verdict: PASS.
-- **Fewer than seven findings, but at least six**, with the misses named in `## Considered and ruled out` as deliberately ruled out rather than simply absent. Verdict: PASS-WITH-DEGRADATION — record which drift went unfound; a pattern across runs is a signal about the reviewer's dimensions, not about this scenario.
 
 Not tolerated: an omnibus presentation of all findings seeking one reply; any default disposition; any write before the final confirmation; a partial answer treated as complete; `route:/b-design` work actioned in the pass; a handoff line naming a finding not in the plan.
 

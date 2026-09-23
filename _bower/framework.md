@@ -1,4 +1,4 @@
-# Bower Framework v0.42
+# Bower Framework v0.43
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
@@ -59,7 +59,7 @@ ADRs record **cross-cutting commitments** — decisions that constrain more than
 | New component | Create | Create | Yes | Maybe | Yes | — | Maybe | Maybe |
 | New module | Create | Create | Create | Maybe | Yes | Yes | Maybe | Maybe |
 | Architecture change | Yes | — | Maybe | Maybe | — | Yes | Maybe | Yes |
-| UI change (structural) | Maybe | Maybe | — | — | — | — | Yes | Maybe |
+| UI change (structural) | Maybe | Maybe | — | — | — | — | Maybe | Maybe |
 | UI change (visual only) — *git is the undo* | — | — | — | — | — | — | — | — |
 | Scope boundary shift (incl. criterion added/deleted/reworded/re-pointed) | — | — | — | Yes | — | — | — | — |
 | Cross-cutting decision changed | — | — | — | — | — | Maybe | Maybe | Yes |
@@ -83,7 +83,7 @@ ADRs record **cross-cutting commitments** — decisions that constrain more than
 
 Bower's workflows are runtime-neutral: they say what must happen — gate, delegate, stop — not which tool does it. This section is the single place those idioms bind to the runtime in use. Workflows name the idiom; this section supplies the mechanics. Never restate a binding inside a workflow.
 
-**Operator gates.** A gate names a decision, what the operator must see to decide it, the available choices, and a resume condition. On every runtime: present the content and the choices, then stop — end the turn without performing any gated action. Proceed only when the operator's reply explicitly maps to one of the offered choices. Silence, an unrelated message, or approval of a runtime permission prompt is never acceptance. If the reply does not map to a choice, deal with it briefly (answer a question if one was asked), then restate the choices and stop again — every time, not just the first.
+**Operator gates.** A gate names a decision, what the operator must see to decide it, the available choices, and a resume condition. On every runtime: present the content and the choices, then stop — end the turn without performing any gated action. Proceed only when the operator's reply explicitly maps to one of the offered choices. Silence, an unrelated message, or approval of a runtime permission prompt is never acceptance. Nor is anything said before the gate was presented — "no need to check with me" in the request does not answer a gate that did not yet exist; present it and stop. If the reply does not map to a choice, deal with it briefly (answer a question if one was asked), then restate the choices and stop again — every time, not just the first.
 
 - *Claude Code:* present the decision and choices through the `AskUserQuestion` tool and wait for its result.
 - *Codex:* present the same content and choices in the ordinary reply and end the turn; interpret the operator's next message against the offered choices.
@@ -100,6 +100,7 @@ Bower's workflows are runtime-neutral: they say what must happen — gate, deleg
 - *Claude Code:* the Agent tool with `subagent_type: "bower-<role>"`; definitions in `.claude/agents/`.
 - *Codex:* delegate to the named custom agent; definitions in `.codex/agents/`.
 - *Fallback, any runtime:* if delegation is unavailable, the calling workflow — this conversation, never a spawned agent — follows the role's definition inline, says so in one line, and writes `Context: inline` into the artifact it produces. That marker is written only by the caller on this fallback path; a genuinely delegated role never writes it. Fresh-context isolation is degraded, and the record says so rather than faking it.
+- *Waiting, any runtime:* elapsed time is not evidence of failure. A wait or polling timeout means keep waiting — report progress to the operator and request status without interrupting. Interrupt only on concrete evidence of a stall: no progress across repeated status checks, or an error. A report returned under interrupt is degraded: the caller writes `Context: interrupted — <what was not finished or not verified>` into the artifact built from it (for an implementation, the feature's `## Verification`). The marker records the gap; it does not license redoing the role's work on this thread.
 
 **The request.** Workflows call their invocation argument "the request". On Claude Code it is bound by the `$ARGUMENTS` line at the top of the command; on Codex it is the text of the invoking message after the skill mention.
 
@@ -115,7 +116,7 @@ Three questions: Is it UI? Is it *structural* (changes what's there or how it re
 
 |                  | Non-structural                          | Structural                                 |
 |------------------|-----------------------------------------|--------------------------------------------|
-| **Well-specified**   | Just do it. No doc update.               | Just do it; reconcile `docs/ui.md`.          |
+| **Well-specified**   | Just do it. No doc update.               | Just do it; `docs/ui.md` only by the test below. |
 | **Underspecified**   | Ask one clarifying question, then do it. | Use `/b-ui` — propose with options.          |
 
 **Design work records nothing by default** — change it and move on; a comment in the component or stylesheet is the next rung, and it is where a choice that would otherwise read as arbitrary belongs. `docs/ui.md` is reached only when an invariant changed **and the code cannot carry it** — a pattern a shared component already expresses is recorded by that component. It holds what a later editor could not recover by reading the code: ownership, relationships across surfaces, and constraints — not one feature's behaviour, implementation identifiers, backend mechanics or why a shape was chosen (`_bower/framework-reference.md` → *UI Changes* → *What `docs/ui.md` holds*).
