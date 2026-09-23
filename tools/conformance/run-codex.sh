@@ -11,7 +11,7 @@
 #   prompt    The invoking message, e.g. '$b-feature add a logout endpoint …'
 #
 # Environment:
-#   CODEX_MODEL   model to run (default gpt-5.6-luna — the weakest supported
+#   CODEX_MODEL   model to run (default gpt-6-luna — the weakest supported
 #                 model, which is the one worth testing gates against)
 #   CODEX_EFFORT  reasoning effort (default medium)
 #
@@ -38,7 +38,7 @@ set -uo pipefail
 [ $# -eq 4 ] || { sed -n '3,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1; }
 
 ID="$1"; FIXTURE="$(cd "$2" && pwd)"; SANDBOX="$3"; PROMPT="$4"
-MODEL="${CODEX_MODEL:-gpt-5.6-luna}"
+MODEL="${CODEX_MODEL:-gpt-6-luna}"
 EFFORT="${CODEX_EFFORT:-medium}"
 
 EVIDENCE="$(dirname "$FIXTURE")/evidence"

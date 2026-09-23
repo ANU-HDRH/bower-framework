@@ -1,0 +1,13 @@
+{
+  "name": "bower-conformance-driver",
+  "private": true,
+  "type": "module",
+  "description": "Scripted operator for docs/conformance/. Not scaffolded; framework-repo tooling only.",
+  "scripts": {
+    "drive": "node drive.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.281",
+    "@openai/codex-sdk": "0.156.1"
+  }
+}

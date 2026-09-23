@@ -9,9 +9,8 @@
 # scaffold explicitly never touches it.
 .claude/settings.local.json
 
-# Scratch installs. The repo has no package.json and no dependencies — the tools
-# under tools/ are plain .cjs — but a stray `npm i` while poking at the viewer
-# would otherwise land 200MB in the working set.
+# Scratch installs. The only package.json is tools/conformance/'s (the driver's
+# two SDKs); everything else under tools/ is plain .cjs with no dependencies.
 node_modules/
 
 .DS_Store
