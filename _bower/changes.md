@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.45 | 2026-09-29 | The module status rollup is defined once, first match wins — 🔴, 🔧, 🟡, 🚧, all ⏸ → ⏸, ⏸ mixed with ✓ → 🚧, else ✓; `/b-index`'s contradictory linear ordering is replaced, and `/b-recap` derives each module's marker rather than copying `docs/index.md`'s | mechanical |
 | v0.44 | 2026-09-29 | A constitution's verified-for-✓ rule names its level: a feature is ✓ on its acceptance criteria, the module integration test gates the module; `/b-design` drafts the line that way, and a project whose rule gates features on integration is offered a rewording | judgement |
 | v0.43 | 2026-09-24 | A manual check the operator accepts as deferred lands the feature ✓ with a `Deferred verification:` line — owed work listed by `/b-recap` and the viewer, never a 🚧 pin; `/b-feature <feature>` records a pending or deferred check's result. A waiver in the request never answers a gate. A delegate's elapsed time is not failure; a report taken under interrupt is marked. The viewer reports two ADRs sharing an `id`. v0.42's UI recording test applied at `/b-feature` and `/b-module`'s proposal and reconcile, *Path 2* and the router | none |
 | v0.42 | 2026-09-22 | UI records nothing by default, then a code comment, then `docs/ui.md` only where an invariant moved, then a *new* ADR only where something outside the stylesheet depends on it — existing ADRs bind every UI change; `docs/ui.md` gains a density budget and four content classes it does not hold; a prose reference to a transient item pins a commit that held it | judgement |
@@ -37,6 +38,28 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.45 — 2026-09-29
+
+### One module status rollup
+
+Three texts defined the module rollup three ways. `/b-index` gave a linear ordering (`🔴 > 🟡 > 🚧 > ⏸ > 🔧 > ✓`) under which a module with one feature ✓ and the rest ⏸ rolls up to ⏸, contradicting its own worked example; it also ranked 🔧 below ⏸, where the viewer ranks it second. `/b-recap` had no rule and copied the index, and `/b-index` read feature markers from `status.md` where the viewer reads the build order. The rollup and its source — the build-order marker, with a disagreeing `status.md` reported rather than obeyed — are now defined once in the reference as the viewer already implemented them, and both commands point there; ⏸ is a lifecycle state, so part-started is 🚧.
+
+- **`_bower/framework-reference.md`** — *Module-level status is a floor, not a sum* gains the first-match ordering.
+- **`skills-src/commands/b-index.md`** — the linear ordering is replaced with a pointer; feature markers come from the build order, and a disagreeing `status.md` is reported.
+- **`skills-src/commands/b-recap.md`** — derives each module's marker from `module-status.md` and flags a differing index marker as stale.
+- **`_bower/framework.md`**, **`_bower/review-schema.md`** — point at the definition.
+- **`_bower/viewer/`** — README and code comment point at the definition; behaviour unchanged.
+
+### Migration
+
+Mechanical.
+
+1. For each module under `docs/modules/`, read `module-status.md`'s `## Build order` markers and `## Module integration` `Test:` marker, and derive the module marker from those only (not from feature `status.md` files), first match wins: any 🔴 → 🔴; any 🔧 → 🔧; any 🟡 → 🟡; any 🚧 → 🚧; every marker ⏸ → ⏸; any ⏸ mixed with ✓ → 🚧; otherwise ✓.
+2. Compare each with the module's marker in `docs/index.md`. If any differ, run `/b-index` to regenerate it; the most likely case is a part-built module shown as ⏸. If none differ, record `module markers already conform` and make no change.
+3. For each feature whose `status.md` opens with a marker different from its build-order marker, list the pair in the upgrade report for the operator to resolve with `/b-feature <feature>`. Do not edit either file.
 
 ---
 

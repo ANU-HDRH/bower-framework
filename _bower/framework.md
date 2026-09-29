@@ -1,4 +1,4 @@
-# Bower Framework v0.44
+# Bower Framework v0.45
 
 This project uses the Bower AI-assisted development pattern. Bower optimises for small-team research velocity across the full prototype-to-infrastructure lifecycle. This file is the always-loaded router: identity, guards, and where things live. Detailed specs live in `_bower/framework-reference.md` and in the `/b-*` commands themselves — consult them on demand rather than holding everything in every session.
 
@@ -42,7 +42,7 @@ Full ownership semantics, the `constitution.md` normative shape, document schema
 
 ✓ complete · 🚧 in development · ⏸ planned · 🟡 known issues · 🔴 broken · 🔧 under revision
 
-Only `/b-integration` (or `/b-module`'s integration pass) flips a module's `## Module integration` marker; `/b-feature` updates build-order markers only. Module-level status is the *worst* across feature and integration markers.
+Only `/b-integration` (or `/b-module`'s integration pass) flips a module's `## Module integration` marker; `/b-feature` updates build-order markers only. Module-level status is a floor across feature and integration markers — ordering in `framework-reference.md` → *Module-level status is a floor, not a sum*.
 
 Only `/b-review` writes a module's `## Module review` `Review:` marker (⏸ never reviewed · 🚧 in review, a `review-plan.md` is open · ✓ reviewed, with date and roster snapshot). Review is an orthogonal axis: it is reported alongside module status, never folded into it, because review is optional. Staleness is derived by comparing the snapshot count to the current `## Build order` length — no command invalidates a review. A review at 🚧 is **resumed** by re-invoking `/b-review <module>`, which picks up mediation against the open `review-plan.md` and does not re-diagnose — so a review can span as many sessions as its findings take.
 

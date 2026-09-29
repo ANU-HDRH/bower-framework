@@ -211,11 +211,11 @@ particular can be a deliberate human judgement the mechanical rollup cannot make
 
 ## Module status rollup
 
-A module's status is the worst marker across its features and its integration
-test — but ⏸ is read as *not started* rather than as a severity, so a module
-that is part built and part planned rolls up to 🚧, and only an entirely
-untouched module is ⏸. That is what `framework-reference.md`'s own worked example
-describes: all features ✓ with `## Module integration` still ⏸ surfaces as 🚧.
+A module's status follows `framework-reference.md` → *Module-level status is a
+floor, not a sum*, across its features and its integration test, first match
+wins: 🔴, 🔧, 🟡, 🚧; all ⏸ → ⏸; ⏸ mixed with ✓ → 🚧; otherwise ✓. ⏸ is read as
+*not started* rather than as a severity, so a module that is part built and part
+planned rolls up to 🚧, and only an entirely untouched module is ⏸.
 Where the rollup disagrees with `docs/index.md`, both are shown and the
 difference is reported rather than silently resolved.
 

@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.44';
+const SCHEMA_VERSION = '0.45';
 
 // ---------------------------------------------------------------- helpers
 
@@ -1310,11 +1310,9 @@ function extract(root) {
       modFeatures.push(feat);
     }
 
-    // Module rollup: the worst marker across features + integration. ⏸ means
-    // *not started* rather than a severity, so a module that is part built and
-    // part planned rolls up to 🚧 — which is what framework-reference.md's own
-    // worked example describes ("A module with all features ✓ but `## Module
-    // integration` still ⏸ surfaces as 🚧"). Only an untouched module is ⏸.
+    // Module rollup: framework-reference.md → "Module-level status is a floor,
+    // not a sum", first match wins. ⏸ means *not started* rather than a
+    // severity, so a part-built module is 🚧; only an untouched module is ⏸.
     const markers = modFeatures
       .map((f) => f.effectiveMarker)
       .concat(integration ? [integration.marker] : [])

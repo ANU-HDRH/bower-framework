@@ -241,7 +241,17 @@ Review: <state, with date and roster count at ✓>
 
 **Over-budget is never a finding**, and never work for `/b-feature`. Only a **shape violation** is reportable: a shape-conformant file can exceed density honestly through long `Remaining:` clauses, and there is then nothing in it a compaction is allowed to cut.
 
-**Module-level status is a floor, not a sum.** `/b-index` derives a module's status as the worst across both feature markers and the module-integration marker. A module with all features ✓ but `## Module integration` still ⏸ surfaces as 🚧 — making the constitution's verified-for-✓ rule observable rather than aspirational. The review state (below) is **not** an input to this floor.
+**Module-level status is a floor, not a sum.** A module's status is derived from its `## Build order` feature markers plus its `## Module integration` `Test:` marker, first match wins. The build-order marker is the feature's marker for this purpose; a feature `status.md` whose marker disagrees with it is a contradiction to report and fix at `/b-feature <feature>`, never an input that overrides it.
+
+1. any 🔴 → 🔴
+2. any 🔧 → 🔧
+3. any 🟡 → 🟡
+4. any 🚧 → 🚧
+5. every marker ⏸ → ⏸
+6. any ⏸ (mixed with ✓) → 🚧
+7. otherwise → ✓
+
+⏸ is a lifecycle state, not a severity, so it has no place in a linear worst-of ordering: a module with some work started and some planned is 🚧. A module with all features ✓ but `## Module integration` still ⏸ surfaces as 🚧 — making the constitution's verified-for-✓ rule observable rather than aspirational. `/b-index` writes this marker, `/b-recap` derives it, and the viewer implements it; none copies another's. The review state (below) is **not** an input to this floor.
 
 ```markdown
 ## Module review
