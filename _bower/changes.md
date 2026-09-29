@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.44 | 2026-09-29 | A constitution's verified-for-✓ rule names its level: a feature is ✓ on its acceptance criteria, the module integration test gates the module; `/b-design` drafts the line that way, and a project whose rule gates features on integration is offered a rewording | judgement |
 | v0.43 | 2026-09-24 | A manual check the operator accepts as deferred lands the feature ✓ with a `Deferred verification:` line — owed work listed by `/b-recap` and the viewer, never a 🚧 pin; `/b-feature <feature>` records a pending or deferred check's result. A waiver in the request never answers a gate. A delegate's elapsed time is not failure; a report taken under interrupt is marked. The viewer reports two ADRs sharing an `id`. v0.42's UI recording test applied at `/b-feature` and `/b-module`'s proposal and reconcile, *Path 2* and the router | none |
 | v0.42 | 2026-09-22 | UI records nothing by default, then a code comment, then `docs/ui.md` only where an invariant moved, then a *new* ADR only where something outside the stylesheet depends on it — existing ADRs bind every UI change; `docs/ui.md` gains a density budget and four content classes it does not hold; a prose reference to a transient item pins a commit that held it | judgement |
 | v0.41 | 2026-09-15 | `module-status.md`'s word budget becomes a density heuristic (~30 words per build-order entry) plus a structural shape test; out-of-shape content is a compaction candidate, deleted only where it is known duplication or history and otherwise reported, at the reconcile step of `/b-feature`, `/b-module` and `/b-integration` and at `/b-review` closeout; over-budget is never a review finding | judgement |
@@ -36,6 +37,28 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.44 — 2026-09-29
+
+### The verified-for-✓ rule names its level
+
+The marker model gates a *feature* on its acceptance criteria and the *module* on its integration test (the floor rule), but nothing told `/b-design` which level the constitution's verified-for-✓ rule governs, and `/b-adopt`'s example named no level. A fresh project's constitution said a feature is ✓ only when "the module's integration test exercises it" — read literally, every feature waits at 🚧 for a test `/b-integration` writes after them. The rule now names its level, with a canonical line.
+
+- **`_bower/framework-reference.md`** — *constitution.md — Normative Shape* gains the level rule and its canonical line.
+- **`skills-src/commands/b-design.md`** — Stage 5's test-runner bullet drafts the line to that rule.
+- **`skills-src/commands/b-adopt.md`** — the example constitution rule names the module.
+
+### Migration
+
+Judgement, gated; `docs/constitution.md` is human-owned.
+
+1. Read `docs/constitution.md`'s testing section. Look for a rule that makes a **feature's** ✓ depend on the module integration test (e.g. "a feature is ✓ only when … the module's integration test exercises it"). A rule that gates the **module** on its integration test is correct; leave it.
+2. If none, record `no feature-level integration gate found` and stop.
+3. For each match, quote the line verbatim with `docs/constitution.md:NN` and explain in one sentence: Bower marks a feature ✓ on its agreed acceptance criteria; the module integration test gates the module marker, which `/b-index` holds at 🚧 until `## Module integration` is ✓. Offer at an operator gate: reword to *"A feature is ✓ when its unit tests and agreed acceptance checks pass; a module is ✓ only when its integration test also passes."* · keep it (the project deliberately gates features on integration) · leave it for now. Edit the file only on an explicit instruction to reword.
+4. If the operator keeps a feature-level gate deliberately, note in the upgrade report that Bower has no marker for "verified, awaiting integration" and that such features will read 🚧.
+5. If the rule is reworded, check each module's `module-status.md` `## Build order` for features held at 🚧 **only** by that rule — acceptance criteria all PASS or accepted as deferred, with any `Pending verification:` naming nothing but the integration test. List them to the operator at a batch gate; on confirmation per feature, mark it ✓, compress its `status.md` to terminal form, and run `/b-index`. Do not touch `## Module integration`.
 
 ---
 

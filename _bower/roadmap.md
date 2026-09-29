@@ -17,6 +17,8 @@ In order. The first is framework-repo tooling and carries no version.
 
 ## Deferred items
 
+- **Feature-level integration gating** — v0.44 fixed the verified-for-`✓` rule at module level: a feature's `✓` is its acceptance criteria, the module integration test gates the module. A project that genuinely wants each feature held until the integration test exercises it has no marker for "built, verified, awaiting integration" — `🚧` means in progress and `Pending verification:` means an operator check. Revisit trigger: a project asks for that gating deliberately, not as a misread of the constitution line.
+
 - **The reviewer misses plan-inventory and verification-count drift** — C8 at v0.43 (`docs/conformance/runs.md`): on `gpt-6-luna` twice and `gpt-6-sol` once, `/b-review` never named a file missing from a plan's `## Components` table (D6) or a `status.md` citing fewer assertions than the test file now holds (D7), and did not list either as ruled out. Both are mechanical comparisons the review schema's spec↔code and status-honesty dimensions cover. Candidate: name the two comparisons in `bower-reviewer`'s survey steps; the viewer's `component-missing` checks only the reverse direction (listed, not on disk).
   *Revisit trigger:* either miss on a real project's review, or the next C8 run on a Claude-side reviewer showing the same gap.
 

@@ -159,7 +159,7 @@ Four kinds of edits, any of which the brief may list:
 - **README.md** — If a stock README exists (from `create-*` tooling, or from adopting Bower itself), move it to `_bower/original-README.md` and generate a project-specific README drawn from `scope.md` and `architecture.md`. The new README must include a short "Built with Bower" section linking to `_bower/original-README.md`.
 - **.gitignore** — Stack-appropriate.
 - **Linter / formatter config** — per Stage 2 decisions. If the stack's formatter handles markdown (Prettier and most of its peers do), exclude `docs/` in the same step — `.prettierignore` or the equivalent — and note the exclusion in `constitution.md`. Reason: `_bower/framework-reference.md` § *Code Formatters and `docs/`*.
-- **Test runner setup** — per the testing approach in `constitution.md`.
+- **Test runner setup** — per the testing approach in `constitution.md`. Its verified-for-✓ rule names its level: `_bower/framework-reference.md` → *constitution.md — Normative Shape*.
 - **Migration convention** — if the stack numbers database migrations, `constitution.md`'s working conventions carry the branch-author-renumbers rule (`_bower/framework-reference.md` → *Numbered migrations and the branch that carries them*): bring the target branch in before integrating, renumber above its highest, regenerate the journal with the tool.
 - **Directory skeleton** — empty module directories matching the Stage 4 breakdown (the `module-status.md` placeholders have already been written in Stage 4).
 
