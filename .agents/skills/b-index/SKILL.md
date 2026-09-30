@@ -45,7 +45,7 @@ Two boundaries on that rule:
 If `docs/index.md` already exists, follow the **Regeneration contract** above: refresh the derived status markers in place and preserve the project's structure. The structure below is the seed used only on first generation:
 
 ```markdown
-# Project Index
+# <Project name> — Project Index
 
 ## Core System
 - [Architecture](/docs/architecture.md) — System overview and key decisions
@@ -64,6 +64,8 @@ If `docs/index.md` already exists, follow the **Regeneration contract** above: r
 - ...
 - [Module Status](/docs/modules/<module>/module-status.md)
 ```
+
+`<Project name>` is the name `docs/architecture.md`'s H1 gives the project, else the repository directory's name. On regeneration, an H1 that is exactly `# Project Index` is the pre-v0.45 seed, not curation — rewrite it to this form.
 
 Every link target is **repo-root-based** — a leading `/`, per the doc-link convention in `_bower/framework.md` Working Conventions. Write `/docs/architecture.md`, never `architecture.md` or `../../architecture.md`, even though these links sit inside `docs/` and a relative target would resolve. On regeneration, if the existing `docs/index.md` carries relative targets, rewrite them to the repo-root form as part of the derived-value refresh — link targets are derived, not curated structure.
 

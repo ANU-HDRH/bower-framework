@@ -12,7 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
-| v0.45 | 2026-09-29 | The module status rollup is defined once, first match wins — 🔴, 🔧, 🟡, 🚧, all ⏸ → ⏸, ⏸ mixed with ✓ → 🚧, else ✓; `/b-index`'s contradictory linear ordering is replaced, and `/b-recap` derives each module's marker rather than copying `docs/index.md`'s | mechanical |
+| v0.45 | 2026-09-29 | The module status rollup is defined once, first match wins — 🔴, 🔧, 🟡, 🚧, all ⏸ → ⏸, ⏸ mixed with ✓ → 🚧, else ✓; `/b-index`'s contradictory linear ordering is replaced, and `/b-recap` derives each module's marker rather than copying `docs/index.md`'s; the index H1 names the project | mechanical |
 | v0.44 | 2026-09-29 | A constitution's verified-for-✓ rule names its level: a feature is ✓ on its acceptance criteria, the module integration test gates the module; `/b-design` drafts the line that way, and a project whose rule gates features on integration is offered a rewording | judgement |
 | v0.43 | 2026-09-24 | A manual check the operator accepts as deferred lands the feature ✓ with a `Deferred verification:` line — owed work listed by `/b-recap` and the viewer, never a 🚧 pin; `/b-feature <feature>` records a pending or deferred check's result. A waiver in the request never answers a gate. A delegate's elapsed time is not failure; a report taken under interrupt is marked. The viewer reports two ADRs sharing an `id`. v0.42's UI recording test applied at `/b-feature` and `/b-module`'s proposal and reconcile, *Path 2* and the router | none |
 | v0.42 | 2026-09-22 | UI records nothing by default, then a code comment, then `docs/ui.md` only where an invariant moved, then a *new* ADR only where something outside the stylesheet depends on it — existing ADRs bind every UI change; `docs/ui.md` gains a density budget and four content classes it does not hold; a prose reference to a transient item pins a commit that held it | judgement |
@@ -53,6 +53,14 @@ Three texts defined the module rollup three ways. `/b-index` gave a linear order
 - **`_bower/framework.md`**, **`_bower/review-schema.md`** — point at the definition.
 - **`_bower/viewer/`** — README and code comment point at the definition; behaviour unchanged.
 
+### The index names the project
+
+`/b-index`'s seed H1 was a bare `# Project Index`, and the viewer takes the project name from that H1, so a new project's viewer was titled "Project Index". The seed now reads `# <Project name> — Project Index`, and regeneration rewrites the old bare H1; the viewer falls back to the directory name when it meets one.
+
+- **`skills-src/commands/b-index.md`** — seed H1 names the project; where the name comes from; the bare pre-v0.45 H1 is rewritten on regeneration.
+- **`_bower/viewer/lib/extract.cjs`** — a bare `Project Index` title falls back to the directory name.
+- **`_bower/viewer/README.md`** — Schema contract row for the index H1.
+
 ### Migration
 
 Mechanical.
@@ -60,6 +68,7 @@ Mechanical.
 1. For each module under `docs/modules/`, read `module-status.md`'s `## Build order` markers and `## Module integration` `Test:` marker, and derive the module marker from those only (not from feature `status.md` files), first match wins: any 🔴 → 🔴; any 🔧 → 🔧; any 🟡 → 🟡; any 🚧 → 🚧; every marker ⏸ → ⏸; any ⏸ mixed with ✓ → 🚧; otherwise ✓.
 2. Compare each with the module's marker in `docs/index.md`. If any differ, run `/b-index` to regenerate it; the most likely case is a part-built module shown as ⏸. If none differ, record `module markers already conform` and make no change.
 3. For each feature whose `status.md` opens with a marker different from its build-order marker, list the pair in the upgrade report for the operator to resolve with `/b-feature <feature>`. Do not edit either file.
+4. Read the first line of `docs/index.md`. If it is exactly `# Project Index`, replace it with `# <Project name> — Project Index`, taking the name from `docs/architecture.md`'s H1 if that names the project, else the repository directory's name. Any other H1 is curated; leave it and record `index H1 already names the project`.
 
 ---
 

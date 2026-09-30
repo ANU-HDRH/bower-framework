@@ -1794,7 +1794,10 @@ function extract(root) {
   let projectName = path.basename(root);
   let tagline = '';
   if (indexDoc) {
-    projectName = (indexDoc.title || projectName).replace(/\s*—.*$/, '').trim() || projectName;
+    // A bare "Project Index" is the pre-v0.45 /b-index seed, which named no
+    // project; the directory name is the better label.
+    const title = (indexDoc.title || '').replace(/\s*—.*$/, '').trim();
+    if (title && !/^project index$/i.test(title)) projectName = title;
     const t = M.firstTable(M.sections(indexDoc.body)['Status overview'] || '');
     if (t) {
       const row = t.rows.find((r) => /project/i.test(r[0] || ''));
