@@ -117,6 +117,7 @@ const EXPECTED = [
   'adr-narrow-dangling',
   'adr-narrow-and-supersede',
   'narrowed-adr-not-accepted',
+  'adr-narrowed-by-retired',
   // links
   'broken-link',
   'relative-doc-link',
@@ -181,6 +182,7 @@ for (const [kind, want] of [
   ['marker-disagreement', 'error'],
   ['pending-verification-complete', 'error'],
   ['narrowed-adr-not-accepted', 'error'],
+  ['adr-narrowed-by-retired', 'error'],
   ['adr-duplicate-id', 'error'],
   ['criterion-stale-pointer', 'error'],
   ['component-missing', 'warn'],
@@ -428,8 +430,8 @@ assert(
 // ── structure the views depend on ────────────────────────────────────────────
 
 assert(
-  g.counts.modules === 7,
-  'seven modules (two documented, one ghost, one undeclared, one unparseable build order, one stale-reviewed, one name-collider)',
+  g.counts.modules === 8,
+  'eight modules (two documented, one ghost, one undeclared, one unparseable build order, one stale-reviewed, one name-collider, one dir-less ⏸ tail)',
   `got ${g.counts.modules}`,
 );
 assert(g.schema.match === true, 'fixture is on the schema version the viewer parses', JSON.stringify(g.schema));
@@ -440,6 +442,10 @@ assert(clean.status === '✓' && clean.complete, 'a fully built module rolls up 
 // framework-reference.md's own worked example: all features ✓ with integration
 // still ⏸ surfaces as 🚧, not ⏸. ⏸ means not-started, not a severity.
 assert(drifted.status === '🚧', 'a part-built module rolls up 🚧, not ⏸', `got ${drifted.status}`);
+// A ⏸ entry has no docs directory until it is planned; the rollup reads the
+// build order, so it still counts.
+const tail = g.modules.find((m) => m.name === 'tail');
+assert(tail.status === '🚧', 'a ⏸ build-order entry with no directory keeps the module 🚧', `got ${tail.status}`);
 
 // v0.22 pull-forward annotation — the `Remaining:` half is the load-bearing
 // part, since it is what stops the next pass rebuilding what already exists.
@@ -850,7 +856,17 @@ const adr = (id) => g.adrs.find((a) => a.id === id);
 assert(adr('ADR-0011').narrows.includes('ADR-0012'), 'narrows is read from frontmatter');
 assert(adr('ADR-0012').narrowedBy.includes('ADR-0011'), 'narrowed-by is read from frontmatter');
 assert(adr('ADR-0012').status === 'accepted', 'a narrowed ADR stays accepted');
-assert(g.counts.adrsNarrowed === 4, 'narrowed ADRs are counted', `got ${g.counts.adrsNarrowed}`);
+// Supersession prunes the target's narrowed-by and leaves the retired file's
+// narrows as history, so the pair is asymmetric by design.
+assert(
+  !g.health.some((h) => h.kind === 'adr-narrow-asymmetric' && /ADR-0023/.test(h.message)),
+  'a retired narrower is not held to symmetry with its pruned target',
+);
+assert(
+  g.health.some((h) => h.kind === 'adr-narrowed-by-retired' && /ADR-0026/.test(h.message)),
+  'a live ADR still naming a retired narrower is flagged',
+);
+assert(g.counts.adrsNarrowed === 5, 'narrowed ADRs are counted', `got ${g.counts.adrsNarrowed}`);
 
 // v0.38 slug IDs — a v0.38 `<slug>.md` and a pre-v0.38 `NNNN-*.md` are both ADRs,
 // identity comes from frontmatter, and the key (route token) is the slug for one

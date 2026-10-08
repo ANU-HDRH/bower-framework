@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.46 | 2026-10-08 | Viewer: the module rollup reads every build-order entry, so a ⏸ entry with no docs directory keeps a part-built module 🚧; a retired narrowing ADR's `narrows` is history, and a live `narrowed-by` naming a retired ADR is a new error | mechanical |
 | v0.45 | 2026-09-29 | The module status rollup is defined once, first match wins — 🔴, 🔧, 🟡, 🚧, all ⏸ → ⏸, ⏸ mixed with ✓ → 🚧, else ✓; `/b-index`'s contradictory linear ordering is replaced, and `/b-recap` derives each module's marker rather than copying `docs/index.md`'s; the index H1 names the project | mechanical |
 | v0.44 | 2026-09-29 | A constitution's verified-for-✓ rule names its level: a feature is ✓ on its acceptance criteria, the module integration test gates the module; `/b-design` drafts the line that way, and a project whose rule gates features on integration is offered a rewording | judgement |
 | v0.43 | 2026-09-24 | A manual check the operator accepts as deferred lands the feature ✓ with a `Deferred verification:` line — owed work listed by `/b-recap` and the viewer, never a 🚧 pin; `/b-feature <feature>` records a pending or deferred check's result. A waiver in the request never answers a gate. A delegate's elapsed time is not failure; a report taken under interrupt is marked. The viewer reports two ADRs sharing an `id`. v0.42's UI recording test applied at `/b-feature` and `/b-module`'s proposal and reconcile, *Path 2* and the router | none |
@@ -38,6 +39,24 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.46 — 2026-10-08
+
+### Viewer: rollup roster and retired narrowers
+
+Two false findings on a real project. The viewer rolled modules up from feature directories, so a ⏸ build-order entry not yet planned was dropped and a part-built module read ✓; it now reads the build order, as the rollup definition says. And it held a superseded narrowing ADR's `narrows` to symmetry, demanding the target name a retired ADR that the pruning rule had correctly removed; a retired ADR's `narrows` is now history, and the converse — a live `narrowed-by` still naming a retired ADR — is a new error, `adr-narrowed-by-retired`.
+
+- **`_bower/viewer/lib/extract.cjs`** — rollup input is the build order; retired ADRs skip the `narrows` checks; new `adr-narrowed-by-retired`.
+- **`_bower/viewer/README.md`** — Schema contract rows for the rollup and narrowing.
+
+### Migration
+
+Mechanical.
+
+1. For each ADR under `docs/adr/` with `status: accepted` and a `narrowed-by` field, read each ADR it names. Where a named ADR has `status: superseded` or `deprecated`, read that ADR's `superseded-by` successor. If the successor's `narrows` names the reporting ADR, replace the retired ID with the successor's in the reporting ADR's `narrowed-by`; otherwise remove the retired ID (deleting the field if empty). Touch nothing else in either file. If no ADR qualifies, record `narrowing pointers already pruned`.
+2. For each module under `docs/modules/`, derive its marker from `module-status.md`'s `## Build order` markers — every entry, including ⏸ entries with no feature directory — and its `## Module integration` `Test:` marker, by the first-match rule in `_bower/framework-reference.md` → *Module-level status is a floor, not a sum*. If any differs from the module's marker in `docs/index.md`, run `/b-index`; otherwise record `module markers already conform`.
 
 ---
 

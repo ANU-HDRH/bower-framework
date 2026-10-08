@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.45';
+const SCHEMA_VERSION = '0.46';
 
 // ---------------------------------------------------------------- helpers
 
@@ -1313,8 +1313,11 @@ function extract(root) {
     // Module rollup: framework-reference.md → "Module-level status is a floor,
     // not a sum", first match wins. ⏸ means *not started* rather than a
     // severity, so a part-built module is 🚧; only an untouched module is ⏸.
-    const markers = modFeatures
-      .map((f) => f.effectiveMarker)
+    // Input is the build order, not the feature directories: a ⏸ entry has no
+    // directory until it is planned, and dropping it reads a part-built module ✓.
+    const markers = buildOrder
+      .map((b) => b.marker)
+      .concat(modFeatures.filter((f) => !f.inBuildOrder).map((f) => f.effectiveMarker))
       .concat(integration ? [integration.marker] : [])
       .filter(Boolean);
     let rollup = null;
@@ -1641,7 +1644,11 @@ function extract(root) {
     // state. And `narrows` never changes the target's status — that is the whole
     // point of the field, so a narrowed ADR marked superseded is the exact
     // defect the field exists to prevent: live policy marked dead.
-    for (const t of a.narrows) {
+    // A retired ADR's `narrows` is history: supersession prunes the target's
+    // `narrowed-by`, never the retired file, so demanding symmetry contradicts
+    // the pruning rule.
+    const retired = a.status === 'superseded' || a.status === 'deprecated';
+    for (const t of retired ? [] : a.narrows) {
       const target = adrById.get(t);
       if (!target) {
         flag('error', 'adr-narrow-dangling', `${a.id} narrows unknown ${t}`, a.rel);
@@ -1672,6 +1679,13 @@ function extract(root) {
     for (const t of a.narrowedBy) {
       const source = adrById.get(t);
       if (!source) flag('error', 'adr-narrow-dangling', `${a.id} declares narrowed-by unknown ${t}`, a.rel);
+      else if (source.status === 'superseded' || source.status === 'deprecated')
+        flag(
+          'error',
+          'adr-narrowed-by-retired',
+          `${a.id} declares narrowed-by ${t}, but ${t} is ${source.status} — superseding a narrowing ADR prunes it from its target's narrowed-by, or moves the entry to a successor that re-asserts the exception`,
+          a.rel,
+        );
       else if (!source.narrows.includes(a.id))
         flag(
           'error',
