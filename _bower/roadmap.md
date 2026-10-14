@@ -2,7 +2,7 @@
 
 Deferred framework improvements and the triggers that make each one worth picking up. This file is not loaded into context by default — it's a canonical home for ideas that are named but not scheduled.
 
-Each item has a one-line description and a *revisit trigger*: the signal that turns it from deferred to worth doing. Items were last checked against a real project's state on 2026-09-23; an *Evidence* line records what that check found.
+Each item has a one-line description and a *revisit trigger*: the signal that turns it from deferred to worth doing. Items were last checked against a real project's state on 2026-09-23, some again on 2026-10-14; an *Evidence* line records what each check found.
 
 ## Scheduled
 
@@ -10,10 +10,7 @@ In order. The first is framework-repo tooling and carries no version.
 
 - **A scripted operator for the conformance suite** — `tools/conformance/drive.mjs`: each scenario as a list of turns (invoke, the non-answer probes, confirm), `git status --porcelain` checked after every turn. Claude Code runs through the Agent SDK, whose `canUseTool` callback always receives `AskUserQuestion` and can answer it, free-text non-answers included; Codex runs through its SDK, where `thread.run()` continues one thread across turns and answers a prose gate. The blocking criterion (no gated write before an explicit answer) is scored mechanically from porcelain; restatement by the choice labels, with a model judge as fallback; the operator reviews each ledger row before it is written. Covers C3 and C8 outright, plausibly C1, C2 and C4 (SDK abort, then resume). A row driven through the Claude SDK is the SDK surface, not the TUI, and says so. **Built 2026-09-24; Claude C3 cleared at v0.42.** Remaining: C3 and C8 on Codex; a C8 scenario needs turns that read the presented group (`send` as a function of the stop).
 
-- **v0.43, held unreleased — the rest of the bundle** — *v0.43 carries the v0.42 UI-test fix and the accepted-as-deferred close-out.*
-  - **A delegated role's elapsed time is not evidence of failure.** `Runtime bindings` → *Delegation* gains a clause: a polling timeout is not a failure; keep waiting, report progress, request status without interrupting, interrupt only on concrete evidence of a stall. A report produced under interrupt is marked so by the caller, in the artifact, naming what was degraded — the `Context: inline` discipline. Must not prescribe re-verification on the caller's thread. Observed at v0.33: a Codex caller interrupted an implementer running the full suite, then reconciled from a report that may have described an unfinished run.
-  - **A viewer check for two ADRs sharing an `id`** — `extract.cjs` keys ADRs in a `Map` and silently keeps one; it is the only post-commit catch for an unrepaired `/b-merge` slug collision. Owed since v0.39.
-  - Gate and delegation text both change, so C3 and C8 run through the driver above before the tier claims repeat.
+- **v0.47 — what a plan's `## Components` cell may hold** — the plans clause of *Growth of the always-read documents* fired on 2026-10-14: oversized cells in two real plans (`projects/project-crud`, `test-harness/test-run-viewer-and-annotation`). Decide the cell's budget and where the overflow lives; `/b-feature` Step 6 writes the table, and the viewer's `oversized-table-cell` already reports it. Design from those two plans.
 
 ## Deferred items
 
@@ -44,7 +41,7 @@ In order. The first is framework-repo tooling and carries no version.
 
   *Revisit trigger:* the operator's shape decision. Design from the real project's `README.md` and constitution text, not from imagined protocols.
 
-- **Multi-writer Bower — the residue** — *v0.38 (slug IDs, module-owned `ui.md` regions, migration renumbering) and v0.39 (`/b-merge`, *Working in parallel*) shipped 2026-08-25.* Still owed: a run of `/b-merge` on a real two-branch merge; the duplicate-`id` viewer check is scheduled for v0.43. Design position: small-team branch-and-merge, no PR review assumed, merges by people not fluent with git, solo work pays nothing. IDs are names never counts; a `docs/` conflict is impossible by construction or has a one-word resolution. Deliberately not built:
+- **Multi-writer Bower — the residue** — *v0.38 (slug IDs, module-owned `ui.md` regions, migration renumbering) and v0.39 (`/b-merge`, *Working in parallel*) shipped 2026-08-25.* Still owed: a run of `/b-merge` on a real two-branch merge. The duplicate-`id` viewer check shipped at v0.43. Design position: small-team branch-and-merge, no PR review assumed, merges by people not fluent with git, solo work pays nothing. IDs are names never counts; a `docs/` conflict is impossible by construction or has a one-word resolution. Deliberately not built:
   - **Coherence detection beyond the two sides' diffs** — a branch contradicting docs neither side changed is `/b-review`'s territory. *Trigger:* an incoherence that `/b-merge` and `/b-recap` both missed.
   - **A scripted `/b-index` on the viewer's parser** — makes regenerate-never-merge idempotent. *Trigger:* a regenerate-on-conflict producing an index neither branch had, or a request for `/b-index` in CI.
   - **Late-bound or renumbered IDs** — needs an integration stage Bower will not have. *Trigger:* only if one arrives for another reason.
@@ -62,6 +59,7 @@ In order. The first is framework-repo tooling and carries no version.
   - **`architecture.md` splitting** — a short overview, component detail in module-scoped docs. *Trigger:* ~500 lines.
 
   **Evidence (2026-09-23):** on the most mature real project, `index.md` is 58 lines, the largest `module-status.md` 104, `architecture.md` 306. The one oversized table cell is in a `plan.md`, not the index — the pattern has moved to where no budget applies.
+  **Evidence (2026-10-14):** `index.md` 59, largest `module-status.md` 83, `architecture.md` 326. Oversized cells are now in two plans (`projects/project-crud`, `test-harness/test-run-viewer-and-annotation`), so the plans clause of the trigger has fired; scheduled for v0.47.
   *Revisit trigger:* an index needing a surgical edit it cannot get; a second project growing an unbounded curated section; `architecture.md` past ~500 lines; or oversized cells recurring in plans. Cheapest bundled with other work in `/b-index`.
 
 - **Where `module-status.md` compaction runs** — *v0.41 put it inline at reconcile and review closeout.* A tired context may skip it; delegation was rejected because a fresh subagent would load cold what the orchestrator has already read. The job is bounded so a skip fails safe.
@@ -95,12 +93,11 @@ In order. The first is framework-repo tooling and carries no version.
   - **Screenshot before confirm in `/b-ui` Step 4:** when an observation tool is in the session, capture the surface before the manual-check question; without one, today's behaviour. Includes documenting WSL2 headless setup. *Trigger:* two real UI cycles where the manual-check round-trip caused back-and-forth a screenshot would have prevented.
   - **`ui.md` invariants enforced by a test harness** (Playwright, Textual, native). Project-specific; likely a `constitution.md` convention rather than a framework default. *Trigger:* a `ui.md` invariant drifting from code, caught only at manual review or by a user.
 
-- **Forward-written claims — three follow-ons to v0.40** —
-  - **Render the decided-but-unbuilt roster** in the viewer, grouped by discharging feature. *Trigger:* annotations accumulating across more than one design run.
+- **Forward-written claims — two follow-ons to v0.40** — *the viewer roster shipped at v0.46.*
   - **Greenfield `architecture.md` after the first feature lands** — the greenfield exemption expires silently. *Trigger:* a `/b-feature` run building on an unbuilt claim as though it existed.
   - **Audit the cited authority** — `forward-write-no-authority` and `forward-write-superseded-authority` as `warn` checks. *Trigger:* a superseded ADR whose annotated claims a later run implements.
 
-  **Evidence (2026-09-23):** `counts.forwardWritten` is 0 on the real project; nothing has been annotated yet.
+  **Evidence (2026-10-14):** 8 annotations on the real project from two design runs, 7 owned by one ⏸ entry. The first real `forward-write-unowned` caught an `architecture.md` claim still naming a queue item drained five days earlier — the lifecycle audit working as designed.
 
 - **Extend the implementation-agent boundary to `/b-module`** — a per-feature `bower-implementer` spawn in the build loop; if adopted, consider graduating the report contract to a `_bower/` schema. The original trigger (delegation validated on real `/b-feature` cycles) is plausibly met, but no `/b-module` run has happened on the real project since, so the cost it fixes has not been felt.
   *Revisit trigger:* the next real `/b-module` run.

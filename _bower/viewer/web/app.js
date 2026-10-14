@@ -524,6 +524,7 @@ function viewOverview() {
         fs['⏸'] ? `${fs['⏸']} planned` : null,
         c.pendingVerification ? `${c.pendingVerification} awaiting checks` : null,
         c.deferredVerification ? `${c.deferredVerification} deferred ${c.deferredVerification === 1 ? 'check' : 'checks'}` : null,
+        c.forwardWritten ? `${c.forwardWritten} unbuilt ${c.forwardWritten === 1 ? 'claim' : 'claims'}` : null,
       ],
     }),
     tile({
@@ -697,7 +698,8 @@ function viewHealth() {
     'build-order-orphan': 'A build-order entry past ⏸ should have a docs directory.',
     'no-components-table': 'No parseable Components table, so its files are not indexed.',
     'pending-verification-complete':
-      '✓ means the agreed criteria were verified. Deferred manual checks mean 🚧, not ✓.',
+      '✓ means the agreed criteria were verified. A check still pending holds the feature 🚧; one the operator ' +
+      'accepted as deferred is a Deferred verification: line, which a ✓ feature may carry.',
     'criterion-no-owner':
       'Without a Delivered by: clause a criterion cannot be derived — and its module is never guessed from the wording.',
     'criterion-stale-pointer': 'A criterion points at a module that no longer exists.',
@@ -1351,6 +1353,105 @@ function lifecycle(m) {
   );
 }
 
+// ─────────────────────────────────────────────────── decided, not built
+//
+// Claims docs/ makes about code that does not exist yet, grouped by the owner
+// whose build will make them true. The lifecycle checks are Health's; here an
+// owner's state is shown beside it so the two pages agree.
+
+const UNBUILT_STATE = {
+  stale: 'owner landed — annotation is stale',
+  absorbed: 'owner absorbed — nothing left to build',
+  unowned: 'owner does not resolve',
+  unrostered: 'owner not in the build order yet',
+};
+
+function unbuiltGroups(moduleName = null) {
+  const groups = new Map();
+  for (const fw of G.forwardWritten) {
+    const o = fw.owner;
+    if (moduleName && o.module !== moduleName) continue;
+    const k = o.key || '';
+    if (!groups.has(k)) groups.set(k, { owner: o, claims: [] });
+    groups.get(k).claims.push(fw);
+  }
+  const rank = ({ owner: o }) => {
+    const m = o.module && modByName(o.module);
+    if (!m) return [Infinity, Infinity];
+    const at = o.kind === 'feature' ? m.buildOrder.findIndex((b) => b.name === o.feature) : -1;
+    return [m.order, at < 0 ? Infinity : at];
+  };
+  return [...groups.values()].sort((a, b) => {
+    const [ra, rb] = [rank(a), rank(b)];
+    return ra[0] - rb[0] || ra[1] - rb[1] || String(a.owner.key).localeCompare(String(b.owner.key));
+  });
+}
+
+function unbuiltOwnerHref(o) {
+  const m = o.module && modByName(o.module);
+  if (!m) return null;
+  if (o.kind === 'queue') return (m.findings && m.findings.route) || m.route;
+  const f = o.feature && featOf(o.module, o.feature);
+  return f && f.route ? f.route : m.route;
+}
+
+function unbuiltPanel({ owner: o, claims }) {
+  const href = unbuiltOwnerHref(o);
+  return el(
+    'div',
+    { class: 'panel', style: 'margin-bottom:14px' },
+    el(
+      'div',
+      { class: 'panel-head' },
+      el(href ? 'a' : 'span', { class: 'ident', href }, o.key || 'no owner named'),
+      el(
+        'span',
+        { style: 'display:flex;gap:8px;align-items:center' },
+        UNBUILT_STATE[o.state] ? el('a', { class: 'tag pend', href: '#/health' }, UNBUILT_STATE[o.state]) : null,
+        o.marker ? badge(o.marker) : o.kind === 'queue' ? el('span', { class: 'eyebrow' }, 'findings queue') : null,
+      ),
+    ),
+    el(
+      'div',
+      { class: 'rows' },
+      claims.map((c) =>
+        el(
+          c.route ? 'a' : 'div',
+          { class: 'row', href: c.route },
+          el(
+            'span',
+            { class: 'note grow claim' },
+            el('div', { html: ticks(c.claim || plain(c.text)) }),
+            el(
+              'div',
+              { class: 'where' },
+              [`${c.rel.replace(/^docs\//, '')}:${c.line}`, c.adr || (c.gate && `gate ${c.gate}`)].filter(Boolean).join(' · '),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+function viewUnbuilt() {
+  const groups = unbuiltGroups();
+  return el(
+    'div',
+    {},
+    pageHead(
+      [el('a', { href: '#/' }, 'Overview'), el('span', {}, '·'), el('span', {}, 'Decided, not built')],
+      'Decided, not built',
+      'Claims in `architecture.md` and plans that describe code which does not exist yet, each annotated ' +
+        'with the build-order entry or findings-queue item whose work makes it true. That owner\'s build ' +
+        'deletes the annotation; until then, treat the claim as absent from the code.',
+    ),
+    groups.length
+      ? groups.map(unbuiltPanel)
+      : el('div', { class: 'panel' }, el('div', { class: 'panel-body' }, el('p', {}, 'No decided-not-built claims.'))),
+  );
+}
+
 function viewModule(name) {
   const m = modByName(name);
   if (!m) return notFound(`No module “${name}”`);
@@ -1378,6 +1479,8 @@ function viewModule(name) {
       )
     : feats;
   const extra = feats.filter((f) => !ordered.includes(f));
+  const unbuilt = unbuiltGroups(name);
+  const owns = new Map(unbuilt.filter((g) => g.owner.kind === 'feature').map((g) => [g.owner.feature, g.claims.length]));
 
   const depChips = (list, raw) =>
     list.length
@@ -1497,11 +1600,22 @@ function viewModule(name) {
               ),
               f.pendingVerification ? el('span', { class: 'tag pend' }, 'checks pending') : null,
               f.deferredVerification && f.deferredVerification.length ? el('span', { class: 'tag pend' }, 'check deferred') : null,
+              owns.get(f.name)
+                ? el('span', { class: 'tag' }, `${owns.get(f.name)} unbuilt ${owns.get(f.name) === 1 ? 'claim' : 'claims'}`)
+                : null,
             ),
           ),
         ),
       ),
     ),
+    unbuilt.length
+      ? el(
+          'section',
+          { class: 'block' },
+          el('h2', {}, `Decided, not built · ${unbuilt.reduce((n, g) => n + g.claims.length, 0)} claims`),
+          unbuilt.map(unbuiltPanel),
+        )
+      : null,
     lifecycle(m),
     m.integration
       ? el(
@@ -2126,6 +2240,7 @@ function buildRail() {
       G.scope ? { href: '#/scope', name: `criteria · ${G.scope.satisfied}/${G.scope.derivable}` } : null,
       { href: '#/health', name: `health · ${errs}` },
       { href: '#/files', name: `files · ${G.counts.indexedFiles}` },
+      G.counts.forwardWritten ? { href: '#/unbuilt', name: `not built · ${G.counts.forwardWritten}` } : null,
       G.adoption ? { href: '#/adoption', name: `adoption · ${G.adoption.openItems.length}` } : null,
     ].filter(Boolean)),
   );
@@ -2244,6 +2359,7 @@ function render() {
   else if (parts[0] === 'scope') node = viewScope();
   else if (parts[0] === 'adoption') node = viewAdoption();
   else if (parts[0] === 'files') node = viewFiles();
+  else if (parts[0] === 'unbuilt') node = viewUnbuilt();
   else if (parts[0] === 'modules') node = viewModules();
   else if (parts[0] === 'adrs') node = viewAdrs();
   else if (parts[0] === 'adr' && parts[1]) node = viewAdr(parts[1]);
@@ -2358,6 +2474,8 @@ if (typeof module !== 'undefined' && module.exports) {
       G = graph;
     },
     viewReview,
+    viewUnbuilt,
+    viewModule,
   };
 } else {
   window.addEventListener('hashchange', () => {

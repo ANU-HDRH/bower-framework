@@ -233,6 +233,17 @@ assert(
   !fwdFindings.some((h) => h.path.includes('shrunk-feature')),
   'an annotation on a ⏸ feature is not a finding',
 );
+// The roster page shows each owner's state; it must say what Health says.
+const ownerDisagrees = fwd.filter((f) => {
+  const h = at(f.rel, f.line);
+  return (f.owner.state === 'pending' || f.owner.state === 'unrostered') !== !h ||
+    (h && h.kind !== `forward-write-${f.owner.state}`);
+});
+assert(
+  ownerDisagrees.length === 0,
+  "every annotation's owner state agrees with its lifecycle finding",
+  ownerDisagrees.map((f) => `${f.rel}:${f.line} ${f.owner.state}`).join(', '),
+);
 // One cause, one finding — the same precedence transient-link takes over
 // broken-link. /b-feature writes the plan at Step 3 and the build-order entry
 // at Step 6.2, so a self-owned annotation naming a feature that is not rostered
@@ -765,12 +776,16 @@ class TestNode {
     this.children = [];
     this._text = text;
     this.className = '';
+    this.classList = { add: () => {} };
     this.innerHTML = '';
   }
   setAttribute(name, value) {
     this.attrs[name] = String(value);
   }
   addEventListener() {}
+  querySelectorAll() {
+    return [];
+  }
   append(...nodes) {
     this.children.push(...nodes);
   }
@@ -836,6 +851,34 @@ assert(
   renderedText.includes('Constitution') && renderedText.includes('consented to'),
   'the review page renders non-schema sections',
 );
+// Decided, not built: grouped by owner on its own page and on the owner's module.
+const unbuiltPage = reviewApp.viewUnbuilt();
+const ghostPanel = descendants(unbuiltPage).find(
+  (n) => hasClass(n, 'panel') && n.textContent.startsWith('drifted/ghost-feature'),
+);
+assert(
+  ghostPanel && descendants(ghostPanel).filter((n) => hasClass(n, 'row')).length === 4,
+  'the roster groups every claim under the owner that discharges it',
+  ghostPanel && ghostPanel.textContent,
+);
+assert(
+  unbuiltPage.textContent.includes('owner landed — annotation is stale') &&
+    unbuiltPage.textContent.includes('owner absorbed — nothing left to build'),
+  "the roster shows a failing owner's lifecycle state",
+);
+// The module page renders markdown; the markdown is not under test here.
+const priorWindow = global.window;
+global.window = { marked: { parse: (src) => src } };
+const driftedPage = reviewApp.viewModule('drifted');
+assert(
+  driftedPage.textContent.includes('2 unbuilt claims') && driftedPage.textContent.includes('Decided, not built ·'),
+  "a module page counts each entry's owned claims and lists them",
+);
+assert(
+  !reviewApp.viewModule('clean').textContent.includes('unbuilt claim'),
+  'and a queue-owned claim tags no build-order entry',
+);
+global.window = priorWindow;
 global.document = priorDocument;
 
 // v0.24 derived success criteria.
@@ -1133,6 +1176,14 @@ assert(
   `all ${readFields.length} graph fields the client reads are emitted`,
   unresolved.map((f) => `G.${f} is read but never emitted`).join('\n      '),
 );
+
+// ────────────────────────────────────────────────────────────────── live reload
+
+console.log('\nserve.cjs live reload');
+const watchRun = require('child_process').spawnSync(process.execPath, [path.join(__dirname, 'watch.cjs')], {
+  stdio: 'inherit',
+});
+assert(watchRun.status === 0, 'every docs/ change reaches a rebuild (watch.cjs)');
 
 // ────────────────────────────────────────────────────────────────── result
 

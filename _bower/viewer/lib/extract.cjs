@@ -212,6 +212,34 @@ function parseFinding(text) {
 // see would be one no command could ever discharge.
 const FWD_MARKER = /\bdecided, not built\b/i;
 
+// What the annotation qualifies, for the roster page: the sentence the inline
+// clause closes, or — for a banner, which covers its whole section — the
+// section's heading. Links become their text; backticks stay for rendering.
+function forwardClaim(lines, i, markerAt) {
+  const bound = /^\s*(#{1,6}\s|\||[-*+]\s|\d+\.\s)/;
+  let para = lines[i].slice(0, markerAt);
+  for (let j = i - 1; j >= 0 && !/^\s*(#|$)/.test(lines[j]) && !bound.test(lines[j + 1]); j--)
+    para = `${lines[j]} ${para}`;
+  const clean = para
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\*\*/g, '')
+    .replace(/(^|\s)_([^_]+)_(?=[\s.,;:]|$)/g, '$1$2')
+    .replace(/^[>\s]*([-*+]|\d+\.)?\s*/, '')
+    .replace(/\s+/g, ' ')
+    .replace(/(\s*\((ADR-[^)]*)?\)?)*\s*\($/, '')
+    .replace(/\s*\(ADR-[^)]*\)\s*$/, '')
+    .trim();
+  const sentences = clean.split(/(?<=\.)\s+(?=[A-Z`])/);
+  const claim = sentences[sentences.length - 1];
+  if (claim && !/^\|/.test(claim)) return claim;
+  if (/^\s*\|/.test(lines[i])) return lines[i].split('|').filter((c) => c.trim())[0].trim();
+  for (let j = i - 1; j >= 0; j--) {
+    const h = /^#{1,6}\s+(.*?)\s*$/.exec(lines[j]);
+    if (h) return `Section: ${h[1]}`;
+  }
+  return null;
+}
+
 function scanForwardWritten(rel, route, body, host) {
   const out = [];
   const lines = M.withoutFences(body).split('\n');
@@ -237,6 +265,7 @@ function scanForwardWritten(rel, route, body, host) {
       feature: host.feature || null,
       line: i + 1,
       text: lines[i].replace(/^[>\s]+/, '').trim(),
+      claim: forwardClaim(lines, i, FWD_MARKER.exec(lines[i]).index),
       // The feature that will make the claim true, and so the only thing that
       // will ever delete the annotation. Written `<module>/<feature>`: feature
       // names are module-scoped by construction, so a bare one identifies
@@ -1539,6 +1568,17 @@ function extract(root) {
         { line: fw.line, feature: fw.names, route: fw.route },
       );
     }
+
+    // The roster page groups claims by the owner that will discharge them. The
+    // state repeats the lifecycle verdict above, so the page and Health agree.
+    fw.owner = {
+      key: fw.names,
+      kind: !fw.names ? null : queued ? 'queue' : 'feature',
+      module: target ? target.module : fw.qualified ? fw.names.slice(0, fw.names.lastIndexOf('/')) : null,
+      feature: target ? target.feature : null,
+      marker: target ? target.marker : null,
+      state: stale ? 'stale' : absorbed ? 'absorbed' : unowned ? 'unowned' : rosterGap ? 'unrostered' : 'pending',
+    };
   }
 
   // ------------------------------------------------------------ scope: derived criteria

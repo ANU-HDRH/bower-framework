@@ -693,6 +693,15 @@ section.block > h2 {
 .row:last-child {
   border-bottom: 0;
 }
+/* A decided-not-built claim: the sentence, then where it is written. */
+.row .note.claim {
+  white-space: normal;
+}
+.row .note.claim .where {
+  font: 11px var(--f-mono);
+  color: var(--ink-3);
+  margin-top: 3px;
+}
 a.row:hover {
   background: var(--surface-2);
 }

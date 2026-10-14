@@ -90,12 +90,48 @@ if (lastError) process.exit(1);
 
 // ---------------------------------------------------------------- watch
 
+const DOCS = path.join(ROOT, 'docs');
 const clients = new Set();
+const dirWatchers = new Map();
 let debounce = null;
+
+// One non-recursive watch per directory, never per file. Node's recursive
+// watch on Linux holds each file's inode, so a file an editor or agent
+// replaces atomically goes deaf — its later edits and its deletion are never
+// seen. A directory watch reports its children by name, whatever their inode.
+// Every sync re-opens every watch: a watch is held on the directory's inode
+// too, so a directory swapped out at the same path would keep a dead one.
+function syncWatches() {
+  for (const w of dirWatchers.values()) w.close();
+  dirWatchers.clear();
+  const walk = (dir) => {
+    try {
+      const w = fs.watch(dir, onDocsChange);
+      w.on('error', () => {
+        w.close();
+        if (dirWatchers.get(dir) === w) dirWatchers.delete(dir);
+      });
+      dirWatchers.set(dir, w);
+    } catch {
+      return;
+    }
+    let entries = [];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      /* removed mid-walk; the next sync drops it */
+    }
+    for (const e of entries) if (e.isDirectory()) walk(path.join(dir, e.name));
+  };
+  walk(DOCS);
+}
 
 function onDocsChange() {
   clearTimeout(debounce);
   debounce = setTimeout(() => {
+    // Before the rebuild, so a change made while the watches are re-opened,
+    // or written into a new directory inside the debounce window, is read now.
+    syncWatches();
     rebuild('docs changed');
     // A failed re-extract must not masquerade as a reload: the client would
     // re-fetch the last good graph and report success over stale data. Tell
@@ -113,12 +149,9 @@ function onDocsChange() {
   }, 150);
 }
 
-try {
-  fs.watch(path.join(ROOT, 'docs'), { recursive: true }, onDocsChange);
-  console.log(`watching ${path.join(ROOT, 'docs')}`);
-} catch (err) {
-  console.warn(`[watch unavailable: ${err.message}] — reload the page manually after edits`);
-}
+syncWatches();
+if (dirWatchers.has(DOCS)) console.log(`watching ${DOCS} (${dirWatchers.size} directories)`);
+else console.warn(`[watch unavailable on ${DOCS}] — reload the page manually after edits`);
 
 // ---------------------------------------------------------------- static server
 
@@ -204,9 +237,10 @@ server.listen(PORT, HOST, () => {
     for (const n of list || []) if (n.family === 'IPv4' && !n.internal) lan.push(n.address);
   const s = graph.schema;
   console.log(`\n  Bower docs viewer — ${graph.project.name}`);
-  console.log(`  local    http://localhost:${PORT}`);
+  const port = server.address().port;
+  console.log(`  local    http://localhost:${port}`);
   if (HOST === '0.0.0.0') {
-    for (const ip of lan) console.log(`  network  http://${ip}:${PORT}`);
+    for (const ip of lan) console.log(`  network  http://${ip}:${port}`);
     if (lan.length)
       console.log(`\n  (bound to 0.0.0.0 — reachable on your subnet, and the graph embeds every doc body)`);
   }

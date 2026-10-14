@@ -12,7 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
-| v0.46 | 2026-10-08 | Viewer: the module rollup reads every build-order entry, so a ⏸ entry with no docs directory keeps a part-built module 🚧; a retired narrowing ADR's `narrows` is history, and a live `narrowed-by` naming a retired ADR is a new error | mechanical |
+| v0.46 | 2026-10-08 | Viewer: the module rollup reads every build-order entry, so a ⏸ entry with no docs directory keeps a part-built module 🚧; a retired narrowing ADR's `narrows` is history, and a live `narrowed-by` naming a retired ADR is a new error; live reload sees a file's deletion after an atomic edit, so a closed review leaves the screen; the viewer lists decided-not-built claims grouped by the owner that will build them | mechanical |
 | v0.45 | 2026-09-29 | The module status rollup is defined once, first match wins — 🔴, 🔧, 🟡, 🚧, all ⏸ → ⏸, ⏸ mixed with ✓ → 🚧, else ✓; `/b-index`'s contradictory linear ordering is replaced, and `/b-recap` derives each module's marker rather than copying `docs/index.md`'s; the index H1 names the project | mechanical |
 | v0.44 | 2026-09-29 | A constitution's verified-for-✓ rule names its level: a feature is ✓ on its acceptance criteria, the module integration test gates the module; `/b-design` drafts the line that way, and a project whose rule gates features on integration is offered a rewording | judgement |
 | v0.43 | 2026-09-24 | A manual check the operator accepts as deferred lands the feature ✓ with a `Deferred verification:` line — owed work listed by `/b-recap` and the viewer, never a 🚧 pin; `/b-feature <feature>` records a pending or deferred check's result. A waiver in the request never answers a gate. A delegate's elapsed time is not failure; a report taken under interrupt is marked. The viewer reports two ADRs sharing an `id`. v0.42's UI recording test applied at `/b-feature` and `/b-module`'s proposal and reconcile, *Path 2* and the router | none |
@@ -51,12 +51,28 @@ Two false findings on a real project. The viewer rolled modules up from feature 
 - **`_bower/viewer/lib/extract.cjs`** — rollup input is the build order; retired ADRs skip the `narrows` checks; new `adr-narrowed-by-retired`.
 - **`_bower/viewer/README.md`** — Schema contract rows for the rollup and narrowing.
 
+### Viewer: live reload misses deletes
+
+On Linux, Node's recursive `fs.watch` watches each file's inode, so once an agent or editor replaced a file atomically, its later edits and its deletion fired nothing: a closed review stayed on screen, and a long session's viewer stopped reloading at all. `serve.cjs` now watches each directory non-recursively and re-opens every watch before each rebuild, so a directory replaced at the same path is watched too.
+
+- **`_bower/viewer/serve.cjs`** — per-directory watches; the startup banner prints the bound port.
+- **`_bower/viewer/README.md`** — layout line.
+
+### Viewer: decided, not built
+
+`decided, not built` annotations were read only by the lifecycle checks, so the viewer reported a claim when its annotation went wrong and never listed the pending ones. A new page lists every annotated claim grouped by the build-order entry or findings-queue item that will discharge it, with that owner's marker and lifecycle state; a module page shows the claims its entries own and tags each entry with its count. The Health page's note on `pending-verification-complete` no longer says a deferred check means 🚧, which v0.43 reversed.
+
+- **`_bower/viewer/lib/extract.cjs`** — each annotation carries its claim sentence and its resolved owner and state.
+- **`_bower/viewer/web/app.js`**, **`web/style.css`** — the `#/unbuilt` page, rail entry, overview count and module-page section.
+- **`_bower/viewer/README.md`** — the Schema contract row for annotations names the claim it reads.
+
 ### Migration
 
 Mechanical.
 
 1. For each ADR under `docs/adr/` with `status: accepted` and a `narrowed-by` field, read each ADR it names. Where a named ADR has `status: superseded` or `deprecated`, read that ADR's `superseded-by` successor. If the successor's `narrows` names the reporting ADR, replace the retired ID with the successor's in the reporting ADR's `narrowed-by`; otherwise remove the retired ID (deleting the field if empty). Touch nothing else in either file. If no ADR qualifies, record `narrowing pointers already pruned`.
 2. For each module under `docs/modules/`, derive its marker from `module-status.md`'s `## Build order` markers — every entry, including ⏸ entries with no feature directory — and its `## Module integration` `Test:` marker, by the first-match rule in `_bower/framework-reference.md` → *Module-level status is a floor, not a sum*. If any differs from the module's marker in `docs/index.md`, run `/b-index`; otherwise record `module markers already conform`.
+3. The live-reload fix and the decided-not-built page need no project-side work; restart any running `node _bower/viewer/serve.cjs` to pick them up.
 
 ---
 

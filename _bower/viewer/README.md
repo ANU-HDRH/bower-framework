@@ -36,7 +36,7 @@ project's `package.json` (`"type": "module"` or not) cannot affect them.
 ```
 lib/md.cjs        markdown structure parsing — frontmatter, sections, tables
 lib/extract.cjs   docs/ → graph.json. Pure: no DOM, no vscode API, no npm
-serve.cjs         static server + fs.watch + SSE live reload
+serve.cjs         static server + per-directory fs.watch + SSE live reload
 web/              the client: index.html, style.css, app.js, vendored marked
 ```
 
@@ -72,7 +72,7 @@ defines it. Changing a row means changing `lib/extract.cjs` and
 | ADR frontmatter: `supersedes` / `superseded-by` | same section, *Lifecycle* | supersession chains and symmetry checks |
 | ADR frontmatter: `narrows` / `narrowed-by`, target stays `accepted`; a superseded or deprecated ADR's `narrows` is history, and a live `narrowed-by` naming one is an error | same section, *Narrowing* | narrowing pairs and their checks |
 | `constitution.md` `## Not yet in force` | `framework-reference.md` → *constitution.md — Normative Shape* | separates aspiration from rule |
-| `decided, not built` annotations in `plan.md` and `architecture.md` — the exact marker string, case-insensitive, fenced code skipped; read with the two lines after it; the deciding ADR **or** `gate YYYY-MM-DD`; the owner from the token `` feature `<module>/<feature>` `` / `` feature `<module>/Q-<slug>` `` and nothing else (`owner:` or a bare backticked name reads as ownerless) | `framework-reference.md` → *Forward-written claims* | the decided-but-unbuilt roster and the three lifecycle checks below, owners resolved module-qualified against build orders and findings queues. A canonical blockquote banner as a `## Components` section's **first content** exempts the whole table from `component-missing`; any other annotation exempts only the row it sits in — a looser rule would hide a genuinely missing row, the worse direction to fail in |
+| `decided, not built` annotations in `plan.md` and `architecture.md` — the exact marker string, case-insensitive, fenced code skipped; read with the two lines after it; the deciding ADR **or** `gate YYYY-MM-DD`; the owner from the token `` feature `<module>/<feature>` `` / `` feature `<module>/Q-<slug>` `` and nothing else (`owner:` or a bare backticked name reads as ownerless) | `framework-reference.md` → *Forward-written claims* | the decided-but-unbuilt roster — each claim shown as the sentence its inline clause closes, or as its section's heading for a banner — and the three lifecycle checks below, owners resolved module-qualified against build orders and findings queues. A canonical blockquote banner as a `## Components` section's **first content** exempts the whole table from `component-missing`; any other annotation exempts only the row it sits in — a looser rule would hide a genuinely missing row, the worse direction to fail in |
 | `plan.md` `Confirmed YYYY-MM-DD` line | same section — the plan's unannotated claims describe code that exists | a 🚧 owner counts as built only when its plan carries it; 🚧 alone also means mid-build or adopted |
 | `docs/index.md` 🌱 banner + `docs/adoption-ledger.md` | `framework-reference.md` → *Adoption phase* | phase detection; suppresses per-feature status warnings |
 | `## Module review` `Review:` line — marker, date, `(N of N features)` snapshot | `framework-reference.md` → *module-status.md — Integration and Build Order* | review state, derived staleness, the lifecycle panel |
