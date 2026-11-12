@@ -19,7 +19,7 @@ const M = require('./md.cjs');
 // against. Compared with the target project's _bower/VERSION so a viewer
 // pointed at a project on another version says so, rather than quietly
 // misreading it. Bump when a framework change alters what is parsed here.
-const SCHEMA_VERSION = '0.46';
+const SCHEMA_VERSION = '0.47';
 
 // ---------------------------------------------------------------- helpers
 
@@ -947,7 +947,11 @@ function extract(root) {
           'info',
           'findings-queue-open',
           `${name}${it.id ? ` ${it.id}` : ''} — ${it.gist}` +
-            (it.pointer ? ` · ${it.pointer}` : ''),
+            (it.pointer
+              ? it.pointerKind === 'command'
+                ? ` · \`${it.pointer.replace(/^Run\s+/, '')}\``
+                : ` · ${it.pointer}`
+              : ''),
           fqRel,
           { module: name, id: it.id || null },
         );

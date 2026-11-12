@@ -136,7 +136,8 @@ After the user confirms at the gate, write `plan.md` *before* any code is touche
 **For add intent:** create `docs/modules/<module>/<feature>/plan.md` with the sections the feature warrants:
 
 - **Purpose** — what the feature does, what it does *not* do.
-- **Components** — a file table from the proposal's "Technical approach": each file by path with a one-line purpose.
+- **Components** — a file table from the proposal's "Technical approach": each file by path, and what the file is for in one line (~200 characters). How it behaves, why, and how to run it go under the heading that owns them, never in the cell.
+- **Behaviour** — the contract no other section below holds: what the feature does under which conditions, and what it deliberately does not. Prose or bullets by behaviour, not by file. Omit if the other sections cover it.
 - **Schema / API surface / Access model** — if the feature introduces a table, API, or access boundary, document the shape now.
 - **Configuration** — env vars, settings, or dependency mounts the feature requires (write `No new env vars.` if none).
 - **Integration points** — which other modules this feature consumes from or exposes to.
@@ -229,7 +230,7 @@ If the user declines the edit, that is a legitimate outcome — record nothing, 
 
 The exact set of documents to touch depends on the intent. Common to all intents: `status.md` is rewritten from scratch, `module-status.md` build-order markers reflect reality, and `scope.md` is updated if the change shifted scope.
 
-**Completed plans describe the system, not the build.** When finalising `plan.md` (add and modify intents), keep purpose, the current behavioural contract, the component map, integration points, and testing *categories*. Compress dated counts and implementation history aggressively — the resumption record and git hold those. A footnote earns its place only when a future reader would otherwise have to dig it out of git.
+**Completed plans describe the system, not the build.** When finalising `plan.md` (add and modify intents), keep purpose, the current behavioural contract, the component map, integration points, and testing *categories*. Compress dated counts and implementation history aggressively — the resumption record and git hold those. A footnote earns its place only when a future reader would otherwise have to dig it out of git. **A `## Components` cell holding more than its one line is repaired in the same edit**: move what is beyond the file's purpose to the section that owns it, compressed as above; test counts go to Testing.
 
 **Discharge the *decided, not built* annotations first — before any marker, stamp or tick below**, so the mechanical edit sits ahead of every place a run can stop. Re-run Step 1.2's grep rather than working from Step 2's list — the report's `## Changed files` may have widened what this change made true:
 
@@ -263,7 +264,7 @@ Leave every annotation whose owner this change did not discharge — compare qua
    - Append implementation footnotes worth keeping (from `## Implementation footnotes`).
    - **Delete every *decided, not built* annotation owned by this feature** — Step 3's own, and any a `/b-design` run left in this plan — and refresh the `Confirmed YYYY-MM-DD` line in the same edit, whether the feature lands ✓ or 🚧. Only the annotation goes; the claim stays. An annotation naming a different feature (compare qualified names) is not yours.
    - If during Step 4 the implementer diverged from the Step 3 plan, the plan should already reflect reality (minor divergences are edited in flight and listed under `## Divergences`) — verify and tidy any stale fragments.
-2. Update each sibling `plan.md` listed in the Step 2 Impact section — fix outbound references to the changed behaviour; their annotations already went in the head-of-step sweep. Cross-reference the report's `## Changed files` and `## Doc implications` for sibling plans the proposal missed; update those too and note it in the resumption summary.
+2. Update each sibling `plan.md` listed in the Step 2 Impact section — fix outbound references to the changed behaviour, under the heading that owns the claim — never by appending to a `## Components` cell; their annotations already went in the head-of-step sweep. Cross-reference the report's `## Changed files` and `## Doc implications` for sibling plans the proposal missed; update those too and note it in the resumption summary.
 3. Refresh `## Module integration` `Notes:` if the test's assertions need to shift (the report's `## Doc implications` flags this). If yes, the Step 7 handoff points to `/b-integration` so the test itself gets updated.
 4. If the feature is multi-session, update `## Implementation trajectory` in `plan.md`: compress the just-completed phase into a one-paragraph précis (why-focused, not steps); leave future phases detailed.
 

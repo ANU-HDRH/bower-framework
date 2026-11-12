@@ -1283,3 +1283,26 @@ a.strap:hover {
   font-size: 13.5px;
   line-height: 1.5;
 }
+
+/* Copy-to-clipboard beside a pasteable command. */
+button.copy {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  margin-left: 4px;
+  padding: 2px 3px;
+  vertical-align: -2px;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  cursor: pointer;
+}
+button.copy svg {
+  display: block;
+}
+button.copy:hover,
+button.copy:focus-visible {
+  color: var(--bower);
+  border-color: var(--bower);
+}

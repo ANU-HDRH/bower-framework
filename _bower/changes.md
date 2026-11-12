@@ -12,6 +12,7 @@ Most recent first. **Migration** is the class of project-side work each version'
 
 | Version | Date | Summary | Migration |
 | --- | --- | --- | --- |
+| v0.47 | 2026-11-09 | A plan's `## Components` cell is one line on what the file is for; behaviour goes under the heading that owns it, with `## Behaviour` as the new home where none does. Viewer: a routed finding's command shows as code with a copy button, without the redundant `route:/b-x` class | none |
 | v0.46 | 2026-10-08 | Viewer: the module rollup reads every build-order entry, so a ⏸ entry with no docs directory keeps a part-built module 🚧; a retired narrowing ADR's `narrows` is history, and a live `narrowed-by` naming a retired ADR is a new error; live reload sees a file's deletion after an atomic edit, so a closed review leaves the screen; the viewer lists decided-not-built claims grouped by the owner that will build them | mechanical |
 | v0.45 | 2026-09-29 | The module status rollup is defined once, first match wins — 🔴, 🔧, 🟡, 🚧, all ⏸ → ⏸, ⏸ mixed with ✓ → 🚧, else ✓; `/b-index`'s contradictory linear ordering is replaced, and `/b-recap` derives each module's marker rather than copying `docs/index.md`'s; the index H1 names the project | mechanical |
 | v0.44 | 2026-09-29 | A constitution's verified-for-✓ rule names its level: a feature is ✓ on its acceptance criteria, the module integration test gates the module; `/b-design` drafts the line that way, and a project whose rule gates features on integration is offered a rewording | judgement |
@@ -39,6 +40,29 @@ Most recent first. **Migration** is the class of project-side work each version'
 | v0.22 | 2026-07-27 | Build-order pull-forward annotation | judgement |
 | v0.21 | 2026-07-22 | `/b-adopt` — brownfield cold-start | none |
 | v0.20 | 2026-07-17 | Context economy: delegated implementation, selective orientation, ADR applicability, slim framework import | judgement |
+
+---
+
+## v0.47 — 2026-11-09
+
+### A plan's Components cell is one line
+
+`## Components` cells were accumulating each feature's behavioural contract, and later features appended to them: a plan had no other section for behaviour unless the feature had an API or schema. The cell now holds what the file is for in one line, a plan gains an optional `## Behaviour` section, and a sibling's update goes under the owning heading rather than into the cell. Existing plans are repaired when next finalised.
+
+- **`skills-src/commands/b-feature.md`** — Step 3 cell rule and `Behaviour` section; Step 6 repairs an over-long cell at finalise; sibling updates never append to a cell.
+- **`skills-src/commands/b-module.md`** — the same cell rule where it creates a plan.
+- **`_bower/framework-reference.md`** — *Document Layers and Ownership*: the no-narrative-in-a-cell rule names the plan's Components table.
+
+### Viewer: copyable routed commands
+
+A routed finding showed `— route:/b-x — Run /b-x …` as plain text, repeating the command's name. The viewer now drops the class segment and shows the command as code with a copy button, on the findings-queue and review-plan pages and on the Health page's `findings-queue-open` entries.
+
+- **`_bower/viewer/web/app.js`**, **`web/style.css`** — routed-tail rewrite, copy button.
+- **`_bower/viewer/lib/extract.cjs`** — the `findings-queue-open` message puts the command in a code span.
+
+### Migration
+
+None — no project-side changes required. Do not rewrite existing `plan.md` files during the upgrade: a `## Components` cell longer than one line is repaired by `/b-feature` the next time it finalises that plan. Restart any running `node _bower/viewer/serve.cjs` to pick up the viewer change.
 
 ---
 

@@ -6,11 +6,9 @@ Each item has a one-line description and a *revisit trigger*: the signal that tu
 
 ## Scheduled
 
-In order. The first is framework-repo tooling and carries no version.
+Framework-repo tooling; carries no version.
 
 - **A scripted operator for the conformance suite** — `tools/conformance/drive.mjs`: each scenario as a list of turns (invoke, the non-answer probes, confirm), `git status --porcelain` checked after every turn. Claude Code runs through the Agent SDK, whose `canUseTool` callback always receives `AskUserQuestion` and can answer it, free-text non-answers included; Codex runs through its SDK, where `thread.run()` continues one thread across turns and answers a prose gate. The blocking criterion (no gated write before an explicit answer) is scored mechanically from porcelain; restatement by the choice labels, with a model judge as fallback; the operator reviews each ledger row before it is written. Covers C3 and C8 outright, plausibly C1, C2 and C4 (SDK abort, then resume). A row driven through the Claude SDK is the SDK surface, not the TUI, and says so. **Built 2026-09-24; Claude C3 cleared at v0.42.** Remaining: C3 and C8 on Codex; a C8 scenario needs turns that read the presented group (`send` as a function of the stop).
-
-- **v0.47 — what a plan's `## Components` cell may hold** — the plans clause of *Growth of the always-read documents* fired on 2026-10-14: oversized cells in two real plans (`projects/project-crud`, `test-harness/test-run-viewer-and-annotation`). Decide the cell's budget and where the overflow lives; `/b-feature` Step 6 writes the table, and the viewer's `oversized-table-cell` already reports it. Design from those two plans.
 
 ## Deferred items
 
@@ -59,8 +57,9 @@ In order. The first is framework-repo tooling and carries no version.
   - **`architecture.md` splitting** — a short overview, component detail in module-scoped docs. *Trigger:* ~500 lines.
 
   **Evidence (2026-09-23):** on the most mature real project, `index.md` is 58 lines, the largest `module-status.md` 104, `architecture.md` 306. The one oversized table cell is in a `plan.md`, not the index — the pattern has moved to where no budget applies.
-  **Evidence (2026-10-14):** `index.md` 59, largest `module-status.md` 83, `architecture.md` 326. Oversized cells are now in two plans (`projects/project-crud`, `test-harness/test-run-viewer-and-annotation`), so the plans clause of the trigger has fired; scheduled for v0.47.
-  *Revisit trigger:* an index needing a surgical edit it cannot get; a second project growing an unbounded curated section; `architecture.md` past ~500 lines; or oversized cells recurring in plans. Cheapest bundled with other work in `/b-index`.
+  **Evidence (2026-10-14):** `index.md` 59, largest `module-status.md` 83, `architecture.md` 326. Oversized cells are now in two plans (`projects/project-crud`, `test-harness/test-run-viewer-and-annotation`), so the plans clause of the trigger has fired; shipped at v0.47.
+  **Evidence (2026-11-13):** 39 of the project's 100 plans held a Components cell over 300 characters, only two over the viewer's 1,200 threshold. v0.47 set the cell rule and repairs lazily. Open: whether the viewer should report a Components cell at a lower threshold than `oversized-table-cell`'s.
+  *Revisit trigger:* an index needing a surgical edit it cannot get; a second project growing an unbounded curated section; `architecture.md` past ~500 lines; or plans written under v0.47 or later still growing Components cells. Cheapest bundled with other work in `/b-index`.
 
 - **Where `module-status.md` compaction runs** — *v0.41 put it inline at reconcile and review closeout.* A tired context may skip it; delegation was rejected because a fresh subagent would load cold what the orchestrator has already read. The job is bounded so a skip fails safe.
   *Revisit trigger:* `module-status.md` files growing across several runs that each had the chance to compact.

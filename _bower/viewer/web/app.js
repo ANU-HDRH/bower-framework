@@ -42,6 +42,9 @@ const esc = (s) =>
 
 /** Inline `code` spans in plain metadata prose → real <code>. */
 const ticks = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+/** As ticks, but a code span holding a whole command (`/b-x args`) becomes copyable. */
+const cmdTicks = (s) =>
+  esc(s).replace(/`([^`]+)`/g, (_, c) => (/^\/b-[a-z-]+\s/.test(c) ? `<code class="cmd">${c}</code>` : `<code>${c}</code>`));
 
 /** Flatten markdown to bare text, for one-line summaries in dense rows. */
 const plain = (s) =>
@@ -87,11 +90,65 @@ function toast(msg) {
 
 // ─────────────────────────────────────────── markdown + link rewriting
 
+// A routed checklist item ends `— route:/b-x — Run /b-x …`. The class repeats
+// the command's own name, so it is dropped and the command shown as copyable.
+// A trailing `— done YYYY-MM-DD …` completion note stays outside the command.
+const ROUTED_TAIL =
+  /\s+[—–]\s+route:\/b-[a-z-]+\s+[—–]\s+Run\s+(\/b-.*?)(?=\s+[—–]\s+done\s+\d{4}-\d{2}-\d{2}|\s*$)/;
+const CHECKLIST_DOC = /(^|\/)(findings|review-plan)\.md$/;
+
+/** Rewrite routed tails to code spans; returns the source and the commands. */
+function routedCommands(src) {
+  const cmds = new Set();
+  const out = src
+    .split('\n')
+    .map((line) =>
+      /^\s*[-*]\s+\[.\]\s/.test(line) && !line.includes('`/b-')
+        ? line.replace(ROUTED_TAIL, (_, cmd) => (cmds.add(cmd), ` — \`${cmd}\``))
+        : line,
+    )
+    .join('\n');
+  return { src: out, cmds };
+}
+
+function copyBtn(text) {
+  return el(
+    'button',
+    {
+      class: 'copy',
+      type: 'button',
+      title: 'Copy command',
+      'aria-label': 'Copy command',
+      html: '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5.5" y="5.5" width="8" height="8" rx="1"/><path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"/></svg>',
+      onclick: (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigator.clipboard.writeText(text).then(
+          () => toast('Copied'),
+          () => toast('Copy failed — select the text instead'),
+        );
+      },
+    },
+  );
+}
+
+/** Give every `code.cmd` under host a copy button. */
+function withCopy(host) {
+  for (const c of host.querySelectorAll('code.cmd')) c.after(copyBtn(c.textContent));
+  return host;
+}
+
 function renderMd(markdown, sourceRel, { stripH1 = true } = {}) {
   let src = markdown || '';
   if (stripH1) src = src.replace(/^#\s+.*\n?/, '');
+  let cmds = null;
+  if (sourceRel && CHECKLIST_DOC.test(sourceRel)) ({ src, cmds } = routedCommands(src));
   const host = el('div', { class: 'md' });
   host.innerHTML = window.marked.parse(src, { mangle: false, headerIds: false });
+  if (cmds && cmds.size) {
+    for (const c of host.querySelectorAll('li code')) if (cmds.has(c.textContent)) c.classList.add('cmd');
+    withCopy(host);
+  }
 
   // Heading anchors, matching the slugs the extractor computed.
   const seen = new Map();
@@ -763,7 +820,7 @@ function viewHealth() {
                   el(
                     'div',
                     { class: 'msg' },
-                    el('div', { html: ticks(h.message.replace(/\s*\(from [^)]*\)\s*$/, '')) }),
+                    withCopy(el('div', { html: cmdTicks(h.message.replace(/\s*\(from [^)]*\)\s*$/, '')) })),
                     el(
                       'div',
                       { class: 'where' },
@@ -949,7 +1006,8 @@ function viewReview(name) {
         },
         it.pointer,
       );
-    return el('code', { style: 'font-size:12px' }, it.pointer.replace(/^Run\s+/, ''));
+    const cmd = it.pointer.replace(/^Run\s+/, '');
+    return el('span', {}, el('code', { class: 'cmd', style: 'font-size:12px' }, cmd), copyBtn(cmd));
   };
 
   return el(
